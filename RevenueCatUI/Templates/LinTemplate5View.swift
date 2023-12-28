@@ -27,6 +27,12 @@ struct LinTemplate5View: TemplateViewType {
 
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
+    
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+    
+    @Environment(\.verticalSizeClass)
+    var verticalSizeClass
 
     @Environment(\.locale)
     var locale
@@ -44,40 +50,52 @@ struct LinTemplate5View: TemplateViewType {
 
     var body: some View {
         self.content
+            .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+
     }
 
     @ViewBuilder
     var content: some View {
-        VStack(spacing: self.defaultVerticalPaddingLength) {
+        VStack(spacing: 16) {
             if self.configuration.mode.isFullScreen {
                 if let header = self.configuration.headerImageURL {
-                    RemoteImage(url: header,
-                                aspectRatio: self.headerAspectRatio,
-                                maxWidth: .infinity)
-                    .clipped()
-
                     Spacer()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background {
+                            if verticalSizeClass == .regular {
+                                RemoteImage(url: header)
+                            }
+                        }
+                        .clipped()
                 }
             }
 
-            self.scrollableContent
-                .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
-                .padding(
-                    .top,
-                    self.displayingAllPlans
-                    ? self.defaultVerticalPaddingLength
-                    // Compensate for additional padding on condensed mode + iPad
-                    : self.defaultVerticalPaddingLength.map { $0 * -1 }
-                )
+            Group {
+                if self.configuration.mode.isFullScreen {
+                    Text(.init(self.selectedLocalization.title))
+                        .font(self.font(for: .title).bold())
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-            if self.configuration.mode.shouldDisplayInlineOfferDetails(displayingAllPlans: self.displayingAllPlans) {
-                self.offerDetails(package: self.selectedPackage, selected: false)
+                    self.features
+
+                    self.packages
+                } else {
+                    self.packages
+                        .hideFooterContent(self.configuration,
+                                           hide: !self.displayingAllPlans)
+                }
+                
+                if self.configuration.mode.shouldDisplayInlineOfferDetails(displayingAllPlans: self.displayingAllPlans) {
+                    self.offerDetails(package: self.selectedPackage, selected: false)
+                }
+                
+                self.subscribeButton
             }
-
-            self.subscribeButton
-                .defaultHorizontalPadding()
-
+            .frame(maxWidth: self.defaultContentWidth)
+            .defaultHorizontalPadding()
+            
             FooterView(configuration: self.configuration,
                        purchaseHandler: self.purchaseHandler,
                        displayingAllPlans: self.$displayingAllPlans)
@@ -88,34 +106,9 @@ struct LinTemplate5View: TemplateViewType {
         .frame(maxHeight: .infinity)
     }
 
-    private var scrollableContent: some View {
-        VStack(spacing: self.defaultVerticalPaddingLength) {
-            if self.configuration.mode.isFullScreen {
-                Text(.init(self.selectedLocalization.title))
-                    .font(self.font(for: .largeTitle).bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .defaultHorizontalPadding()
-
-                Spacer()
-
-                self.features
-                    .defaultHorizontalPadding()
-
-                Spacer()
-
-                self.packages
-            } else {
-                self.packages
-                    .hideFooterContent(self.configuration,
-                                       hide: !self.displayingAllPlans)
-            }
-        }
-        .frame(maxHeight: .infinity)
-    }
-
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: self.defaultVerticalPaddingLength) {
+        VStack(spacing: 8) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack {
                     Rectangle()
@@ -150,12 +143,8 @@ struct LinTemplate5View: TemplateViewType {
                 } label: {
                     self.packageButton(package, selected: isSelected)
                 }
-                .buttonStyle(PackageButtonStyle())
             }
         }
-        .defaultHorizontalPadding()
-
-        Spacer()
     }
 
     @ViewBuilder
@@ -312,7 +301,7 @@ struct LinTemplate5View_Previews: PreviewProvider {
     static var previews: some View {
         ForEach(PaywallViewMode.allCases, id: \.self) { mode in
             PreviewableTemplate(
-                offering: TestData.offeringWithTemplate5Paywall,
+                offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
                 LinTemplate5View($0)
