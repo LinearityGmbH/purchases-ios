@@ -20,6 +20,14 @@ func paywallViewControllerAPI(_ delegate: Delegate, _ offering: Offering?) {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, *)
+func paywallFooterViewControllerAPI(_ delegate: Delegate, _ offering: Offering?) {
+    let controller = PaywallFooterViewController()
+    controller.delegate = delegate
+
+    let _: UIViewController = PaywallFooterViewController(offering: offering)
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, *)
 final class Delegate: PaywallViewControllerDelegate {
 
     func paywallViewController(_ controller: PaywallViewController,
@@ -31,6 +39,8 @@ final class Delegate: PaywallViewControllerDelegate {
 
     func paywallViewController(_ controller: PaywallViewController,
                                didFinishRestoringWith customerInfo: CustomerInfo) {}
+
+    func paywallViewControllerWasDismissed(_ controller: PaywallViewController) {}
 
 }
 
