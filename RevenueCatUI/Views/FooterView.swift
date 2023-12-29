@@ -216,6 +216,9 @@ private struct LinkButton: View {
     @Environment(\.locale)
     private var locale
 
+    @Namespace
+    private var namespace
+
     @State
     private var displayLink = false
 
@@ -234,6 +237,7 @@ private struct LinkButton: View {
         } label: {
             self.content
         }
+        .matchedGeometryEffect(id: self.titles.first ?? "", in: self.namespace)
         .buttonStyle(.plain)
         .sheet(isPresented: self.$displayLink) {
             NavigationView {
@@ -250,6 +254,7 @@ private struct LinkButton: View {
                         }
                     }
             }
+            .navigationViewStyle(.stack)
         }
         #else
         Link(destination: self.url) {
@@ -280,6 +285,7 @@ private struct LinkButton: View {
 
     private func linkContent(for title: String, bundle: Bundle) -> some View {
         Text(Self.localizedString(title, bundle))
+            .multilineTextAlignment(.center)
             .frame(minHeight: Constants.minimumButtonHeight)
     }
 

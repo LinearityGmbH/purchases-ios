@@ -82,6 +82,7 @@ class HTTPClient {
                                     authHeaders: self.authHeaders,
                                     defaultHeaders: self.defaultHeaders,
                                     verificationMode: verificationMode ?? self.systemInfo.responseVerificationMode,
+                                    internalSettings: self.systemInfo.dangerousSettings.internalSettings,
                                     completionHandler: completionHandler))
     }
 
@@ -148,6 +149,20 @@ extension HTTPClient {
         }
     }
 
+    static func headerParametersForSignatureHeader(
+        with headers: RequestHeaders,
+        path: HTTPRequestPath
+    ) -> RequestHeaders {
+        if let header = HTTPRequest.headerParametersForSignatureHeader(
+            headers: headers,
+            path: path
+        ) {
+            return [RequestHeader.headerParametersForSignature.rawValue: header]
+        } else {
+            return [:]
+        }
+    }
+
     enum RequestHeader: String {
 
         case authorization = "Authorization"
@@ -155,6 +170,7 @@ extension HTTPClient {
         case eTag = "X-RevenueCat-ETag"
         case eTagValidationTime = "X-RC-Last-Refresh-Time"
         case postParameters = "X-Post-Params-Hash"
+        case headerParametersForSignature = "X-Headers-Hash"
         case sandbox = "X-Is-Sandbox"
 
     }
@@ -201,12 +217,14 @@ private extension HTTPClient {
                                       authHeaders: HTTPClient.RequestHeaders,
                                       defaultHeaders: HTTPClient.RequestHeaders,
                                       verificationMode: Signing.ResponseVerificationMode,
+                                      internalSettings: InternalDangerousSettingsType,
                                       completionHandler: HTTPClient.Completion<Value>?) {
             self.httpRequest = httpRequest.requestAddingNonceIfRequired(with: verificationMode)
             self.headers = self.httpRequest.headers(
                 with: authHeaders,
                 defaultHeaders: defaultHeaders,
-                verificationMode: verificationMode
+                verificationMode: verificationMode,
+                internalSettings: internalSettings
             )
             self.verificationMode = verificationMode
 
@@ -305,6 +323,21 @@ private extension HTTPClient {
         data: Data?,
         response httpURLResponse: HTTPURLResponse
     ) -> VerifiedHTTPResponse<Data>.Result? {
+        #if DEBUG
+        let requestHeaders: HTTPClient.RequestHeaders
+
+        if self.systemInfo.dangerousSettings.internalSettings.disableHeaderSignatureVerification {
+            Logger.warn(Strings.network.api_request_disabling_header_parameter_signature_verification(
+                request.httpRequest
+            ))
+            requestHeaders = [:]
+        } else {
+            requestHeaders = request.headers
+        }
+        #else
+        let requestHeaders = request.headers
+        #endif
+
         return Result
             .success(data)
             .mapToResponse(response: httpURLResponse, request: request.httpRequest)
@@ -313,6 +346,7 @@ private extension HTTPClient {
                 return cachedResponse.verify(
                     signing: self.signing(for: request.httpRequest),
                     request: request.httpRequest,
+                    requestHeaders: requestHeaders,
                     publicKey: request.verificationMode.publicKey
                 )
             }
@@ -518,7 +552,8 @@ extension HTTPRequest {
     func headers(
         with authHeaders: HTTPClient.RequestHeaders,
         defaultHeaders: HTTPClient.RequestHeaders,
-        verificationMode: Signing.ResponseVerificationMode
+        verificationMode: Signing.ResponseVerificationMode,
+        internalSettings: InternalDangerousSettingsType
     ) -> HTTPClient.RequestHeaders {
         var result: HTTPClient.RequestHeaders = defaultHeaders
 
@@ -532,10 +567,24 @@ extension HTTPRequest {
 
         if #available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *),
            verificationMode.isEnabled,
-           self.path.supportsSignatureVerification,
-           let body = self.requestBody {
+           self.path.supportsSignatureVerification {
+            let headerParametersSignature = HTTPClient.headerParametersForSignatureHeader(
+                with: defaultHeaders,
+                path: self.path
+            )
+
+            #if DEBUG
+            if !internalSettings.disableHeaderSignatureVerification {
+                result += headerParametersSignature
+            }
+            #else
+            result += headerParametersSignature
+            #endif
+
+            if let body = self.requestBody {
                 result += HTTPClient.postParametersHeaderForSigning(with: body)
             }
+        }
 
         return result
     }

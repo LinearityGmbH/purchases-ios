@@ -33,9 +33,15 @@ import XCTest
 @MainActor
 class BaseSnapshotTest: TestCase {
 
-    // swiftlint:disable:next unneeded_override
     override class func setUp() {
         super.setUp()
+
+        // See https://github.com/pointfreeco/swift-snapshot-testing/pull/702 and
+        // https://github.com/pointfreeco/swift-snapshot-testing/pull/666
+        expect(MTLCreateSystemDefaultDevice()).toNot(
+            beNil(),
+            description: "Metal is required for perceptuallyCompare, but not available on this machine."
+        )
 
         // Uncomment this line to manually record snapshots:
         // isRecording = true
@@ -60,6 +66,7 @@ class BaseSnapshotTest: TestCase {
                            fonts: fonts,
                            introEligibility: introEligibility,
                            purchaseHandler: purchaseHandler)
+            .environment(\.isRunningSnapshots, true)
     }
 
     private static func skipTestIfNeeded() throws {
@@ -80,6 +87,8 @@ extension BaseSnapshotTest {
     static let fonts: PaywallFontProvider = CustomPaywallFontProvider(fontName: "Papyrus")
 
     static let fullScreenSize: CGSize = .init(width: 460, height: 950)
+    static let landscapeSize: CGSize = .init(width: fullScreenSize.height,
+                                             height: fullScreenSize.width)
     static let iPadSize: CGSize = .init(width: 744, height: 1130)
     static let footerSize: CGSize = .init(width: 460, height: 460)
 
@@ -87,6 +96,28 @@ extension BaseSnapshotTest {
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension View {
+
+    @MainActor
+    func snapshotTablet(file: StaticString = #file, line: UInt = #line) {
+        self
+            .environment(\.userInterfaceIdiom, .pad)
+            .snapshot(
+                size: BaseSnapshotTest.iPadSize,
+                file: file,
+                line: line
+            )
+    }
+
+    @MainActor
+    func snapshotLandscape(file: StaticString = #file, line: UInt = #line) {
+        self
+            .environment(\.verticalSizeClass, .compact)
+            .snapshot(
+                size: BaseSnapshotTest.landscapeSize,
+                file: file,
+                line: line
+            )
+    }
 
     /// Adds the receiver to a view hierarchy to be able to test lifetime logic.
     /// - Returns: dispose block that removes the view from the hierarchy.

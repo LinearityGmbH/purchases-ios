@@ -22,10 +22,14 @@ import UIKit
 /// - Seealso: ``PaywallView`` for `SwiftUI`.
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, *)
 @objc(RCPaywallViewController)
-public final class PaywallViewController: UIViewController {
+public class PaywallViewController: UIViewController {
 
     /// See ``PaywallViewControllerDelegate`` for receiving purchase events.
-    @objc public weak var delegate: PaywallViewControllerDelegate?
+    @objc public final weak var delegate: PaywallViewControllerDelegate?
+
+    var mode: PaywallViewMode {
+        return .fullScreen
+    }
 
     private let offering: Offering?
     private let displayCloseButton: Bool
@@ -51,11 +55,12 @@ public final class PaywallViewController: UIViewController {
     }
 
     private lazy var hostingController: UIHostingController<some View> = {
-        let paywallView = self.offering
-            .map { PaywallView(offering: $0, displayCloseButton: self.displayCloseButton) }
-            ?? PaywallView(displayCloseButton: self.displayCloseButton)
-
-        let view = paywallView
+        let view = PaywallView(offering: self.offering,
+                               customerInfo: nil,
+                               mode: self.mode,
+                               displayCloseButton: self.displayCloseButton,
+                               introEligibility: nil,
+                               purchaseHandler: nil)
             .onPurchaseCompleted { [weak self] transaction, customerInfo in
                 guard let self = self else { return }
                 self.delegate?.paywallViewController?(self, didFinishPurchasingWith: customerInfo)
@@ -85,6 +90,12 @@ public final class PaywallViewController: UIViewController {
         self.hostingController.view.frame = self.view.bounds
     }
 
+    public override func viewDidDisappear(_ animated: Bool) {
+        if self.isBeingDismissed {
+            self.delegate?.paywallViewControllerWasDismissed?(self)
+        }
+        super.viewDidDisappear(animated)
+    }
 }
 
 /// Delegate for ``PaywallViewController``.
@@ -111,6 +122,10 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     @objc(paywallViewController:didFinishRestoringWithCustomerInfo:)
     optional func paywallViewController(_ controller: PaywallViewController,
                                         didFinishRestoringWith customerInfo: CustomerInfo)
+
+    /// Notifies that the ``PaywallViewController`` was dismissed.
+    @objc(paywallViewControllerWasDismissed:)
+    optional func paywallViewControllerWasDismissed(_ controller: PaywallViewController)
 
 }
 
