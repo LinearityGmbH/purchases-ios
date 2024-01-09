@@ -68,6 +68,7 @@ struct LinTemplate5View: TemplateViewType {
                             }
                         }
                         .clipped()
+                        .padding(.bottom, 8)
                 }
             }
 
@@ -79,6 +80,7 @@ struct LinTemplate5View: TemplateViewType {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     self.features
+                        .padding(.bottom, 8)
 
                     self.packages
                 } else {
@@ -122,7 +124,7 @@ struct LinTemplate5View: TemplateViewType {
                         .frame(width: self.iconSize, height: self.iconSize)
 
                     Text(.init(feature.title))
-                        .font(self.font(for: .body))
+                        .font(self.font(for: .subheadline))
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
