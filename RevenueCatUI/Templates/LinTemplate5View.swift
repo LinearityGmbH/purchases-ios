@@ -143,6 +143,7 @@ struct LinTemplate5View: TemplateViewType {
                 } label: {
                     self.packageButton(package, selected: isSelected)
                 }
+                .buttonStyle(PackageButtonStyle())
             }
         }
     }
