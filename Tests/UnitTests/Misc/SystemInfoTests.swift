@@ -44,14 +44,14 @@ class SystemInfoTests: TestCase {
         let sandboxDetector = MockSandboxEnvironmentDetector(isSandbox: true)
 
         expect(SystemInfo.withReceiptResult(.sandboxReceipt, sandboxDetector).isSandbox) == true
-        expect(SystemInfo.withReceiptResult(.receiptWithData, sandboxDetector).isSandbox) == true
+        expect(SystemInfo.withReceiptResult(.appStoreReceipt, sandboxDetector).isSandbox) == true
     }
 
     func testIsNotSandbox() {
         let sandboxDetector = MockSandboxEnvironmentDetector(isSandbox: false)
 
         expect(SystemInfo.withReceiptResult(.sandboxReceipt, sandboxDetector).isSandbox) == false
-        expect(SystemInfo.withReceiptResult(.receiptWithData, sandboxDetector).isSandbox) == false
+        expect(SystemInfo.withReceiptResult(.appStoreReceipt, sandboxDetector).isSandbox) == false
     }
 
     func testStorefrontForUnsupportedPlatforms() throws {
@@ -100,7 +100,7 @@ class SystemInfoTests: TestCase {
         let info = SystemInfo(
             platformInfo: nil,
             finishTransactions: true,
-            sandboxEnvironmentDetector: MockSandboxEnvironmentDetector(true)
+            sandboxEnvironmentDetector: MockSandboxEnvironmentDetector(isSandbox: true)
         )
 
         expect(info.identifierForVendor) == MacDevice.identifierForVendor?.uuidString
@@ -110,7 +110,7 @@ class SystemInfoTests: TestCase {
         let info = SystemInfo(
             platformInfo: nil,
             finishTransactions: true,
-            sandboxEnvironmentDetector: MockSandboxEnvironmentDetector(false)
+            sandboxEnvironmentDetector: MockSandboxEnvironmentDetector(isSandbox: false)
         )
 
         expect(info.identifierForVendor).to(beNil())
