@@ -50,18 +50,43 @@ struct LinTemplate5View: TemplateViewType {
 
     var body: some View {
         self.content
-            .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
     }
 
     @ViewBuilder
     var content: some View {
+        VStack(spacing: 8) {
+            self.scrollableContent
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity)
+                .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
+            
+            
+            self.subscribeButton
+                .frame(maxWidth: self.defaultContentWidth)
+                .defaultHorizontalPadding()
+            
+            FooterView(configuration: self.configuration,
+                       purchaseHandler: self.purchaseHandler,
+                       displayingAllPlans: self.$displayingAllPlans)
+        }
+        .foregroundColor(self.configuration.colors.text1Color)
+        .edgesIgnoringSafeArea(.top)
+        .animation(Constants.fastAnimation, value: self.selectedPackage)
+        .frame(maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var scrollableContent: some View {
         VStack(spacing: 16) {
             if self.configuration.mode.isFullScreen {
                 if let header = self.configuration.headerImageURL {
                     Spacer()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: verticalSizeClass == .regular ? 200 : nil,
+                            maxHeight: .infinity
+                        )
                         .background {
                             if verticalSizeClass == .regular {
                                 RemoteImage(url: header)
@@ -92,19 +117,10 @@ struct LinTemplate5View: TemplateViewType {
                 if self.configuration.mode.shouldDisplayInlineOfferDetails(displayingAllPlans: self.displayingAllPlans) {
                     self.offerDetails(package: self.selectedPackage, selected: false)
                 }
-                
-                self.subscribeButton
             }
             .frame(maxWidth: self.defaultContentWidth)
             .defaultHorizontalPadding()
-            
-            FooterView(configuration: self.configuration,
-                       purchaseHandler: self.purchaseHandler,
-                       displayingAllPlans: self.$displayingAllPlans)
         }
-        .foregroundColor(self.configuration.colors.text1Color)
-        .edgesIgnoringSafeArea(.top)
-        .animation(Constants.fastAnimation, value: self.selectedPackage)
         .frame(maxHeight: .infinity)
     }
 
