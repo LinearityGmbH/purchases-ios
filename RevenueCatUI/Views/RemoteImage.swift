@@ -44,6 +44,7 @@ struct RemoteImage: View {
                 } else {
                     image
                         .resizable()
+                        .aspectRatio(contentMode: .fill)
                 }
 
             case let .failure(error):

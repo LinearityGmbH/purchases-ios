@@ -149,7 +149,7 @@ extension PaywallData {
         case .template4:
             Template4View(configuration)
         case .template5:
-            Template5View(configuration)
+            LinTemplate5View(configuration)
         }
         #endif
     }

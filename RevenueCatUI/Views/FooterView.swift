@@ -150,8 +150,8 @@ struct FooterView: View {
 
     fileprivate var font: Font.TextStyle {
         return self.interfaceIdiom == .pad
-        ? .callout
-        : .footnote
+        ? .caption
+        : .caption2
     }
 
 }

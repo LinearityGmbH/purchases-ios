@@ -51,6 +51,10 @@ enum Constants {
             return nil
         }
     }
+    
+    static func defaultContentWidth(_ idiom: UserInterfaceIdiom) -> CGFloat? {
+        return 400
+    }
 
 }
 
@@ -72,6 +76,10 @@ extension TemplateViewType {
 
     var defaultVerticalPaddingLength: CGFloat? {
         return Constants.defaultVerticalPaddingLength(self.userInterfaceIdiom)
+    }
+
+    var defaultContentWidth: CGFloat? {
+        return Constants.defaultContentWidth(self.userInterfaceIdiom)
     }
 
     var shouldUseLandscapeLayout: Bool {

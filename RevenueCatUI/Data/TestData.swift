@@ -435,6 +435,65 @@ internal enum TestData {
                             TestData.sixMonthPackage,
                             TestData.annualPackage]
     )
+    
+    static let offeringWithLinTemplate5Paywall = Offering(
+        identifier: Self.offeringIdentifier,
+        serverDescription: "Offering",
+        metadata: [:],
+        paywall: .init(
+            templateName: PaywallTemplate.template5.rawValue,
+            config: .init(
+                packages: [PackageType.annual.identifier,
+                           PackageType.monthly.identifier],
+                defaultPackage: PackageType.annual.identifier,
+                images: .init(
+                    header: "954459_1692992845.png"
+                ),
+                colors: .init(
+                    light: .init(
+                        background: "#ffffff",
+                        text1: "#000000",
+                        text2: "#000000",
+                        text3: "#000000",
+                        callToActionBackground: "#FD7C0F",
+                        callToActionForeground: "#111717",
+                        accent1: "#FD7C0F",
+                        accent2: "#FD7C0F",
+                        accent3: "#DFDFDF"
+                    ),
+                    dark: .init(
+                        background: #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1).asPaywallColor,
+                        text1: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1).asPaywallColor,
+                        text2: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1).asPaywallColor,
+                        text3: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1).asPaywallColor,
+                        callToActionBackground: #colorLiteral(red: 0.9921568627, green: 0.4862745098, blue: 0.05882352941, alpha: 1).asPaywallColor,
+                        callToActionForeground: #colorLiteral(red: 0.06666666667, green: 0.09019607843, blue: 0.09019607843, alpha: 1).asPaywallColor,
+                        accent1: #colorLiteral(red: 0.9921568627, green: 0.4862745098, blue: 0.05882352941, alpha: 1).asPaywallColor,
+                        accent2: #colorLiteral(red: 0.9921568627, green: 0.4862745098, blue: 0.05882352941, alpha: 1).asPaywallColor,
+                        accent3: #colorLiteral(red: 0.3764705882, green: 0.3921568627, blue: 0.3882352941, alpha: 1).asPaywallColor
+                    )
+                ),
+                termsOfServiceURL: URL(string: "https://revenuecat.com/tos")!
+            ),
+            localization: .init(
+                title: "Unlock endless design & animation possibilities",
+                callToAction: "Continue",
+                callToActionWithIntroOffer: "Start your Free Trial",
+                offerDetails: "{{ total_price_and_per_month }}",
+                offerDetailsWithIntroOffer: "Free for {{ sub_offer_duration }}, then {{ total_price_and_per_month }}",
+                offerName: "{{ sub_period }}",
+                features: [
+                    .init(title: "Create unlimited Linearity files", iconID: "tick"),
+                    .init(title: "Limitless eye-catching animations", iconID: "tick"),
+                    .init(title: "Get fast priority support", iconID: "tick"),
+                ]
+            ),
+            assetBaseURL: Self.paywallAssetBaseURL
+        ),
+        availablePackages: [TestData.monthlyPackage,
+                            TestData.sixMonthPackage,
+                            TestData.annualPackage]
+    )
 
     static let offeringWithNoPaywall = Offering(
         identifier: Self.offeringIdentifier,
