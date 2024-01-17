@@ -76,6 +76,10 @@ public class PaywallViewController: UIViewController {
                 guard let self = self else { return }
                 self.delegate?.paywallViewController?(self, didChangeSizeTo: $0)
             }
+            .onSelectPackage { [weak self] package in
+                guard let self = self else { return }
+                self.delegate?.paywallViewController?(self, didSelectPackage: package)
+            }
 
         return .init(rootView: view)
     }()
@@ -141,7 +145,11 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     @objc(paywallViewControlle:didChangeSizeTo:)
     optional func paywallViewController(_ controller: PaywallViewController,
                                         didChangeSizeTo size: CGSize)
-
+    
+    /// Notifies that a purchase has been initiated in a ``PaywallViewController``.
+    @objc(paywallViewController:didSelectPackage:)
+    optional func paywallViewController(_ controller: PaywallViewController,
+                                        didSelectPackage package: Package)
 }
 
 #endif

@@ -21,6 +21,8 @@ public typealias PurchaseOrRestoreCompletedHandler = @MainActor @Sendable (Custo
 public typealias PurchaseCompletedHandler = @MainActor @Sendable (_ transaction: StoreTransaction?,
                                                                   _ customerInfo: CustomerInfo) -> Void
 
+public typealias PackageSelectedHandler = @MainActor @Sendable (_ package: Package) -> Void
+
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable, message: "RevenueCatUI does not support macOS yet")
 extension View {
@@ -111,6 +113,11 @@ extension View {
         return self.modifier(OnRestoreCompletedModifier(handler: handler))
     }
 
+    public func onSelectPackage(
+        _ handler: @escaping PackageSelectedHandler
+    ) -> some View {
+        return self.modifier(OnPackageSelectedModifier(handler: handler))
+    }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -151,4 +158,19 @@ private struct OnRestoreCompletedModifier: ViewModifier {
             }
     }
 
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct OnPackageSelectedModifier: ViewModifier {
+
+    let handler: PackageSelectedHandler
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(SelectedPackagePreferenceKey.self) { package in
+                if let package {
+                    self.handler(package)
+                }
+            }
+    }
 }
