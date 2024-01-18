@@ -42,6 +42,9 @@ final class PurchaseHandler: ObservableObject {
     /// When `restored` becomes `true`, this will include the `CustomerInfo` associated to it.
     @Published
     fileprivate(set) var restoredCustomerInfo: CustomerInfo?
+    
+    @Published
+    var selectedPackage: Package?
 
     private var eventData: PaywallEvent.Data?
 
@@ -77,6 +80,7 @@ extension PurchaseHandler {
         }
         defer { self.actionInProgress = false }
 
+        self.selectedPackage = package
         let result = try await self.purchases.purchase(package: package)
 
         if result.userCancelled {
@@ -236,6 +240,18 @@ struct RestoredCustomerInfoPreferenceKey: PreferenceKey {
     }
 
 }
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct InitiatedPurchaseWithSelectedPackagePreferenceKey: PreferenceKey {
+
+    static var defaultValue: Package?
+
+    static func reduce(value: inout Package?, nextValue: () -> Package?) {
+        value = nextValue()
+    }
+
+}
+
 
 // MARK: -
 

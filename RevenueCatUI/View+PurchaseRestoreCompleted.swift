@@ -21,6 +21,8 @@ public typealias PurchaseOrRestoreCompletedHandler = @MainActor @Sendable (Custo
 public typealias PurchaseCompletedHandler = @MainActor @Sendable (_ transaction: StoreTransaction?,
                                                                   _ customerInfo: CustomerInfo) -> Void
 
+public typealias PurchaseInitiationHandler = @MainActor @Sendable (_ selectedPackage: Package) -> Void
+
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable, message: "RevenueCatUI does not support macOS yet")
 extension View {
@@ -110,7 +112,30 @@ extension View {
     ) -> some View {
         return self.modifier(OnRestoreCompletedModifier(handler: handler))
     }
-
+    
+    /// Invokes the given closure when the CTA button is clicked.
+    /// The closure includes the `Package` that has been selected.
+    /// Example:
+    /// ```swift
+    ///  @State
+    ///  private var displayPaywall: Bool = true
+    ///
+    ///  var body: some View {
+    ///     ContentView()
+    ///         .sheet(isPresented: self.$displayPaywall) {
+    ///             PaywallView()
+    ///                 .onPurchaseInitiated { selectedPackage in
+    ///                     print("Purchase initiated with selected package: \(selectedPackage)")
+    ///                     self.displayPaywall = false
+    ///                 }
+    ///         }
+    ///  }
+    /// ```
+    public func onPurchaseInitiated(
+        _ handler: @escaping PurchaseInitiationHandler
+    ) -> some View {
+        return self.modifier(OnPurchaseInitiatedModifier(handler: handler))
+    }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -151,4 +176,19 @@ private struct OnRestoreCompletedModifier: ViewModifier {
             }
     }
 
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct OnPurchaseInitiatedModifier: ViewModifier {
+
+    let handler: PurchaseInitiationHandler
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(InitiatedPurchaseWithSelectedPackagePreferenceKey.self) { package in
+                if let package {
+                    self.handler(package)
+                }
+            }
+    }
 }
