@@ -33,7 +33,8 @@ extension View {
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-        restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil
+        restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         return self.paywallFooter(
             offering: nil,
@@ -42,7 +43,8 @@ extension View {
             fonts: fonts,
             introEligibility: nil,
             purchaseCompleted: purchaseCompleted,
-            restoreCompleted: restoreCompleted
+            restoreCompleted: restoreCompleted,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -61,7 +63,8 @@ extension View {
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-        restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil
+        restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         return self.paywallFooter(
             offering: offering,
@@ -70,7 +73,8 @@ extension View {
             fonts: fonts,
             introEligibility: nil,
             purchaseCompleted: purchaseCompleted,
-            restoreCompleted: restoreCompleted
+            restoreCompleted: restoreCompleted,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -82,7 +86,8 @@ extension View {
         introEligibility: TrialOrIntroEligibilityChecker? = nil,
         purchaseHandler: PurchaseHandler? = nil,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-        restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil
+        restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         return self
             .modifier(PresentingPaywallFooterModifier(
@@ -93,7 +98,8 @@ extension View {
                 restoreCompleted: restoreCompleted,
                 fontProvider: fonts,
                 introEligibility: introEligibility,
-                purchaseHandler: purchaseHandler
+                purchaseHandler: purchaseHandler,
+                refreshSubscriptions: refreshSubscriptions
             ))
     }
 }
@@ -110,6 +116,7 @@ private struct PresentingPaywallFooterModifier: ViewModifier {
     let fontProvider: PaywallFontProvider
     let introEligibility: TrialOrIntroEligibilityChecker?
     let purchaseHandler: PurchaseHandler?
+    let refreshSubscriptions: () async throws -> Void
 
     func body(content: Content) -> some View {
         content
@@ -120,7 +127,8 @@ private struct PresentingPaywallFooterModifier: ViewModifier {
                     mode: self.condensed ? .condensedFooter : .footer,
                     fonts: self.fontProvider,
                     introEligibility: self.introEligibility,
-                    purchaseHandler: self.purchaseHandler
+                    purchaseHandler: self.purchaseHandler,
+                    refreshSubscriptions: self.refreshSubscriptions
                 )
                 .onPurchaseCompleted {
                     self.purchaseCompleted?($0)

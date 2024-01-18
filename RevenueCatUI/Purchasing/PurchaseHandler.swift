@@ -16,7 +16,7 @@ import StoreKit
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-final class PurchaseHandler: ObservableObject {
+public final class PurchaseHandler: ObservableObject {
 
     private let purchases: PaywallPurchasesType
 
@@ -44,6 +44,8 @@ final class PurchaseHandler: ObservableObject {
     fileprivate(set) var restoredCustomerInfo: CustomerInfo?
 
     private var eventData: PaywallEvent.Data?
+    
+    var refreshSubscriptions: () async throws -> Void = {}
 
     convenience init(purchases: Purchases = .shared) {
         self.init(isConfigured: true, purchases: purchases)
@@ -78,6 +80,7 @@ extension PurchaseHandler {
         defer { self.actionInProgress = false }
 
         let result = try await self.purchases.purchase(package: package)
+        try await refreshSubscriptions()
 
         if result.userCancelled {
             self.trackCancelledPurchase()
@@ -99,6 +102,7 @@ extension PurchaseHandler {
         defer { self.actionInProgress = false }
 
         let customerInfo = try await self.purchases.restorePurchases()
+        try await refreshSubscriptions()
 
         withAnimation(Constants.defaultAnimation) {
             self.restored = true

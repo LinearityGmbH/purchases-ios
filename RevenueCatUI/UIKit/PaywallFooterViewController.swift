@@ -34,17 +34,28 @@ public final class PaywallFooterViewController: PaywallViewController {
     /// Initialize a `PaywallFooterViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
     /// `Offerings.current` will be used by default.
-    @objc
-    public init(offering: Offering? = nil) {
-        super.init(offering: offering, displayCloseButton: false)
+    public init(
+        offering: Offering? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
+    ) {
+        super.init(
+            offering: offering,
+            displayCloseButton: false,
+            refreshSubscriptions: refreshSubscriptions
+        )
     }
 
     @available(*, unavailable)
     override init(
         offering: Offering? = nil,
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
-        super.init(offering: offering, displayCloseButton: false)
+        super.init(
+            offering: offering,
+            displayCloseButton: false,
+            refreshSubscriptions: refreshSubscriptions
+        )
     }
 
     // swiftlint:disable:next missing_docs

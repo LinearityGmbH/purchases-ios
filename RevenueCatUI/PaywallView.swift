@@ -56,7 +56,8 @@ public struct PaywallView: View {
     /// If you want to handle that, you can use ``init(offering:)`` instead.
     public init(
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.init(
             offering: nil,
@@ -64,7 +65,8 @@ public struct PaywallView: View {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             introEligibility: nil,
-            purchaseHandler: nil
+            purchaseHandler: nil,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -81,7 +83,8 @@ public struct PaywallView: View {
     public init(
         offering: Offering,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.init(
             offering: offering,
@@ -89,7 +92,8 @@ public struct PaywallView: View {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             introEligibility: nil,
-            purchaseHandler: nil
+            purchaseHandler: nil,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -100,10 +104,13 @@ public struct PaywallView: View {
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
         introEligibility: TrialOrIntroEligibilityChecker?,
-        purchaseHandler: PurchaseHandler?
+        purchaseHandler: PurchaseHandler?,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self._introEligibility = .init(wrappedValue: introEligibility ?? .default())
-        self._purchaseHandler = .init(wrappedValue: purchaseHandler ?? .default())
+        let installedPurchaseHandler = purchaseHandler ?? .default()
+        installedPurchaseHandler.refreshSubscriptions = refreshSubscriptions
+        self._purchaseHandler = .init(wrappedValue: installedPurchaseHandler)
         self._offering = .init(
             initialValue: offering ?? Self.loadCachedCurrentOfferingIfPossible()
         )
@@ -387,7 +394,8 @@ struct PaywallView_Previews: PreviewProvider {
                     customerInfo: TestData.customerInfo,
                     mode: mode,
                     introEligibility: PreviewHelpers.introEligibilityChecker,
-                    purchaseHandler: PreviewHelpers.purchaseHandler
+                    purchaseHandler: nil, 
+                    refreshSubscriptions: {}
                 )
                 .previewLayout(mode.layout)
                 .previewDisplayName("\(offering.paywall?.templateName ?? "")-\(mode)")
