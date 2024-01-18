@@ -110,6 +110,11 @@ public class PaywallViewController: UIViewController {
         }
         super.viewDidDisappear(animated)
     }
+
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        delegate?.paywallViewControllerDidAppear?(self)
+    }
 }
 
 /// Delegate for ``PaywallViewController``.
@@ -150,6 +155,10 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     @objc(paywallViewController:didSelectPackage:)
     optional func paywallViewController(_ controller: PaywallViewController,
                                         didInitiatePurchaseWithSelectedPackage package: Package)
+
+    /// Notifies ``PaywallViewController`` did appear.
+    @objc(paywallViewControllerDidAppear:)
+    optional func paywallViewControllerDidAppear(_ controller: PaywallViewController)
 }
 
 #endif
