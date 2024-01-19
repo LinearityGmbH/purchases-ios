@@ -57,13 +57,14 @@ public class PaywallViewController: UIViewController {
     }
 
     private lazy var hostingController: UIHostingController<some View> = {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         let view = PaywallView(offering: self.offering,
                                customerInfo: nil,
                                mode: self.mode,
                                displayCloseButton: self.displayCloseButton,
                                introEligibility: nil,
-                               purchaseHandler: nil,
-                               refreshSubscriptions: refreshSubscriptions)
+                               purchaseHandler: purchaseHandler)
             .onPurchaseCompleted { [weak self] transaction, customerInfo in
                 guard let self = self else { return }
                 self.delegate?.paywallViewController?(self, didFinishPurchasingWith: customerInfo)

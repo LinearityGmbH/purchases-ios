@@ -45,7 +45,7 @@ public final class PurchaseHandler: ObservableObject {
 
     private var eventData: PaywallEvent.Data?
     
-    var refreshSubscriptions: () async throws -> Void = {}
+    public var refreshSubscriptions: () async throws -> Void = {}
 
     convenience init(purchases: Purchases = .shared) {
         self.init(isConfigured: true, purchases: purchases)

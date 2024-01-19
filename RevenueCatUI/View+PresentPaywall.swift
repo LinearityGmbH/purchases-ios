@@ -99,9 +99,12 @@ extension View {
         onDismiss: (() -> Void)? = nil,
         refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         return self.presentPaywallIfNeeded(
             offering: offering,
             fonts: fonts,
+            purchaseHandler: purchaseHandler, 
             shouldDisplay: shouldDisplay,
             purchaseCompleted: purchaseCompleted,
             restoreCompleted: restoreCompleted,
@@ -110,10 +113,9 @@ extension View {
                 guard Purchases.isConfigured else {
                     throw PaywallError.purchasesNotConfigured
                 }
-
+                
                 return try await Purchases.shared.customerInfo()
-            },
-            refreshSubscriptions: refreshSubscriptions
+            }
         )
     }
 
@@ -122,13 +124,12 @@ extension View {
         offering: Offering? = nil,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         introEligibility: TrialOrIntroEligibilityChecker? = nil,
-        purchaseHandler: PurchaseHandler? = nil,
+        purchaseHandler: PurchaseHandler,
         shouldDisplay: @escaping @Sendable (CustomerInfo) -> Bool,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         onDismiss: (() -> Void)? = nil,
-        customerInfoFetcher: @escaping CustomerInfoFetcher,
-        refreshSubscriptions: @escaping () async throws -> Void
+        customerInfoFetcher: @escaping CustomerInfoFetcher
     ) -> some View {
         return self
             .modifier(PresentingPaywallModifier(
@@ -140,8 +141,7 @@ extension View {
                 fontProvider: fonts,
                 customerInfoFetcher: customerInfoFetcher,
                 introEligibility: introEligibility,
-                purchaseHandler: purchaseHandler,
-                refreshSubscriptions: refreshSubscriptions
+                purchaseHandler: purchaseHandler
             ))
     }
 
@@ -167,8 +167,7 @@ private struct PresentingPaywallModifier: ViewModifier {
 
     var customerInfoFetcher: View.CustomerInfoFetcher
     var introEligibility: TrialOrIntroEligibilityChecker?
-    var purchaseHandler: PurchaseHandler?
-    let refreshSubscriptions: () async throws -> Void
+    var purchaseHandler: PurchaseHandler
 
     @State
     private var data: Data?
@@ -182,8 +181,7 @@ private struct PresentingPaywallModifier: ViewModifier {
                     fonts: self.fontProvider,
                     displayCloseButton: true,
                     introEligibility: self.introEligibility,
-                    purchaseHandler: self.purchaseHandler,
-                    refreshSubscriptions: self.refreshSubscriptions
+                    purchaseHandler: self.purchaseHandler
                 )
                 .onPurchaseCompleted {
                     self.purchaseCompleted?($0)
