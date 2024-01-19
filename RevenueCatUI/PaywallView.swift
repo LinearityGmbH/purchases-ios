@@ -389,7 +389,7 @@ struct PaywallView_Previews: PreviewProvider {
                     customerInfo: TestData.customerInfo,
                     mode: mode,
                     introEligibility: PreviewHelpers.introEligibilityChecker,
-                    purchaseHandler: PurchaseHandler()
+                    purchaseHandler: PreviewHelpers.purchaseHandler
                 )
                 .previewLayout(mode.layout)
                 .previewDisplayName("\(offering.paywall?.templateName ?? "")-\(mode)")
