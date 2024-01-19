@@ -32,6 +32,7 @@ extension View {
     public func paywallFooter(
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
+        purchaseHandler: PurchaseHandler,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil
     ) -> some View {
@@ -40,7 +41,8 @@ extension View {
             customerInfo: nil,
             condensed: condensed,
             fonts: fonts,
-            introEligibility: nil,
+            introEligibility: nil, 
+            purchaseHandler: purchaseHandler,
             purchaseCompleted: purchaseCompleted,
             restoreCompleted: restoreCompleted
         )
@@ -60,6 +62,7 @@ extension View {
         offering: Offering,
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
+        purchaseHandler: PurchaseHandler,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil
     ) -> some View {
@@ -69,6 +72,7 @@ extension View {
             condensed: condensed,
             fonts: fonts,
             introEligibility: nil,
+            purchaseHandler: purchaseHandler,
             purchaseCompleted: purchaseCompleted,
             restoreCompleted: restoreCompleted
         )
@@ -80,7 +84,7 @@ extension View {
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         introEligibility: TrialOrIntroEligibilityChecker? = nil,
-        purchaseHandler: PurchaseHandler? = nil,
+        purchaseHandler: PurchaseHandler,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil
     ) -> some View {
@@ -109,7 +113,7 @@ private struct PresentingPaywallFooterModifier: ViewModifier {
     let restoreCompleted: PurchaseOrRestoreCompletedHandler?
     let fontProvider: PaywallFontProvider
     let introEligibility: TrialOrIntroEligibilityChecker?
-    let purchaseHandler: PurchaseHandler?
+    let purchaseHandler: PurchaseHandler
 
     func body(content: Content) -> some View {
         content

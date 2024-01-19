@@ -47,7 +47,8 @@ extension View {
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-        onDismiss: (() -> Void)? = nil
+        onDismiss: (() -> Void)? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         return self.presentPaywallIfNeeded(
             offering: offering,
@@ -60,7 +61,8 @@ extension View {
             },
             purchaseCompleted: purchaseCompleted,
             restoreCompleted: restoreCompleted,
-            onDismiss: onDismiss
+            onDismiss: onDismiss,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -94,11 +96,15 @@ extension View {
         shouldDisplay: @escaping @Sendable (CustomerInfo) -> Bool,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-        onDismiss: (() -> Void)? = nil
+        onDismiss: (() -> Void)? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         return self.presentPaywallIfNeeded(
             offering: offering,
             fonts: fonts,
+            purchaseHandler: purchaseHandler, 
             shouldDisplay: shouldDisplay,
             purchaseCompleted: purchaseCompleted,
             restoreCompleted: restoreCompleted,
@@ -107,7 +113,7 @@ extension View {
                 guard Purchases.isConfigured else {
                     throw PaywallError.purchasesNotConfigured
                 }
-
+                
                 return try await Purchases.shared.customerInfo()
             }
         )
@@ -118,7 +124,7 @@ extension View {
         offering: Offering? = nil,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         introEligibility: TrialOrIntroEligibilityChecker? = nil,
-        purchaseHandler: PurchaseHandler? = nil,
+        purchaseHandler: PurchaseHandler,
         shouldDisplay: @escaping @Sendable (CustomerInfo) -> Bool,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
@@ -161,7 +167,7 @@ private struct PresentingPaywallModifier: ViewModifier {
 
     var customerInfoFetcher: View.CustomerInfoFetcher
     var introEligibility: TrialOrIntroEligibilityChecker?
-    var purchaseHandler: PurchaseHandler?
+    var purchaseHandler: PurchaseHandler
 
     @State
     private var data: Data?

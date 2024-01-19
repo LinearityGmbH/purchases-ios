@@ -33,18 +33,20 @@ public class PaywallViewController: UIViewController {
 
     private let offering: Offering?
     private let displayCloseButton: Bool
+    private let refreshSubscriptions: () async throws -> Void
 
     /// Initialize a `PaywallViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
     /// `Offerings.current` will be used by default.
     /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
-    @objc
     public init(
         offering: Offering? = nil,
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.offering = offering
         self.displayCloseButton = displayCloseButton
+        self.refreshSubscriptions = refreshSubscriptions
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -55,12 +57,14 @@ public class PaywallViewController: UIViewController {
     }
 
     private lazy var hostingController: UIHostingController<some View> = {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         let view = PaywallView(offering: self.offering,
                                customerInfo: nil,
                                mode: self.mode,
                                displayCloseButton: self.displayCloseButton,
                                introEligibility: nil,
-                               purchaseHandler: nil)
+                               purchaseHandler: purchaseHandler)
             .onPurchaseCompleted { [weak self] transaction, customerInfo in
                 guard let self = self else { return }
                 self.delegate?.paywallViewController?(self, didFinishPurchasingWith: customerInfo)

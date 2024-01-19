@@ -56,7 +56,8 @@ public struct PaywallView: View {
     /// If you want to handle that, you can use ``init(offering:)`` instead.
     public init(
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        purchaseHandler: PurchaseHandler
     ) {
         self.init(
             offering: nil,
@@ -64,7 +65,7 @@ public struct PaywallView: View {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             introEligibility: nil,
-            purchaseHandler: nil
+            purchaseHandler: purchaseHandler
         )
     }
 
@@ -81,7 +82,8 @@ public struct PaywallView: View {
     public init(
         offering: Offering,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        purchaseHandler: PurchaseHandler
     ) {
         self.init(
             offering: offering,
@@ -89,7 +91,7 @@ public struct PaywallView: View {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             introEligibility: nil,
-            purchaseHandler: nil
+            purchaseHandler: purchaseHandler
         )
     }
 
@@ -100,10 +102,10 @@ public struct PaywallView: View {
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
         introEligibility: TrialOrIntroEligibilityChecker?,
-        purchaseHandler: PurchaseHandler?
+        purchaseHandler: PurchaseHandler
     ) {
         self._introEligibility = .init(wrappedValue: introEligibility ?? .default())
-        self._purchaseHandler = .init(wrappedValue: purchaseHandler ?? .default())
+        self._purchaseHandler = .init(wrappedValue: purchaseHandler)
         self._offering = .init(
             initialValue: offering ?? Self.loadCachedCurrentOfferingIfPossible()
         )
