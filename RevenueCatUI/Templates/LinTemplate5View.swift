@@ -168,30 +168,26 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private func packageButton(_ package: TemplateViewConfiguration.Package, selected: Bool) -> some View {
-        VStack(alignment: Self.packageButtonAlignment.horizontal, spacing: 5) {
-            self.packageButtonTitle(package, selected: selected)
-
-            self.offerDetails(package: package, selected: selected)
-        }
-        .font(self.font(for: .body).weight(.medium))
-        .defaultPadding()
-        .multilineTextAlignment(.leading)
-        .frame(maxWidth: .infinity, alignment: Self.packageButtonAlignment)
-        .overlay {
-            self.roundedRectangle
-                .stroke(
-                    selected
-                    ? self.configuration.colors.selectedOutline
-                    : self.configuration.colors.unselectedOutline,
-                    lineWidth: Constants.defaultPackageBorderWidth
-                )
-        }
-        .overlay(alignment: .topTrailing) {
-            self.packageDiscountLabel(package, selected: selected)
-                .padding(8)
-        }
+        packageButtonTitle(package, selected: selected)
+            .font(self.font(for: .body).weight(.medium))
+            .defaultPadding()
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: Self.packageButtonAlignment)
+            .overlay {
+                self.roundedRectangle
+                    .stroke(
+                        selected
+                        ? self.configuration.colors.selectedOutline
+                        : self.configuration.colors.unselectedOutline,
+                        lineWidth: Constants.defaultPackageBorderWidth
+                    )
+            }
+            .overlay(alignment: .topTrailing) {
+                self.packageDiscountLabel(package, selected: selected)
+                    .padding(8)
+            }
     }
-
+    
     @ViewBuilder
     private func packageDiscountLabel(
         _ package: TemplateViewConfiguration.Package,
@@ -228,18 +224,22 @@ struct LinTemplate5View: TemplateViewType {
         _ package: TemplateViewConfiguration.Package,
         selected: Bool
     ) -> some View {
-        let image = selected
-            ? "checkmark.circle.fill"
-            : "circle.fill"
-        let color = selected
-            ? self.configuration.colors.selectedOutline
-            : self.configuration.colors.unselectedOutline
-
         HStack {
+            let image = selected
+                ? "checkmark.circle.fill"
+                : "circle"
+            let color = selected
+                ? self.configuration.colors.selectedOutline
+                : self.configuration.colors.unselectedOutline
             Image(systemName: image)
+                .resizable()
+                .frame(width: 24, height: 24)
                 .foregroundColor(color)
 
-            Text(package.localization.offerName ?? package.content.productName)
+            VStack(alignment: Self.packageButtonAlignment.horizontal, spacing: 5) {
+                Text(package.localization.offerName ?? package.content.productName)
+                self.offerDetails(package: package, selected: selected)
+            }
         }
     }
 
