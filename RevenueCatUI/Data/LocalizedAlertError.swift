@@ -25,7 +25,7 @@ public struct LocalizedAlertError: LocalizedError {
         self.recoverySuggestion = recoverySuggestion
     }
     
-    init(error: NSError) {
+    public init(error: NSError) {
         errorDescription = "\(error.domain) \(error.code)"
         failureReason = switch error {
         case is ErrorCode:
