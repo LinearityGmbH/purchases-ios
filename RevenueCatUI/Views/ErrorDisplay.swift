@@ -13,6 +13,12 @@
 
 import SwiftUI
 
+public struct ErrorDisplayConfiguration {
+    public var makeLocalisedError: (NSError) -> LocalizedAlertError = {
+        LocalizedAlertError(error: $0)
+    }
+}
+
 /// A modifier that allows easily displaying an `NSError` as an `alert`.
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct ErrorDisplay: ViewModifier {

@@ -14,28 +14,25 @@
 import RevenueCat
 import SwiftUI
 
-struct LocalizedAlertError: LocalizedError {
-
-    private let underlyingError: NSError
-
+public struct LocalizedAlertError: LocalizedError {
+    public let errorDescription: String?
+    public let failureReason: String?
+    public let recoverySuggestion: String?
+    
+    public init(errorDescription: String?, failureReason: String?, recoverySuggestion: String?) {
+        self.errorDescription = errorDescription
+        self.failureReason = failureReason
+        self.recoverySuggestion = recoverySuggestion
+    }
+    
     init(error: NSError) {
-        self.underlyingError = error
-    }
-
-    var errorDescription: String? {
-        return "\(self.underlyingError.domain) \(self.underlyingError.code)"
-    }
-
-    var failureReason: String? {
-        if let errorCode = self.underlyingError as? ErrorCode {
-            return errorCode.description
-        } else {
-            return self.underlyingError.localizedDescription
+        errorDescription = "\(error.domain) \(error.code)"
+        failureReason = switch error {
+        case is ErrorCode:
+            error.description
+        default:
+            error.localizedDescription
         }
+        recoverySuggestion = error.localizedRecoverySuggestion
     }
-
-    var recoverySuggestion: String? {
-        self.underlyingError.localizedRecoverySuggestion
-    }
-
 }
