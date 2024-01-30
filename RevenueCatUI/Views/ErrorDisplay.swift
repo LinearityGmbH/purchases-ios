@@ -14,7 +14,7 @@
 import SwiftUI
 
 public struct ErrorDisplayConfiguration {
-    public static var makeLocalisedError: (NSError) -> LocalizedAlertError = {
+    public static var makeLocalizedError: (NSError) -> LocalizedAlertError = {
         LocalizedAlertError(error: $0)
     }
 }
@@ -32,7 +32,7 @@ struct ErrorDisplay: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .alert(isPresented: self.isShowingError, error: self.error.map(ErrorDisplayConfiguration.makeLocalisedError)) { _ in
+            .alert(isPresented: self.isShowingError, error: self.error.map(ErrorDisplayConfiguration.makeLocalizedError)) { _ in
                 Button {
                     self.error = nil
 
