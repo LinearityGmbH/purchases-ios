@@ -103,7 +103,6 @@ struct LinTemplate5View: TemplateViewType {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     self.features
-                        .padding(.bottom, 8)
 
                     self.packages
                 } else {
@@ -124,7 +123,7 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack(alignment: .firstTextBaseline) {
                     Image(.icCheckmark)
