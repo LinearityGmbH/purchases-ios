@@ -100,7 +100,7 @@ struct LinTemplate5View: TemplateViewType {
             Group {
                 if self.configuration.mode.isFullScreen {
                     Text(.init(self.selectedLocalization.title))
-                        .font(self.font(for: .title).bold())
+                        .font(self.font(for: .title2).bold())
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -126,7 +126,7 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack {
                     Rectangle()
