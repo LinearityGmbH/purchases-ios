@@ -126,19 +126,11 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 8) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
-                HStack {
-                    Rectangle()
-                        .foregroundStyle(.clear)
-                        .aspectRatio(1, contentMode: .fit)
-                        .overlay {
-                            if let icon = feature.icon {
-                                IconView(icon: icon, tint: self.configuration.colors.featureIcon)
-                            }
-                        }
-                        .frame(width: self.iconSize, height: self.iconSize)
-
+                HStack(alignment: .firstTextBaseline) {
+                    Image(.icCheckmark)
+                        .foregroundColor(self.configuration.colors.featureIcon)
                     Text(.init(feature.title))
                         .font(self.font(for: .subheadline))
                         .lineLimit(nil)
