@@ -60,8 +60,7 @@ struct LinTemplate5View: TemplateViewType {
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
                 .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
-            
-            
+
             self.subscribeButton
                 .frame(maxWidth: self.defaultContentWidth)
                 .defaultHorizontalPadding()
@@ -93,7 +92,6 @@ struct LinTemplate5View: TemplateViewType {
                             }
                         }
                         .clipped()
-                        .padding(.bottom, 8)
                 }
             }
 
