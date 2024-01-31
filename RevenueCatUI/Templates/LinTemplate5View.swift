@@ -126,7 +126,7 @@ struct LinTemplate5View: TemplateViewType {
         VStack(spacing: 4) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack(alignment: .firstTextBaseline) {
-                    Image(systemName: "checkmark")
+                    Image(.icCheckmark)
                         .foregroundColor(self.configuration.colors.featureIcon)
 
                     Text(.init(feature.title))
