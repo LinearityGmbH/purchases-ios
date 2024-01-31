@@ -60,8 +60,7 @@ struct LinTemplate5View: TemplateViewType {
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
                 .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
-            
-            
+
             self.subscribeButton
                 .frame(maxWidth: self.defaultContentWidth)
                 .defaultHorizontalPadding()
@@ -93,19 +92,17 @@ struct LinTemplate5View: TemplateViewType {
                             }
                         }
                         .clipped()
-                        .padding(.bottom, 8)
                 }
             }
 
             Group {
                 if self.configuration.mode.isFullScreen {
                     Text(.init(self.selectedLocalization.title))
-                        .font(self.font(for: .title).bold())
+                        .font(self.font(for: .title2).bold())
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     self.features
-                        .padding(.bottom, 8)
 
                     self.packages
                 } else {
@@ -126,18 +123,25 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: 8) {
+        #if targetEnvironment(macCatalyst)
+        let spacing: CGFloat = 6
+        #else
+        let spacing: CGFloat = 8
+        #endif
+
+        VStack(spacing: spacing) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
-                HStack {
-                    Rectangle()
-                        .foregroundStyle(.clear)
-                        .aspectRatio(1, contentMode: .fit)
-                        .overlay {
-                            if let icon = feature.icon {
-                                IconView(icon: icon, tint: self.configuration.colors.featureIcon)
-                            }
+                HStack(alignment: .firstTextBaseline) {
+                    if let icon = feature.icon {
+                        if icon == .tick {
+                            Image(.icCheckmark)
+                                .foregroundColor(self.configuration.colors.featureIcon)
+                                .font(self.font(for: .subheadline))
+                        } else {
+                            IconView(icon: icon, tint: self.configuration.colors.featureIcon)
+                                .frame(width: self.iconSize, height: self.iconSize)
                         }
-                        .frame(width: self.iconSize, height: self.iconSize)
+                    }
 
                     Text(.init(feature.title))
                         .font(self.font(for: .subheadline))
@@ -168,30 +172,26 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private func packageButton(_ package: TemplateViewConfiguration.Package, selected: Bool) -> some View {
-        VStack(alignment: Self.packageButtonAlignment.horizontal, spacing: 5) {
-            self.packageButtonTitle(package, selected: selected)
-
-            self.offerDetails(package: package, selected: selected)
-        }
-        .font(self.font(for: .body).weight(.medium))
-        .defaultPadding()
-        .multilineTextAlignment(.leading)
-        .frame(maxWidth: .infinity, alignment: Self.packageButtonAlignment)
-        .overlay {
-            self.roundedRectangle
-                .stroke(
-                    selected
-                    ? self.configuration.colors.selectedOutline
-                    : self.configuration.colors.unselectedOutline,
-                    lineWidth: Constants.defaultPackageBorderWidth
-                )
-        }
-        .overlay(alignment: .topTrailing) {
-            self.packageDiscountLabel(package, selected: selected)
-                .padding(8)
-        }
+        packageButtonTitle(package, selected: selected)
+            .font(self.font(for: .body).weight(.medium))
+            .defaultPadding()
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: Self.packageButtonAlignment)
+            .overlay {
+                self.roundedRectangle
+                    .stroke(
+                        selected
+                        ? self.configuration.colors.selectedOutline
+                        : self.configuration.colors.unselectedOutline,
+                        lineWidth: Constants.defaultPackageBorderWidth
+                    )
+            }
+            .overlay(alignment: .topTrailing) {
+                self.packageDiscountLabel(package, selected: selected)
+                    .padding(8)
+            }
     }
-
+    
     @ViewBuilder
     private func packageDiscountLabel(
         _ package: TemplateViewConfiguration.Package,
@@ -228,18 +228,22 @@ struct LinTemplate5View: TemplateViewType {
         _ package: TemplateViewConfiguration.Package,
         selected: Bool
     ) -> some View {
-        let image = selected
-            ? "checkmark.circle.fill"
-            : "circle.fill"
-        let color = selected
-            ? self.configuration.colors.selectedOutline
-            : self.configuration.colors.unselectedOutline
-
         HStack {
+            let image = selected
+                ? "checkmark.circle.fill"
+                : "circle"
+            let color = selected
+                ? self.configuration.colors.selectedOutline
+                : self.configuration.colors.unselectedOutline
             Image(systemName: image)
+                .resizable()
+                .frame(width: 24, height: 24)
                 .foregroundColor(color)
 
-            Text(package.localization.offerName ?? package.content.productName)
+            VStack(alignment: Self.packageButtonAlignment.horizontal, spacing: 5) {
+                Text(package.localization.offerName ?? package.content.productName)
+                self.offerDetails(package: package, selected: selected)
+            }
         }
     }
 
