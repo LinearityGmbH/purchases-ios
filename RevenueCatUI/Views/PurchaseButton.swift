@@ -86,6 +86,9 @@ struct PurchaseButton: View {
             #if !os(watchOS)
             .padding()
             #endif
+            #if targetEnvironment(macCatalyst)
+            .contentShape(Rectangle())
+            #endif
             .hidden(if: !self.isEnabled)
             .overlay {
                 if !self.isEnabled {
