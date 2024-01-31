@@ -126,14 +126,15 @@ struct LinTemplate5View: TemplateViewType {
         VStack(spacing: 4) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack(alignment: .firstTextBaseline) {
-                    Image(.icCheckmark)
+                    Image(systemName: "checkmark")
                         .foregroundColor(self.configuration.colors.featureIcon)
+
                     Text(.init(feature.title))
-                        .font(self.font(for: .subheadline))
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .font(self.font(for: .subheadline))
                 .accessibilityElement(children: .combine)
             }
         }
