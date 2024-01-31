@@ -123,7 +123,13 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: 6) {
+        #if targetEnvironment(macCatalyst)
+        let spacing: CGFloat = 6
+        #else
+        let spacing: CGFloat = 8
+        #endif
+
+        VStack(spacing: spacing) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack(alignment: .firstTextBaseline) {
                     if let icon = feature.icon {
