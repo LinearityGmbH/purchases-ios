@@ -123,7 +123,7 @@ struct LinTemplate5View: TemplateViewType {
 
     @ViewBuilder
     private var features: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             ForEach(self.selectedLocalization.features, id: \.title) { feature in
                 HStack(alignment: .firstTextBaseline) {
                     if let icon = feature.icon {
