@@ -41,6 +41,8 @@ public struct PaywallView: View {
     @State
     private var offering: Offering?
     @State
+    private var offeringSelection: ((Offerings) -> Offering?)?
+    @State
     private var customerInfo: CustomerInfo?
     @State
     private var error: NSError?
@@ -61,6 +63,7 @@ public struct PaywallView: View {
     ) {
         self.init(
             offering: nil,
+            offeringSelection: nil,
             customerInfo: nil,
             fonts: fonts,
             displayCloseButton: displayCloseButton,
@@ -87,6 +90,34 @@ public struct PaywallView: View {
     ) {
         self.init(
             offering: offering,
+            offeringSelection: nil,
+            customerInfo: nil,
+            fonts: fonts,
+            displayCloseButton: displayCloseButton,
+            introEligibility: nil,
+            purchaseHandler: purchaseHandler
+        )
+    }
+    
+    /// Create a view to display the paywall with an opportunity to select a specific `Offering`.
+    ///
+    /// - Parameter offeringSelection: The closure allowing to select a specific `Offering`
+    /// containing the desired `PaywallData` to display.
+    /// - Parameter fonts: An optional `PaywallFontProvider`.
+    /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
+    ///
+    /// - Note: Returning `nil` from the `offeringSelection` closure will fall back to displaying a default paywall.
+    /// - Note: Specifying this parameter means that it will ignore the offering configured in an active experiment.
+    /// - Warning: `Purchases` must have been configured prior to displaying it.
+    public init(
+        offeringSelection: @escaping (Offerings) -> Offering?,
+        fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
+        displayCloseButton: Bool = false,
+        purchaseHandler: PurchaseHandler
+    ) {
+        self.init(
+            offering: nil,
+            offeringSelection: offeringSelection,
             customerInfo: nil,
             fonts: fonts,
             displayCloseButton: displayCloseButton,
@@ -97,6 +128,7 @@ public struct PaywallView: View {
 
     init(
         offering: Offering?,
+        offeringSelection: ((Offerings) -> Offering?)?,
         customerInfo: CustomerInfo?,
         mode: PaywallViewMode = .default,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
@@ -106,9 +138,14 @@ public struct PaywallView: View {
     ) {
         self._introEligibility = .init(wrappedValue: introEligibility ?? .default())
         self._purchaseHandler = .init(wrappedValue: purchaseHandler)
-        self._offering = .init(
-            initialValue: offering ?? Self.loadCachedCurrentOfferingIfPossible()
-        )
+        self._offeringSelection = .init(wrappedValue: offeringSelection)
+        var initialOffering: Offering?
+        if let offering {
+            initialOffering = offering
+        } else if offeringSelection == nil {
+            initialOffering = Self.loadCachedCurrentOfferingIfPossible()
+        }
+        self._offering = .init(initialValue: initialOffering)
         self._customerInfo = .init(
             initialValue: customerInfo ?? Self.loadCachedCustomerInfoIfPossible()
         )
@@ -145,7 +182,8 @@ public struct PaywallView: View {
                                 }
 
                                 if self.offering == nil {
-                                    guard let offering = try await Purchases.shared.offerings().current else {
+                                    let allOfferings = try await Purchases.shared.offerings()
+                                    guard let offering = offeringSelection?(allOfferings) ?? allOfferings.current else {
                                         throw PaywallError.noCurrentOffering
                                     }
                                     self.offering = offering
@@ -388,6 +426,7 @@ struct PaywallView_Previews: PreviewProvider {
             ForEach(Self.modes, id: \.self) { mode in
                 PaywallView(
                     offering: offering,
+                    offeringSelection: nil,
                     customerInfo: TestData.customerInfo,
                     mode: mode,
                     introEligibility: PreviewHelpers.introEligibilityChecker,

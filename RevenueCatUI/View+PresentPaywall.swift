@@ -163,6 +163,7 @@ private struct PresentingPaywallModifier: ViewModifier {
     var onDismiss: (() -> Void)?
 
     var offering: Offering?
+    var offeringSelection: ((Offerings) -> Offering?)?
     var fontProvider: PaywallFontProvider
 
     var customerInfoFetcher: View.CustomerInfoFetcher
@@ -177,6 +178,7 @@ private struct PresentingPaywallModifier: ViewModifier {
             .sheet(item: self.$data, onDismiss: self.onDismiss) { data in
                 PaywallView(
                     offering: self.offering,
+                    offeringSelection: self.offeringSelection,
                     customerInfo: data.customerInfo,
                     fonts: self.fontProvider,
                     displayCloseButton: true,

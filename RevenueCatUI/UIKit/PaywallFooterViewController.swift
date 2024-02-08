@@ -48,11 +48,13 @@ public final class PaywallFooterViewController: PaywallViewController {
     @available(*, unavailable)
     override init(
         offering: Offering? = nil,
+        offeringSelection: ((Offerings) -> Offering?)? = nil,
         displayCloseButton: Bool = false,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
         super.init(
             offering: offering,
+            offeringSelection: offeringSelection,
             displayCloseButton: false,
             refreshSubscriptions: refreshSubscriptions
         )

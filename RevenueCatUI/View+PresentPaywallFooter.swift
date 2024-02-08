@@ -60,6 +60,7 @@ extension View {
     /// [Documentation](https://rev.cat/paywalls)
     public func paywallFooter(
         offering: Offering,
+        offeringSelection: ((Offerings) -> Offering?)? = nil,
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         purchaseHandler: PurchaseHandler,
@@ -68,6 +69,7 @@ extension View {
     ) -> some View {
         return self.paywallFooter(
             offering: offering,
+            offeringSelection: offeringSelection,
             customerInfo: nil,
             condensed: condensed,
             fonts: fonts,
@@ -80,6 +82,7 @@ extension View {
 
     func paywallFooter(
         offering: Offering?,
+        offeringSelection: ((Offerings) -> Offering?)? = nil,
         customerInfo: CustomerInfo?,
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
@@ -91,6 +94,7 @@ extension View {
         return self
             .modifier(PresentingPaywallFooterModifier(
                 offering: offering,
+                offeringSelection: offeringSelection,
                 customerInfo: customerInfo,
                 condensed: condensed,
                 purchaseCompleted: purchaseCompleted,
@@ -106,6 +110,7 @@ extension View {
 private struct PresentingPaywallFooterModifier: ViewModifier {
 
     let offering: Offering?
+    let offeringSelection: ((Offerings) -> Offering?)?
     let customerInfo: CustomerInfo?
     let condensed: Bool
 
@@ -120,6 +125,7 @@ private struct PresentingPaywallFooterModifier: ViewModifier {
             .safeAreaInset(edge: .bottom) {
                 PaywallView(
                     offering: self.offering,
+                    offeringSelection: self.offeringSelection,
                     customerInfo: self.customerInfo,
                     mode: self.condensed ? .condensedFooter : .footer,
                     fonts: self.fontProvider,
