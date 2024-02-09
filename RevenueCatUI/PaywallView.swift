@@ -142,10 +142,10 @@ public struct PaywallView: View {
         var initialOffering: Offering?
         if let offering {
             initialOffering = offering
-        } else if let offeringSelection,
-                  Purchases.isConfigured,
-                  let cachedOfferings = Purchases.shared.cachedOfferings {
-            initialOffering = offeringSelection(cachedOfferings)
+        } else if let offeringSelection {
+            if Purchases.isConfigured, let cachedOfferings = Purchases.shared.cachedOfferings {
+                initialOffering = offeringSelection(cachedOfferings)
+            }
         } else {
             initialOffering = Self.loadCachedCurrentOfferingIfPossible()
         }
