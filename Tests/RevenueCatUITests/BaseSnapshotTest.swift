@@ -61,6 +61,7 @@ class BaseSnapshotTest: TestCase {
         purchaseHandler: PurchaseHandler = BaseSnapshotTest.purchaseHandler
     ) -> some View {
         return PaywallView(offering: offering,
+                           offeringSelection: nil,
                            customerInfo: TestData.customerInfo,
                            mode: mode,
                            fonts: fonts,

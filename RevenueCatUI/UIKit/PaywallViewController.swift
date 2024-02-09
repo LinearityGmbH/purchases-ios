@@ -32,6 +32,7 @@ public class PaywallViewController: UIViewController {
     }
 
     private let offering: Offering?
+    private let offeringSelection: ((Offerings) -> Offering?)?
     private let displayCloseButton: Bool
     private let refreshSubscriptions: () async throws -> Void
 
@@ -41,10 +42,12 @@ public class PaywallViewController: UIViewController {
     /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
     public init(
         offering: Offering? = nil,
+        offeringSelection: ((Offerings) -> Offering?)? = nil,
         displayCloseButton: Bool = false,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.offering = offering
+        self.offeringSelection = offeringSelection
         self.displayCloseButton = displayCloseButton
         self.refreshSubscriptions = refreshSubscriptions
 
@@ -60,6 +63,7 @@ public class PaywallViewController: UIViewController {
         let purchaseHandler = PurchaseHandler()
         purchaseHandler.refreshSubscriptions = refreshSubscriptions
         let view = PaywallView(offering: self.offering,
+                               offeringSelection: self.offeringSelection,
                                customerInfo: nil,
                                mode: self.mode,
                                displayCloseButton: self.displayCloseButton,

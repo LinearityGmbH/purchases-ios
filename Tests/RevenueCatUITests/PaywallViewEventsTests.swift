@@ -138,6 +138,7 @@ private extension PaywallViewEventsTests {
     func createView() -> some View {
         PaywallView(
             offering: Self.offering.withLocalImages,
+            offeringSelection: nil,
             customerInfo: TestData.customerInfo,
             mode: self.mode,
             introEligibility: .producing(eligibility: .eligible),
