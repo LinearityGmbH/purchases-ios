@@ -30,19 +30,19 @@ import Foundation
     /// The type configured for this package.
     @objc public let packageType: PackageType
     /// The underlying ``storeProduct``
-    @objc public let storeProduct: StoreProduct
+//    @objc public let storeProduct: StoreProduct
     /// The identifier of the ``Offering`` containing this Package.
     @objc public let offeringIdentifier: String
 
     /// The price of this product using ``StoreProduct/priceFormatter``.
     @objc public var localizedPriceString: String {
-        return storeProduct.localizedPriceString
+        return "Some rather long LocalizePriceString LocalizePriceString LocalizePriceString"
     }
 
     /// The price of the ``StoreProduct/introductoryDiscount`` formatted using ``StoreProduct/priceFormatter``.
     /// - Returns: `nil` if there is no `introductoryDiscount`.
     @objc public var localizedIntroductoryPriceString: String? {
-        return self.storeProduct.localizedIntroductoryPriceString
+        return "Some PriceString PriceString PriceStringPriceString"
     }
 
     /// Initialize a ``Package``.
@@ -50,12 +50,12 @@ import Foundation
     public init(
         identifier: String,
         packageType: PackageType,
-        storeProduct: StoreProduct,
+//        storeProduct: StoreProduct,
         offeringIdentifier: String
     ) {
         self.identifier = identifier
         self.packageType = packageType
-        self.storeProduct = storeProduct
+//        self.storeProduct = storeProduct
         self.offeringIdentifier = offeringIdentifier
 
         super.init()
@@ -67,7 +67,6 @@ import Foundation
         return (
             self.identifier == other.identifier &&
             self.packageType == other.packageType &&
-            self.storeProduct == other.storeProduct &&
             self.offeringIdentifier == other.offeringIdentifier
         )
     }
@@ -76,7 +75,6 @@ import Foundation
         var hasher = Hasher()
         hasher.combine(self.identifier)
         hasher.combine(self.packageType)
-        hasher.combine(self.storeProduct)
         hasher.combine(self.offeringIdentifier)
 
         return hasher.finalize()

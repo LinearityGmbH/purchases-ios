@@ -147,7 +147,7 @@ private extension Offering {
             self.availablePackages
                 .lazy
                 .filter { packageTypes.contains($0.identifier) }
-                .map(\.storeProduct.productIdentifier)
+                .map(\.offeringIdentifier)
         )
     }
 

@@ -182,9 +182,9 @@ import Foundation
             case .twoMonth: twoMonth = package
             case .monthly: monthly = package
             case .weekly: weekly = package
-            case .custom where package.storeProduct.productCategory == .nonSubscription:
-                // Non-subscription product, ignoring
-                continue
+//            case .custom where package.storeProduct.productCategory == .nonSubscription:
+//                // Non-subscription product, ignoring
+//                continue
 
             case .custom:
                 Logger.debug(Strings.offering.custom_package_type(package))

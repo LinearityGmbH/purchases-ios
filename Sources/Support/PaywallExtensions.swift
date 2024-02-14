@@ -137,31 +137,32 @@ private extension Offering {
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     var subscriptionProductIdentifiers: [String] {
-        return self.products
-            .filter { $0.productCategory == .subscription }
-            // Filter out products with no subscription periods (non-subscriptions)
-            .compactMap { product in
-                product.subscriptionPeriod.map { period in
-                    (
-                        product: product,
-                        period: period
-                    )
-                }
-            }
-            // Sort by subscription period
-            .sorted(using: KeyPathComparator(\.period.unit.rawValue, order: .forward))
-            .map(\.product.productIdentifier)
+        return self.availablePackages.map(\.identifier)
+//        products
+//            .filter { $0.productCategory == .subscription }
+//            // Filter out products with no subscription periods (non-subscriptions)
+//            .compactMap { product in
+//                product.subscriptionPeriod.map { period in
+//                    (
+//                        product: product,
+//                        period: period
+//                    )
+//                }
+//            }
+//            // Sort by subscription period
+//            .sorted(using: KeyPathComparator(\.period.unit.rawValue, order: .forward))
+//            .map(\.product.productIdentifier)
     }
 
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
     var allProductIdentifiers: [String] {
-        return self.products.map(\.productIdentifier)
+        return self.availablePackages.map(\.identifier)
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
-    private var products: some Sequence<StoreProduct> {
-        return self.availablePackages.lazy.map(\.storeProduct)
-    }
+//    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
+//    private var products: some Sequence<StoreProduct> {
+//        return self.availablePackages.lazy.map(\.storeProduct)
+//    }
 
 }
 

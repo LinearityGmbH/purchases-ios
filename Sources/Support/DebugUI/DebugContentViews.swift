@@ -368,7 +368,7 @@ private struct DebugPackageView: View {
             Section("Data") {
                 LabeledContent("Identifier", value: self.package.identifier)
                 LabeledContent("Price", value: self.package.localizedPriceString)
-                LabeledContent("Product", value: self.package.storeProduct.productIdentifier)
+                LabeledContent("Product", value: "self.package.storeProduct.productIdentifier")
                 LabeledContent("Type", value: self.package.packageType.description ?? "")
             }
 
@@ -390,7 +390,7 @@ private struct DebugPackageView: View {
 
                 #if swift(>=5.9)
                 if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-                    ProductView(id: self.package.storeProduct.productIdentifier)
+                    ProductView(id: "self.package.storeProduct.productIdentifier")
                         .productViewStyle(ProductStyle())
                 }
                 #endif

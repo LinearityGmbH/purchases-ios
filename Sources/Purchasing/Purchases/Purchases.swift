@@ -892,7 +892,7 @@ public extension Purchases {
 
     @objc(purchasePackage:withCompletion:)
     func purchase(package: Package, completion: @escaping PurchaseCompletedBlock) {
-        purchasesOrchestrator.purchase(product: package.storeProduct, package: package, completion: completion)
+//        purchasesOrchestrator.purchase(product: package.storeProduct, package: package, completion: completion)
     }
 
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
@@ -947,10 +947,10 @@ public extension Purchases {
     @available(iOS 12.2, macOS 10.14.4, watchOS 6.2, macCatalyst 13.0, tvOS 12.2, *)
     @objc(purchasePackage:withPromotionalOffer:completion:)
     func purchase(package: Package, promotionalOffer: PromotionalOffer, completion: @escaping PurchaseCompletedBlock) {
-        purchasesOrchestrator.purchase(product: package.storeProduct,
-                                       package: package,
-                                       promotionalOffer: promotionalOffer.signedData,
-                                       completion: completion)
+//        purchasesOrchestrator.purchase(product: package.storeProduct,
+//                                       package: package,
+//                                       promotionalOffer: promotionalOffer.signedData,
+//                                       completion: completion)
     }
 
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
@@ -972,14 +972,15 @@ public extension Purchases {
 
     @available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
     func checkTrialOrIntroDiscountEligibility(packages: [Package]) async -> [Package: IntroEligibility] {
-        let result = await self.checkTrialOrIntroDiscountEligibility(
-            productIdentifiers: packages.map(\.storeProduct.productIdentifier)
-        )
-
-        return Set(packages)
-            .dictionaryWithValues { (package: Package) in
-                result[package.storeProduct.productIdentifier] ?? .init(eligibilityStatus: .unknown)
-            }
+        [:]
+//        let result = await self.checkTrialOrIntroDiscountEligibility(
+//            productIdentifiers: packages.map(\.storeProduct.productIdentifier)
+//        )
+//
+//        return Set(packages)
+//            .dictionaryWithValues { (package: Package) in
+//                result[package.storeProduct.productIdentifier] ?? .init(eligibilityStatus: .unknown)
+//            }
     }
 
     @objc(checkTrialOrIntroDiscountEligibilityForProduct:completion:)
