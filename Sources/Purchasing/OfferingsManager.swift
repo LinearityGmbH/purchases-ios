@@ -439,7 +439,7 @@ func sendError(
 	userInfo _userInfo: [String: Any],
 	file: String = #file,
 	function: String = #function,
-	line: Int = #line
+	line: UInt = #line
 ) {
 	var userInfo = _userInfo
 	
