@@ -14,6 +14,8 @@
 import Foundation
 import StoreKit
 
+public let OfferingsErrorNotification = Notification.Name(rawValue: "Linearity.OfferingsError")
+
 class OfferingsManager {
 
     private let deviceCache: DeviceCache
@@ -169,9 +171,35 @@ private extension OfferingsManager {
         completion: @escaping (@Sendable (Result<Offerings, Error>) -> Void)
     ) {
         let productIdentifiers = response.productIdentifiers
+		linearityLog("response: \(response)")
+		linearityLog("productIdentifiers: \(productIdentifiers), offerings: \(response.offerings), currentOfferingID: \(String(describing: response.currentOfferingId))")
 
         guard !productIdentifiers.isEmpty else {
             let errorMessage = Strings.offering.configuration_error_no_products_for_offering.description
+			DispatchQueue.main.async {
+				var userInfo: [String: Any] = [
+					"response.currentOfferingId": response.currentOfferingId ?? "<nil>",
+				]
+
+				let offerings = response.offerings.map { offering in
+					var dictionary: [String: Any] = [
+						"identifier": offering.identifier,
+						"description": offering.description,
+					]
+					let packages = offering.packages.map { package in
+						return [
+							"package.identifier": package.identifier,
+							"package.platformProductIdentifier": package.platformProductIdentifier,
+						]
+					}
+					dictionary["packages"] = packages
+					return dictionary
+				}
+				userInfo["response.offerings"] = offerings
+				let notification = Notification(name: OfferingsErrorNotification, object: nil, userInfo: userInfo)
+				NotificationCenter.default.post(notification)
+			}
+
             completion(.failure(.configurationError(errorMessage, underlyingError: nil)))
             return
         }
@@ -385,4 +413,8 @@ extension OfferingsManager.Error: CustomNSError {
         }
     }
 
+}
+
+func linearityLog(_ message: String) {
+	Logger.error("[LIN] \(message)")
 }
