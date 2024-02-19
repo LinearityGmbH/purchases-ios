@@ -455,7 +455,7 @@ func sendError(
 	userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
 	userInfo["nsError.localizedRecoveryOptions"] = nsError.localizedRecoveryOptions
 
-	userInfo["file"] = file
+	userInfo["file"] = "OfferingManager.swift"
 	userInfo["function"] = function
 	userInfo["line"] = line
 
