@@ -433,7 +433,14 @@ func userInfo(for response: OfferingsResponse) -> [String: Any] {
 	return userInfo
 }
 
-func sendError(_ error: Error, title: String, userInfo _userInfo: [String: Any]) {
+func sendError(
+	_ error: Error,
+	title: String,
+	userInfo _userInfo: [String: Any],
+	file: String = #file,
+	function: String = #function,
+	line: Int = #line
+) {
 	var userInfo = _userInfo
 	
 	userInfo["error.title"] = title
@@ -447,6 +454,10 @@ func sendError(_ error: Error, title: String, userInfo _userInfo: [String: Any])
 	userInfo["nsError.localizedFailureReason"] = nsError.localizedFailureReason
 	userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
 	userInfo["nsError.localizedRecoveryOptions"] = nsError.localizedRecoveryOptions
+
+	userInfo["file"] = file
+	userInfo["function"] = function
+	userInfo["line"] = line
 
 	linearityLog("Encountered error with title='\(title)', error: '\(error)', userInfo: '\(userInfo)'")
 
