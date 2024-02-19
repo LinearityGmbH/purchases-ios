@@ -455,10 +455,6 @@ func sendError(
 	userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
 	userInfo["nsError.localizedRecoveryOptions"] = nsError.localizedRecoveryOptions
 
-	userInfo["file"] = "OfferingManager.swift"
-	userInfo["function"] = function
-	userInfo["line"] = line
-
 	linearityLog("Encountered error with title='\(title)', error: '\(error)', userInfo: '\(userInfo)'")
 
 	DispatchQueue.main.async {
