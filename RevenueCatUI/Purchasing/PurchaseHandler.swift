@@ -99,15 +99,11 @@ extension PurchaseHandler {
             self.actionInProgress = false
         }
 
-<<<<<<< HEAD
-        self.selectedPackage = package
-        let result = try await self.purchases.purchase(package: package)
-        try await refreshSubscriptions()
-=======
         do {
+            self.selectedPackage = package
             let result = try await self.purchases.purchase(package: package)
             self.purchaseResult = result
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+            try await refreshSubscriptions()
 
             if result.userCancelled {
                 self.trackCancelledPurchase()
@@ -135,19 +131,10 @@ extension PurchaseHandler {
         self.restoredCustomerInfo = nil
         self.restoreError = nil
 
-<<<<<<< HEAD
-        let customerInfo = try await self.purchases.restorePurchases()
-        try await refreshSubscriptions()
-
-        withAnimation(Constants.defaultAnimation) {
-            self.restored = true
-            self.restoredCustomerInfo = customerInfo
-=======
         self.startAction()
         defer {
             self.restoreInProgress = false
             self.actionInProgress = false
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         }
 
         do {
@@ -325,26 +312,15 @@ struct RestoredCustomerInfoPreferenceKey: PreferenceKey {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-<<<<<<< HEAD
-struct InitiatedPurchaseWithSelectedPackagePreferenceKey: PreferenceKey {
-
-    static var defaultValue: Package?
-
-    static func reduce(value: inout Package?, nextValue: () -> Package?) {
-=======
 struct PurchaseErrorPreferenceKey: PreferenceKey {
 
     static var defaultValue: NSError?
 
     static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         value = nextValue()
     }
-
 }
 
-<<<<<<< HEAD
-=======
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct RestoreErrorPreferenceKey: PreferenceKey {
 
@@ -353,9 +329,17 @@ struct RestoreErrorPreferenceKey: PreferenceKey {
     static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
         value = nextValue()
     }
-
 }
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct InitiatedPurchaseWithSelectedPackagePreferenceKey: PreferenceKey {
+
+    static var defaultValue: Package?
+
+    static func reduce(value: inout Package?, nextValue: () -> Package?) {
+        value = nextValue()
+    }
+}
 
 // MARK: -
 
