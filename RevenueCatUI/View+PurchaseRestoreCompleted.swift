@@ -21,9 +21,8 @@ public typealias PurchaseOrRestoreCompletedHandler = @MainActor @Sendable (Custo
 public typealias PurchaseCompletedHandler = @MainActor @Sendable (_ transaction: StoreTransaction?,
                                                                   _ customerInfo: CustomerInfo) -> Void
 
-<<<<<<< HEAD
 public typealias PurchaseInitiationHandler = @MainActor @Sendable (_ selectedPackage: Package) -> Void
-=======
+
 /// A closure used for notifying of purchase initiation.
 @available(iOS, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
 @available(tvOS, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
@@ -43,7 +42,6 @@ public typealias PurchaseFailureHandler = @MainActor @Sendable (NSError) -> Void
 
 /// A closure used for notifying of restore initiation.
 public typealias RestoreStartedHandler = @MainActor @Sendable () -> Void
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable, message: "RevenueCatUI does not support macOS yet")
@@ -216,8 +214,7 @@ extension View {
     ) -> some View {
         return self.modifier(OnRestoreCompletedModifier(handler: handler))
     }
-<<<<<<< HEAD
-    
+
     /// Invokes the given closure when the CTA button is clicked.
     /// The closure includes the `Package` that has been selected.
     /// Example:
@@ -225,35 +222,37 @@ extension View {
     ///  @State
     ///  private var displayPaywall: Bool = true
     ///
-=======
-
-    /// Invokes the given closure when an error is produced during a purchase.
-    /// Example:
-    /// ```swift
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     ///  var body: some View {
     ///     ContentView()
     ///         .sheet(isPresented: self.$displayPaywall) {
     ///             PaywallView()
-<<<<<<< HEAD
     ///                 .onPurchaseInitiated { selectedPackage in
     ///                     print("Purchase initiated with selected package: \(selectedPackage)")
     ///                     self.displayPaywall = false
-=======
-    ///                 .onPurchaseFailure { error in
-    ///                     print("Error purchasing: \(error)")
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     ///                 }
     ///         }
     ///  }
     /// ```
-<<<<<<< HEAD
-    public func onPurchaseInitiated(
+    ///
+    public func onPurchaseInitiated( // VERIFICARE SE E' ANCORA VALIDA
         _ handler: @escaping PurchaseInitiationHandler
     ) -> some View {
         return self.modifier(OnPurchaseInitiatedModifier(handler: handler))
     }
-=======
+
+    /// Invokes the given closure when an error is produced during a purchase.
+    /// Example:
+    /// ```swift
+    ///  var body: some View {
+    ///     ContentView()
+    ///         .sheet(isPresented: self.$displayPaywall) {
+    ///             PaywallView()
+    ///                 .onPurchaseFailure { error in
+    ///                     print("Error purchasing: \(error)")
+    ///                 }
+    ///         }
+    ///  }
+    /// ```
     public func onPurchaseFailure(
         _ handler: @escaping PurchaseFailureHandler
     ) -> some View {
