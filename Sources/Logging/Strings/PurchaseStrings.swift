@@ -82,6 +82,7 @@ enum PurchaseStrings {
                                                  productID: String,
                                                  transactionDate: Date,
                                                  offeringID: String?,
+                                                 placementID: String?,
                                                  paywallSessionID: UUID?)
     case caching_presented_offering_identifier(offeringID: String, productID: String)
     case payment_queue_wrapper_delegate_call_sk1_enabled
@@ -205,14 +206,14 @@ extension PurchaseStrings: LogMessage {
 
         case let .purchasing_product_from_package(product, package):
             return "Purchasing Product '\(product.productIdentifier)' from package " +
-            "in Offering '\(package.offeringIdentifier)'"
+            "in Offering '\(package.presentedOfferingContext.offeringIdentifier)'"
 
         case let .purchasing_product_with_offer(product, discount):
             return "Purchasing Product '\(product.productIdentifier)' with Offer '\(discount.identifier)'"
 
         case let .purchasing_product_from_package_with_offer(product, package, discount):
             return "Purchasing Product '\(product.productIdentifier)' from package in Offering " +
-            "'\(package.offeringIdentifier)' with Offer '\(discount.identifier)'"
+            "'\(package.presentedOfferingContext.offeringIdentifier)' with Offer '\(discount.identifier)'"
 
         case let .purchased_product(productIdentifier):
             return "Purchased product - '\(productIdentifier)'"
@@ -306,12 +307,21 @@ extension PurchaseStrings: LogMessage {
         case let .sk2_transactions_update_received_transaction(productID):
             return "StoreKit.Transaction.updates: received transaction for product '\(productID)'"
 
-        case let .transaction_poster_handling_transaction(transactionID, productID, date, offeringID, paywallSessionID):
+        case let .transaction_poster_handling_transaction(transactionID,
+                                                          productID,
+                                                          date,
+                                                          offeringID,
+                                                          placementID,
+                                                          paywallSessionID):
             var message = "TransactionPoster: handling transaction '\(transactionID)' " +
             "for product '\(productID)' (date: \(date))"
 
             if let offeringIdentifier = offeringID {
                 message += " in Offering '\(offeringIdentifier)'"
+            }
+
+            if let placementIdentifier = placementID {
+                message += " with Placement '\(placementIdentifier)'"
             }
 
             if let paywallSessionID {

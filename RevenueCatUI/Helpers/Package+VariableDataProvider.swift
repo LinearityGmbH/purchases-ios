@@ -24,11 +24,21 @@ extension Package: VariableDataProvider {
     }
 
     var localizedPricePerWeek: String {
-        return self.priceFormatter.string(from: self.pricePerWeek) ?? ""
+        guard let price = self.storeProduct.localizedPricePerWeek else {
+            Logger.warning(Strings.package_not_subscription(self))
+            return self.storeProduct.localizedPriceString
+        }
+
+        return price
     }
 
     var localizedPricePerMonth: String {
-        return self.priceFormatter.string(from: self.pricePerMonth) ?? ""
+        guard let price = self.storeProduct.localizedPricePerMonth else {
+            Logger.warning(Strings.package_not_subscription(self))
+            return self.storeProduct.localizedPriceString
+        }
+
+        return price
     }
 
     var localizedIntroductoryOfferPrice: String? {
@@ -42,6 +52,22 @@ extension Package: VariableDataProvider {
     func periodNameOrIdentifier(_ locale: Locale) -> String {
         return Localization.localized(packageType: self.packageType,
                                       locale: locale) ?? self.identifier
+    }
+
+    func periodNameAbbreviation(_ locale: Locale) -> String? {
+        guard let period = self.storeProduct.subscriptionPeriod else {
+            return nil
+        }
+
+        return Localization.abbreviatedUnitLocalizedString(for: period, locale: locale)
+    }
+
+    func periodLength(_ locale: Locale) -> String? {
+        guard let period = self.storeProduct.subscriptionPeriod else {
+            return nil
+        }
+
+        return Localization.unitLocalizedString(for: period, locale: locale)
     }
 
     func subscriptionDuration(_ locale: Locale) -> String? {
@@ -73,6 +99,15 @@ extension Package: VariableDataProvider {
         return "\(self.localizedPrice)/\(unit)"
     }
 
+    func localizedPricePerPeriodFull(_ locale: Locale) -> String {
+        guard let period = self.storeProduct.subscriptionPeriod else {
+            return self.localizedPrice
+        }
+
+        let unit = Localization.unitLocalizedString(for: period, locale: locale)
+        return "\(self.localizedPrice)/\(unit)"
+    }
+
     func localizedPriceAndPerMonth(_ locale: Locale) -> String {
         if !self.isSubscription || self.isMonthly {
             return self.localizedPricePerPeriod(locale)
@@ -80,6 +115,16 @@ extension Package: VariableDataProvider {
             let unit = Localization.abbreviatedUnitLocalizedString(for: .init(value: 1, unit: .month),
                                                                    locale: locale)
             return "\(self.localizedPricePerPeriod(locale)) (\(self.localizedPricePerMonth)/\(unit))"
+        }
+    }
+
+    func localizedPriceAndPerMonthFull(_ locale: Locale) -> String {
+        if !self.isSubscription || self.isMonthly {
+            return self.localizedPricePerPeriodFull(locale)
+        } else {
+            let unit = Localization.unitLocalizedString(for: .init(value: 1, unit: .month),
+                                                        locale: locale)
+            return "\(self.localizedPricePerPeriodFull(locale)) (\(self.localizedPricePerMonth)/\(unit))"
         }
     }
 
@@ -102,30 +147,6 @@ private extension Package {
 
     var isMonthly: Bool {
         return self.storeProduct.subscriptionPeriod == SubscriptionPeriod(value: 1, unit: .month)
-    }
-
-    var pricePerWeek: NSDecimalNumber {
-        guard let price = self.storeProduct.pricePerWeek else {
-            Logger.warning(Strings.package_not_subscription(self))
-            return self.storeProduct.priceDecimalNumber
-        }
-
-        return price
-    }
-
-    var pricePerMonth: NSDecimalNumber {
-        guard let price = self.storeProduct.pricePerMonth else {
-            Logger.warning(Strings.package_not_subscription(self))
-            return self.storeProduct.priceDecimalNumber
-        }
-
-        return price
-    }
-
-    var priceFormatter: NumberFormatter {
-        // `priceFormatter` can only be `nil` for SK2 products
-        // with an unknown code, which should be rare.
-        return self.storeProduct.priceFormatter ?? .init()
     }
 
     func introDuration(_ locale: Locale) -> String? {

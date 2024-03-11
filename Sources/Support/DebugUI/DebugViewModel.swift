@@ -59,6 +59,7 @@ final class DebugViewModel: ObservableObject {
         set { self._navigationPath = newValue }
     }
 
+    @MainActor
     func load() async {
         self.configuration = .loaded(.create())
 

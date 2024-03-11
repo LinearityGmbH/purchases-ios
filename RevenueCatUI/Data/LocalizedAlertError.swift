@@ -24,6 +24,7 @@ public struct LocalizedAlertError: LocalizedError {
         self.failureReason = failureReason
         self.recoverySuggestion = recoverySuggestion
     }
+<<<<<<< HEAD
     
     public init(error: NSError) {
         errorDescription = "\(error.domain) \(error.code)"
@@ -32,6 +33,22 @@ public struct LocalizedAlertError: LocalizedError {
             error.description
         default:
             error.localizedDescription
+=======
+
+    var errorDescription: String? {
+        if self.underlyingError is ErrorCode {
+            return "Error"
+        } else {
+            return "\(self.underlyingError.domain) \(self.underlyingError.code)"
+        }
+    }
+
+    var failureReason: String? {
+        if let errorCode = self.underlyingError as? ErrorCode {
+            return "Error \(self.underlyingError.code): \(errorCode.description)"
+        } else {
+            return self.underlyingError.localizedDescription
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         }
         recoverySuggestion = error.localizedRecoverySuggestion
     }

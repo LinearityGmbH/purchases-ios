@@ -87,6 +87,21 @@ class PaywallDataTests: BaseHTTPResponseTest {
         expect(paywall.config(for: Locale(identifier: "gl_ES"))).to(beNil())
     }
 
+    func testChineseLocalizations() throws {
+        // This logic only works on iOS 16+
+        try AvailabilityChecks.iOS16APIAvailableOrSkipTest()
+
+        let paywall: PaywallData = try self.decodeFixture("PaywallData-chinese")
+
+        let traditional = try XCTUnwrap(paywall.config(for: Locale(identifier: "zh-Hant")))
+        let simplified = try XCTUnwrap(paywall.config(for: Locale(identifier: "zh-Hans")))
+        let taiwan = try XCTUnwrap(paywall.config(for: Locale(identifier: "zh-TW")))
+
+        expect(traditional.title) == "Traditional"
+        expect(simplified.title) == "Simplified"
+        expect(taiwan.title) == "Traditional"
+    }
+
     func testModifyingImages() throws {
         var paywall: PaywallData = try self.decodeFixture("PaywallData-Sample1")
         var expected = paywall.config.images
@@ -105,6 +120,45 @@ class PaywallDataTests: BaseHTTPResponseTest {
 
         let esConfig = try XCTUnwrap(paywall.config(for: Locale(identifier: "es")))
         expect(esConfig.title) == "Tienda"
+    }
+
+    func testLocalizedConfigurationFallsBackToLanguageWithDifferentRegion() throws {
+        let paywall: PaywallData = try self.decodeFixture("PaywallData-Sample1")
+
+        let enConfig = try XCTUnwrap(paywall.localizedConfiguration(for: [
+            .init(identifier: "en_IN"),
+            .init(identifier: "en-IN")
+        ]))
+        expect(enConfig.title) == "Paywall"
+    }
+
+    func testLocalizedConfigurationLooksForCurrentLocaleWithoutRegionBeforePreferedLocales() throws {
+        let paywall: PaywallData = try self.decodeFixture("PaywallData-Sample1")
+
+        let enConfig = try XCTUnwrap(paywall.localizedConfiguration(for: [
+            .init(identifier: "en_IN"),
+            .init(identifier: "es_ES")
+        ]))
+        expect(enConfig.title) == "Paywall"
+    }
+
+    func testLocalesOrderedByPriority() throws {
+        let expected: [String]
+
+        if #available(iOS 17.0, tvOS 17, watchOS 10, *) {
+            expected = [
+                "en_US",
+                "en-US"
+            ]
+        } else {
+            expected = [
+                "en_US",
+                // `Locale.preferredLanguages` returns `en` before iOS 17.
+                "en"
+            ]
+        }
+
+        expect(PaywallData.localesOrderedByPriority.map(\.identifier)) == expected
     }
 
     func testDoesNotFindLocaleWithMissingLanguage() throws {

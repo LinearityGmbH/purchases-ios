@@ -134,6 +134,8 @@ class PurchasesGetOfferingsTests: BasePurchasesTests {
                 offering.identifier: offering
             ],
             currentOfferingID: offering.identifier,
+            placements: nil,
+            targeting: nil,
             response: offeringsResponse
         )
 

@@ -21,11 +21,80 @@ public typealias PurchaseOrRestoreCompletedHandler = @MainActor @Sendable (Custo
 public typealias PurchaseCompletedHandler = @MainActor @Sendable (_ transaction: StoreTransaction?,
                                                                   _ customerInfo: CustomerInfo) -> Void
 
+<<<<<<< HEAD
 public typealias PurchaseInitiationHandler = @MainActor @Sendable (_ selectedPackage: Package) -> Void
+=======
+/// A closure used for notifying of purchase initiation.
+@available(iOS, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
+@available(tvOS, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
+@available(watchOS, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
+@available(macOS, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
+@available(macCatalyst, deprecated: 1, renamed: "PurchaseOfPackageStartedHandler")
+public typealias PurchaseStartedHandler = @MainActor @Sendable () -> Void
+
+/// A closure used for notifying of purchase of a package initiation.
+public typealias PurchaseOfPackageStartedHandler = @MainActor @Sendable (_ package: Package) -> Void
+
+/// A closure used for notifying of purchase cancellation.
+public typealias PurchaseCancelledHandler = @MainActor @Sendable () -> Void
+
+/// A closure used for notifying of failures during purchases or restores.
+public typealias PurchaseFailureHandler = @MainActor @Sendable (NSError) -> Void
+
+/// A closure used for notifying of restore initiation.
+public typealias RestoreStartedHandler = @MainActor @Sendable () -> Void
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable, message: "RevenueCatUI does not support macOS yet")
 extension View {
+
+    /// Invokes the given closure when a purchase begins.
+    /// Example:
+    /// ```swift
+    ///  @State
+    ///  var body: some View {
+    ///     PaywallView()
+    ///         .onPurchaseStarted {
+    ///             print("Purchase started")
+    ///         }
+    ///  }
+    /// ```
+    ///
+    /// ### Related Articles
+    /// [Documentation](https://rev.cat/paywalls)
+    @available(iOS, deprecated: 1, renamed: "onPurchaseStarted(handler:)")
+    @available(tvOS, deprecated: 1, renamed: "onPurchaseStarted(handler:)")
+    @available(watchOS, deprecated: 1, renamed: "onPurchaseStarted(handler:)")
+    @available(macOS, deprecated: 1, renamed: "onPurchaseStarted(handler:)")
+    @available(macCatalyst, deprecated: 1, renamed: "onPurchaseStarted(handler:)")
+    public func onPurchaseStarted(
+        _ handler: @escaping PurchaseStartedHandler
+    ) -> some View {
+        return self.modifier(OnPurchaseStartedModifier(handler: { _ in
+            handler()
+        }))
+    }
+
+    /// Invokes the given closure when a purchase of a package begins.
+    /// Example:
+    /// ```swift
+    ///  @State
+    ///  var body: some View {
+    ///     PaywallView()
+    ///         .onPurchaseStarted { package in
+    ///             print("Purchase started for package: \(package)")
+    ///         }
+    ///  }
+    /// ```
+    ///
+    /// ### Related Articles
+    /// [Documentation](https://rev.cat/paywalls)
+    public func onPurchaseStarted(
+        _ handler: @escaping PurchaseOfPackageStartedHandler
+    ) -> some View {
+        return self.modifier(OnPurchaseStartedModifier(handler: handler))
+    }
 
     /// Invokes the given closure when a purchase is completed.
     /// The closure includes the `CustomerInfo` with unlocked entitlements.
@@ -81,6 +150,41 @@ extension View {
         return self.modifier(OnPurchaseCompletedModifier(handler: handler))
     }
 
+    /// Invokes the given closure when a purchase is cancelled.
+    ///
+    /// Example:
+    /// ```swift
+    ///  PaywallView()
+    ///     .onPurchaseCancelled {
+    ///         print("Purchase was cancelled")
+    ///     }
+    /// ```
+    public func onPurchaseCancelled(
+        _ handler: @escaping PurchaseCancelledHandler
+    ) -> some View {
+        return self.modifier(OnPurchaseCancelledModifier(handler: handler))
+    }
+
+    /// Invokes the given closure when a restore begins.
+    /// Example:
+    /// ```swift
+    ///  @State
+    ///  var body: some View {
+    ///     PaywallView()
+    ///         .onRestoreStarted {
+    ///             print("Restore started")
+    ///         }
+    ///  }
+    /// ```
+    ///
+    /// ### Related Articles
+    /// [Documentation](https://rev.cat/paywalls)
+    public func onRestoreStarted(
+        _ handler: @escaping RestoreStartedHandler
+    ) -> some View {
+        return self.modifier(OnRestoreStartedModifier(handler: handler))
+    }
+
     /// Invokes the given closure when restore purchases is completed.
     /// The closure includes the `CustomerInfo` after the process is completed.
     /// Example:
@@ -112,6 +216,7 @@ extension View {
     ) -> some View {
         return self.modifier(OnRestoreCompletedModifier(handler: handler))
     }
+<<<<<<< HEAD
     
     /// Invokes the given closure when the CTA button is clicked.
     /// The closure includes the `Package` that has been selected.
@@ -120,22 +225,77 @@ extension View {
     ///  @State
     ///  private var displayPaywall: Bool = true
     ///
+=======
+
+    /// Invokes the given closure when an error is produced during a purchase.
+    /// Example:
+    /// ```swift
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     ///  var body: some View {
     ///     ContentView()
     ///         .sheet(isPresented: self.$displayPaywall) {
     ///             PaywallView()
+<<<<<<< HEAD
     ///                 .onPurchaseInitiated { selectedPackage in
     ///                     print("Purchase initiated with selected package: \(selectedPackage)")
     ///                     self.displayPaywall = false
+=======
+    ///                 .onPurchaseFailure { error in
+    ///                     print("Error purchasing: \(error)")
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     ///                 }
     ///         }
     ///  }
     /// ```
+<<<<<<< HEAD
     public func onPurchaseInitiated(
         _ handler: @escaping PurchaseInitiationHandler
     ) -> some View {
         return self.modifier(OnPurchaseInitiatedModifier(handler: handler))
     }
+=======
+    public func onPurchaseFailure(
+        _ handler: @escaping PurchaseFailureHandler
+    ) -> some View {
+        return self.modifier(PurchaseFailureModifier(handler: handler))
+    }
+
+    /// Invokes the given closure when an error is produced during restore purchases.
+    /// Example:
+    /// ```swift
+    ///  var body: some View {
+    ///     ContentView()
+    ///         .sheet(isPresented: self.$displayPaywall) {
+    ///             PaywallView()
+    ///                 .onRestoreFailure { error in
+    ///                     print("Error restoring purchases: \(error)")
+    ///                 }
+    ///         }
+    ///  }
+    /// ```
+    public func onRestoreFailure(
+        _ handler: @escaping PurchaseFailureHandler
+    ) -> some View {
+        return self.modifier(RestoreFailureModifier(handler: handler))
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct OnPurchaseStartedModifier: ViewModifier {
+
+    let handler: PurchaseOfPackageStartedHandler
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(PurchaseInProgressPreferenceKey.self) { package in
+                if let package {
+                    self.handler(package)
+                }
+            }
+    }
+
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -154,8 +314,44 @@ private struct OnPurchaseCompletedModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onPreferenceChange(PurchasedResultPreferenceKey.self) { result in
-                if let result {
+                if let result, !result.userCancelled {
                     self.handler(result.transaction, result.customerInfo)
+                }
+            }
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct OnPurchaseCancelledModifier: ViewModifier {
+
+    let handler: PurchaseCancelledHandler
+
+    init(handler: @escaping PurchaseCancelledHandler) {
+        self.handler = handler
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(PurchasedResultPreferenceKey.self) { result in
+                if let result, result.userCancelled {
+                    self.handler()
+                }
+            }
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct OnRestoreStartedModifier: ViewModifier {
+
+    let handler: RestoreStartedHandler
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(RestoreInProgressPreferenceKey.self) { inProgress in
+                if inProgress {
+                    self.handler()
                 }
             }
     }
@@ -179,6 +375,7 @@ private struct OnRestoreCompletedModifier: ViewModifier {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+<<<<<<< HEAD
 private struct OnPurchaseInitiatedModifier: ViewModifier {
 
     let handler: PurchaseInitiationHandler
@@ -191,4 +388,35 @@ private struct OnPurchaseInitiatedModifier: ViewModifier {
                 }
             }
     }
+=======
+private struct PurchaseFailureModifier: ViewModifier {
+
+    let handler: PurchaseFailureHandler
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(PurchaseErrorPreferenceKey.self) { error in
+                if let error {
+                    self.handler(error)
+                }
+            }
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct RestoreFailureModifier: ViewModifier {
+
+    let handler: PurchaseFailureHandler
+
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(RestoreErrorPreferenceKey.self) { error in
+                if let error {
+                    self.handler(error)
+                }
+            }
+    }
+
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 }

@@ -65,7 +65,8 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
                 transactionID: transaction.transactionIdentifier,
                 productID: package.storeProduct.productIdentifier,
                 transactionDate: transaction.purchaseDate,
-                offeringID: package.offeringIdentifier,
+                offeringID: package.presentedOfferingContext.offeringIdentifier,
+                placementID: package.presentedOfferingContext.placementIdentifier,
                 paywallSessionID: nil
             )
         )
@@ -89,11 +90,15 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
         await verifyNoUnfinishedTransactions()
     }
 
-    func testPurchasingPackageWithPresentedOfferingIdentifier() async throws {
+    func testPurchasingPackageWithPresentedOfferingContext() async throws {
         let package = try await self.monthlyPackage
 
-        try self.purchases.cachePresentedOfferingIdentifier(
-            package.offeringIdentifier,
+        try self.purchases.cachePresentedOfferingContext(
+            PresentedOfferingContext(
+                offeringIdentifier: package.offeringIdentifier,
+                placementIdentifier: "a_placement",
+                targetingContext: nil
+            ),
             productIdentifier: package.storeProduct.productIdentifier
         )
 
@@ -104,7 +109,8 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
                 transactionID: transaction.transactionIdentifier,
                 productID: package.storeProduct.productIdentifier,
                 transactionDate: transaction.purchaseDate,
-                offeringID: package.offeringIdentifier,
+                offeringID: package.presentedOfferingContext.offeringIdentifier,
+                placementID: package.presentedOfferingContext.placementIdentifier,
                 paywallSessionID: nil
             )
         )
@@ -503,8 +509,8 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
     }
 
     func testIneligibleForIntroForDifferentProductInSameSubscriptionGroupAfterPurchase() async throws {
-        if Self.storeKit2Setting == .enabledForCompatibleDevices {
-            XCTExpectFailure("This test currently does not pass with SK2 (see FB11889732)")
+        if Self.storeKit2Setting == .enabledForCompatibleDevices, #unavailable(iOS 17.4) {
+            XCTExpectFailure("This test does not pass with SK2 until iOS 17.4 (see FB11889732)")
         }
 
         let productWithNoTrial = try await self.product(Self.group3MonthlyNoTrialProductID)

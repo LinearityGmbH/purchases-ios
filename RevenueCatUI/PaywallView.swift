@@ -25,6 +25,7 @@ import SwiftUI
 @available(tvOS, unavailable, message: "RevenueCatUI does not support tvOS yet")
 public struct PaywallView: View {
 
+    private let contentToDisplay: PaywallViewConfiguration.Content
     private let mode: PaywallViewMode
     private let fonts: PaywallFontProvider
     private let displayCloseButton: Bool
@@ -62,6 +63,7 @@ public struct PaywallView: View {
         purchaseHandler: PurchaseHandler
     ) {
         self.init(
+<<<<<<< HEAD
             offering: nil,
             offeringSelection: nil,
             customerInfo: nil,
@@ -69,6 +71,12 @@ public struct PaywallView: View {
             displayCloseButton: displayCloseButton,
             introEligibility: nil,
             purchaseHandler: purchaseHandler
+=======
+            configuration: .init(
+                fonts: fonts,
+                displayCloseButton: displayCloseButton
+            )
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         )
     }
 
@@ -89,6 +97,7 @@ public struct PaywallView: View {
         purchaseHandler: PurchaseHandler
     ) {
         self.init(
+<<<<<<< HEAD
             offering: offering,
             offeringSelection: nil,
             customerInfo: nil,
@@ -150,12 +159,29 @@ public struct PaywallView: View {
             initialOffering = Self.loadCachedCurrentOfferingIfPossible()
         }
         self._offering = .init(initialValue: initialOffering)
-        self._customerInfo = .init(
-            initialValue: customerInfo ?? Self.loadCachedCustomerInfoIfPossible()
+=======
+            configuration: .init(
+                offering: offering,
+                fonts: fonts,
+                displayCloseButton: displayCloseButton
+            )
         )
-        self.mode = mode
-        self.fonts = fonts
-        self.displayCloseButton = displayCloseButton
+    }
+
+    init(configuration: PaywallViewConfiguration) {
+        self._introEligibility = .init(wrappedValue: configuration.introEligibility ?? .default())
+        self._purchaseHandler = .init(wrappedValue: configuration.purchaseHandler ?? .default())
+        self._offering = .init(
+            initialValue: configuration.content.extractInitialOffering()
+        )
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+        self._customerInfo = .init(
+            initialValue: configuration.customerInfo ?? Self.loadCachedCustomerInfoIfPossible()
+        )
+        self.contentToDisplay = configuration.content
+        self.mode = configuration.mode
+        self.fonts = configuration.fonts
+        self.displayCloseButton = configuration.displayCloseButton
     }
 
     // swiftlint:disable:next missing_docs
@@ -186,11 +212,15 @@ public struct PaywallView: View {
                                 }
 
                                 if self.offering == nil {
+<<<<<<< HEAD
                                     let allOfferings = try await Purchases.shared.offerings()
                                     guard let offering = offeringSelection?(allOfferings) ?? allOfferings.current else {
                                         throw PaywallError.noCurrentOffering
                                     }
                                     self.offering = offering
+=======
+                                    self.offering = try await self.loadOffering()
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
                                 }
 
                                 if self.customerInfo == nil {
@@ -242,6 +272,8 @@ public struct PaywallView: View {
         }
     }
 
+    // MARK: -
+
     private static let transition: AnyTransition = .opacity.animation(Constants.defaultAnimation)
 
 }
@@ -259,7 +291,37 @@ private extension PaywallView {
         }
     }
 
-    static func loadCachedCurrentOfferingIfPossible() -> Offering? {
+    func loadOffering() async throws -> Offering {
+        switch self.contentToDisplay {
+        case let .offering(offering):
+            return offering
+
+        case .defaultOffering:
+            return try await Purchases.shared.offerings().current.orThrow(PaywallError.noCurrentOffering)
+
+        case let .offeringIdentifier(identifier):
+            return try await Purchases.shared.offerings()
+                .offering(identifier: identifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+        }
+    }
+
+}
+
+// MARK: -
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension PaywallViewConfiguration.Content {
+
+    func extractInitialOffering() -> Offering? {
+        switch self {
+        case let .offering(offering): return offering
+        case .defaultOffering: return Self.loadCachedCurrentOfferingIfPossible()
+        case .offeringIdentifier: return nil
+        }
+    }
+
+    private static func loadCachedCurrentOfferingIfPossible() -> Offering? {
         if Purchases.isConfigured {
             return Purchases.shared.cachedOfferings?.current
         } else {
@@ -325,12 +387,23 @@ struct LoadedOfferingPaywallView: View {
     var body: some View {
         // Note: preferences need to be applied after `.toolbar` call
         self.content
+            .preference(key: PurchaseInProgressPreferenceKey.self,
+                        value: self.purchaseHandler.packageBeingPurchased)
             .preference(key: PurchasedResultPreferenceKey.self,
                         value: .init(data: self.purchaseHandler.purchaseResult))
             .preference(key: RestoredCustomerInfoPreferenceKey.self,
                         value: self.purchaseHandler.restoredCustomerInfo)
+<<<<<<< HEAD
             .preference(key: InitiatedPurchaseWithSelectedPackagePreferenceKey.self,
                         value: self.purchaseHandler.selectedPackage)
+=======
+            .preference(key: RestoreInProgressPreferenceKey.self,
+                        value: self.purchaseHandler.restoreInProgress)
+            .preference(key: PurchaseErrorPreferenceKey.self,
+                        value: self.purchaseHandler.purchaseError as NSError?)
+            .preference(key: RestoreErrorPreferenceKey.self,
+                        value: self.purchaseHandler.restoreError as NSError?)
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     }
 
     @ViewBuilder
@@ -349,7 +422,7 @@ struct LoadedOfferingPaywallView: View {
             .onAppear { self.purchaseHandler.trackPaywallImpression(self.createEventData()) }
             .onDisappear { self.purchaseHandler.trackPaywallClose() }
             .onChangeOf(self.purchaseHandler.purchased) { purchased in
-                if purchased {
+                if self.mode.isFullScreen, purchased {
                     Logger.debug(Strings.dismissing_paywall)
                     self.dismiss()
                 }
@@ -429,12 +502,22 @@ struct PaywallView_Previews: PreviewProvider {
         ForEach(Self.offerings, id: \.self) { offering in
             ForEach(Self.modes, id: \.self) { mode in
                 PaywallView(
+<<<<<<< HEAD
                     offering: offering,
                     offeringSelection: nil,
                     customerInfo: TestData.customerInfo,
                     mode: mode,
                     introEligibility: PreviewHelpers.introEligibilityChecker,
                     purchaseHandler: PreviewHelpers.purchaseHandler
+=======
+                    configuration: .init(
+                        offering: offering,
+                        customerInfo: TestData.customerInfo,
+                        mode: mode,
+                        introEligibility: PreviewHelpers.introEligibilityChecker,
+                        purchaseHandler: PreviewHelpers.purchaseHandler
+                    )
+>>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
                 )
                 .previewLayout(mode.layout)
                 .previewDisplayName("\(offering.paywall?.templateName ?? "")-\(mode)")

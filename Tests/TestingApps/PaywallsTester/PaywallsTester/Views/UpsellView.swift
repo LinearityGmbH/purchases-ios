@@ -1,5 +1,5 @@
 //
-//  LockedView.swift
+//  UpsellView.swift
 //  PaywallsTester
 //
 //  Created by Andrés Boedo on 9/28/23.
@@ -22,8 +22,26 @@ struct UpsellView: View {
         .padding()
         .presentPaywallIfNeeded(
             requiredEntitlementIdentifier: Configuration.entitlement,
+            purchaseStarted: {
+                print("Purchase started")
+            },
+            purchaseCompleted: { _ in
+                print("Purchase completed")
+            },
+            purchaseCancelled: {
+                print("Purchase cancelled")
+            },
             onDismiss: {
                 print("Paywall dismissed")
+            },
+            onRestoreCompleted: { _ in
+                print("Restore completed")
+            },
+            onRestoreStarted: {
+                print("Restore started")
+            },
+            onRestoreFailure: {
+                print("Restore failed")
             }
         )
     }
