@@ -63,20 +63,11 @@ public struct PaywallView: View {
         purchaseHandler: PurchaseHandler
     ) {
         self.init(
-<<<<<<< HEAD
-            offering: nil,
-            offeringSelection: nil,
-            customerInfo: nil,
-            fonts: fonts,
-            displayCloseButton: displayCloseButton,
-            introEligibility: nil,
-            purchaseHandler: purchaseHandler
-=======
             configuration: .init(
                 fonts: fonts,
-                displayCloseButton: displayCloseButton
+                displayCloseButton: displayCloseButton,
+                purchaseHandler: purchaseHandler
             )
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         )
     }
 
@@ -97,16 +88,15 @@ public struct PaywallView: View {
         purchaseHandler: PurchaseHandler
     ) {
         self.init(
-<<<<<<< HEAD
-            offering: offering,
-            offeringSelection: nil,
-            customerInfo: nil,
-            fonts: fonts,
-            displayCloseButton: displayCloseButton,
-            introEligibility: nil,
-            purchaseHandler: purchaseHandler
+            configuration: .init(
+                offering: offering,
+                fonts: fonts,
+                displayCloseButton: displayCloseButton,
+                purchaseHandler: purchaseHandler
+            )
         )
     }
+
     
     /// Create a view to display the paywall with an opportunity to select a specific `Offering`.
     ///
@@ -125,45 +115,11 @@ public struct PaywallView: View {
         purchaseHandler: PurchaseHandler
     ) {
         self.init(
-            offering: nil,
-            offeringSelection: offeringSelection,
-            customerInfo: nil,
-            fonts: fonts,
-            displayCloseButton: displayCloseButton,
-            introEligibility: nil,
-            purchaseHandler: purchaseHandler
-        )
-    }
-
-    init(
-        offering: Offering?,
-        offeringSelection: ((Offerings) -> Offering?)?,
-        customerInfo: CustomerInfo?,
-        mode: PaywallViewMode = .default,
-        fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false,
-        introEligibility: TrialOrIntroEligibilityChecker?,
-        purchaseHandler: PurchaseHandler
-    ) {
-        self._introEligibility = .init(wrappedValue: introEligibility ?? .default())
-        self._purchaseHandler = .init(wrappedValue: purchaseHandler)
-        self._offeringSelection = .init(wrappedValue: offeringSelection)
-        var initialOffering: Offering?
-        if let offering {
-            initialOffering = offering
-        } else if let offeringSelection {
-            if Purchases.isConfigured, let cachedOfferings = Purchases.shared.cachedOfferings {
-                initialOffering = offeringSelection(cachedOfferings)
-            }
-        } else {
-            initialOffering = Self.loadCachedCurrentOfferingIfPossible()
-        }
-        self._offering = .init(initialValue: initialOffering)
-=======
             configuration: .init(
-                offering: offering,
+                offeringSelection: offeringSelection,
                 fonts: fonts,
-                displayCloseButton: displayCloseButton
+                displayCloseButton: displayCloseButton,
+                purchaseHandler: purchaseHandler
             )
         )
     }
@@ -174,7 +130,7 @@ public struct PaywallView: View {
         self._offering = .init(
             initialValue: configuration.content.extractInitialOffering()
         )
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+        self._offeringSelection = .init(wrappedValue: configuration.offeringSelection)
         self._customerInfo = .init(
             initialValue: configuration.customerInfo ?? Self.loadCachedCustomerInfoIfPossible()
         )
@@ -212,15 +168,13 @@ public struct PaywallView: View {
                                 }
 
                                 if self.offering == nil {
-<<<<<<< HEAD
                                     let allOfferings = try await Purchases.shared.offerings()
+
                                     guard let offering = offeringSelection?(allOfferings) ?? allOfferings.current else {
                                         throw PaywallError.noCurrentOffering
                                     }
+
                                     self.offering = offering
-=======
-                                    self.offering = try await self.loadOffering()
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
                                 }
 
                                 if self.customerInfo == nil {
@@ -393,17 +347,14 @@ struct LoadedOfferingPaywallView: View {
                         value: .init(data: self.purchaseHandler.purchaseResult))
             .preference(key: RestoredCustomerInfoPreferenceKey.self,
                         value: self.purchaseHandler.restoredCustomerInfo)
-<<<<<<< HEAD
-            .preference(key: InitiatedPurchaseWithSelectedPackagePreferenceKey.self,
-                        value: self.purchaseHandler.selectedPackage)
-=======
             .preference(key: RestoreInProgressPreferenceKey.self,
                         value: self.purchaseHandler.restoreInProgress)
             .preference(key: PurchaseErrorPreferenceKey.self,
                         value: self.purchaseHandler.purchaseError as NSError?)
             .preference(key: RestoreErrorPreferenceKey.self,
                         value: self.purchaseHandler.restoreError as NSError?)
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+            .preference(key: InitiatedPurchaseWithSelectedPackagePreferenceKey.self,
+                        value: self.purchaseHandler.selectedPackage)
     }
 
     @ViewBuilder
@@ -502,22 +453,14 @@ struct PaywallView_Previews: PreviewProvider {
         ForEach(Self.offerings, id: \.self) { offering in
             ForEach(Self.modes, id: \.self) { mode in
                 PaywallView(
-<<<<<<< HEAD
-                    offering: offering,
-                    offeringSelection: nil,
-                    customerInfo: TestData.customerInfo,
-                    mode: mode,
-                    introEligibility: PreviewHelpers.introEligibilityChecker,
-                    purchaseHandler: PreviewHelpers.purchaseHandler
-=======
                     configuration: .init(
                         offering: offering,
+                        offeringSelection: nil,
                         customerInfo: TestData.customerInfo,
                         mode: mode,
                         introEligibility: PreviewHelpers.introEligibilityChecker,
                         purchaseHandler: PreviewHelpers.purchaseHandler
                     )
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
                 )
                 .previewLayout(mode.layout)
                 .previewDisplayName("\(offering.paywall?.templateName ?? "")-\(mode)")
