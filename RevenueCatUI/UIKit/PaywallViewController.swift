@@ -35,39 +35,22 @@ public class PaywallViewController: UIViewController {
         }
     }
 
-<<<<<<< HEAD
-    private let offering: Offering?
-    private let offeringSelection: ((Offerings) -> Offering?)?
-    private let displayCloseButton: Bool
     private let refreshSubscriptions: () async throws -> Void
 
-=======
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     /// Initialize a `PaywallViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
     /// `Offerings.current` will be used by default.
     /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
-<<<<<<< HEAD
-    public init(
-=======
-    @objc
     public convenience init(
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         offering: Offering? = nil,
-        offeringSelection: ((Offerings) -> Offering?)? = nil,
         displayCloseButton: Bool = false,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
-<<<<<<< HEAD
-        self.offering = offering
-        self.offeringSelection = offeringSelection
-        self.displayCloseButton = displayCloseButton
-        self.refreshSubscriptions = refreshSubscriptions
-=======
         self.init(
             offering: offering,
             fonts: DefaultPaywallFontProvider(),
-            displayCloseButton: displayCloseButton
+            displayCloseButton: displayCloseButton,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -79,12 +62,14 @@ public class PaywallViewController: UIViewController {
     public convenience init(
         offering: Offering? = nil,
         fonts: PaywallFontProvider,
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.init(
             content: .optionalOffering(offering),
             fonts: fonts,
-            displayCloseButton: displayCloseButton
+            displayCloseButton: displayCloseButton,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -95,19 +80,22 @@ public class PaywallViewController: UIViewController {
     public convenience init(
         offeringIdentifier: String,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.init(
             content: .offeringIdentifier(offeringIdentifier),
             fonts: fonts,
-            displayCloseButton: displayCloseButton
+            displayCloseButton: displayCloseButton,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
     init(
         content: PaywallViewConfiguration.Content,
         fonts: PaywallFontProvider,
-        displayCloseButton: Bool
+        displayCloseButton: Bool,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) {
         self.configuration = .init(
             content: content,
@@ -115,7 +103,7 @@ public class PaywallViewController: UIViewController {
             fonts: fonts,
             displayCloseButton: displayCloseButton
         )
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+        self.refreshSubscriptions = refreshSubscriptions
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -125,42 +113,6 @@ public class PaywallViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-<<<<<<< HEAD
-    private lazy var hostingController: UIHostingController<some View> = {
-        let purchaseHandler = PurchaseHandler()
-        purchaseHandler.refreshSubscriptions = refreshSubscriptions
-        let view = PaywallView(offering: self.offering,
-                               offeringSelection: self.offeringSelection,
-                               customerInfo: nil,
-                               mode: self.mode,
-                               displayCloseButton: self.displayCloseButton,
-                               introEligibility: nil,
-                               purchaseHandler: purchaseHandler)
-            .onPurchaseCompleted { [weak self] transaction, customerInfo in
-                guard let self = self else { return }
-                self.delegate?.paywallViewController?(self, didFinishPurchasingWith: customerInfo)
-                self.delegate?.paywallViewController?(self,
-                                                      didFinishPurchasingWith: customerInfo,
-                                                      transaction: transaction)
-            }
-            .onRestoreCompleted { [weak self] customerInfo in
-                guard let self = self else { return }
-                self.delegate?.paywallViewController?(self, didFinishRestoringWith: customerInfo)
-            }
-            .onSizeChange { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.paywallViewController?(self, didChangeSizeTo: $0)
-            }
-            .onPurchaseInitiated { [weak self] selectedPackage in
-                guard let self = self else { return }
-                self.delegate?.paywallViewController?(self, didInitiatePurchaseWithSelectedPackage: selectedPackage)
-            }
-
-        return .init(rootView: view)
-    }()
-
-=======
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     public override func loadView() {
         super.loadView()
 
@@ -174,12 +126,11 @@ public class PaywallViewController: UIViewController {
         super.viewDidDisappear(animated)
     }
 
-<<<<<<< HEAD
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         delegate?.paywallViewControllerDidAppear?(self)
     }
-=======
+
     /// - Warning: For internal use only
     @objc(updateWithOffering:)
     public func update(with offering: Offering) {
@@ -236,8 +187,6 @@ public class PaywallViewController: UIViewController {
             ])
         }
     }
-
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 }
 
 // MARK: - PaywallViewControllerDelegate
@@ -317,8 +266,10 @@ public protocol PaywallViewControllerDelegate: AnyObject {
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, *)
 private extension PaywallViewController {
-
     func createHostingController() -> UIHostingController<PaywallContainerView> {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions // ASPETTA GLI INIT
+
         let container = PaywallContainerView(
             configuration: self.configuration,
             purchaseStarted: { [weak self] package in

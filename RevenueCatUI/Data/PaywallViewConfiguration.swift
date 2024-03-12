@@ -14,7 +14,6 @@ import RevenueCat
 struct PaywallViewConfiguration {
 
     var content: Content
-    var offeringSelection: ((Offerings) -> Offering?)?
     var customerInfo: CustomerInfo?
     var mode: PaywallViewMode
     var fonts: PaywallFontProvider
@@ -24,7 +23,6 @@ struct PaywallViewConfiguration {
 
     init(
         content: Content,
-        offeringSelection: ((Offerings) -> Offering?)?,
         customerInfo: CustomerInfo? = nil,
         mode: PaywallViewMode = .default,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
@@ -33,7 +31,6 @@ struct PaywallViewConfiguration {
         purchaseHandler: PurchaseHandler? = nil
     ) {
         self.content = content
-        self.offeringSelection = offeringSelection
         self.customerInfo = customerInfo
         self.mode = mode
         self.fonts = fonts
@@ -65,7 +62,6 @@ extension PaywallViewConfiguration {
 
     init(
         offering: Offering? = nil,
-        offeringSelection: ((Offerings) -> Offering?)? = nil,
         customerInfo: CustomerInfo? = nil,
         mode: PaywallViewMode = .default,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
@@ -75,7 +71,6 @@ extension PaywallViewConfiguration {
     ) {
         self.init(
             content: .optionalOffering(offering),
-            offeringSelection: offeringSelection,
             customerInfo: customerInfo,
             mode: mode,
             fonts: fonts,

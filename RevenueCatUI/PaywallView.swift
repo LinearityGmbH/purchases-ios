@@ -42,8 +42,6 @@ public struct PaywallView: View {
     @State
     private var offering: Offering?
     @State
-    private var offeringSelection: ((Offerings) -> Offering?)?
-    @State
     private var customerInfo: CustomerInfo?
     @State
     private var error: NSError?
@@ -97,40 +95,12 @@ public struct PaywallView: View {
         )
     }
 
-    
-    /// Create a view to display the paywall with an opportunity to select a specific `Offering`.
-    ///
-    /// - Parameter offeringSelection: The closure allowing to select a specific `Offering`
-    /// containing the desired `PaywallData` to display.
-    /// - Parameter fonts: An optional `PaywallFontProvider`.
-    /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
-    ///
-    /// - Note: Returning `nil` from the `offeringSelection` closure will fall back to displaying a default paywall.
-    /// - Note: Specifying this parameter means that it will ignore the offering configured in an active experiment.
-    /// - Warning: `Purchases` must have been configured prior to displaying it.
-    public init(
-        offeringSelection: @escaping (Offerings) -> Offering?,
-        fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
-        displayCloseButton: Bool = false,
-        purchaseHandler: PurchaseHandler
-    ) {
-        self.init(
-            configuration: .init(
-                offeringSelection: offeringSelection,
-                fonts: fonts,
-                displayCloseButton: displayCloseButton,
-                purchaseHandler: purchaseHandler
-            )
-        )
-    }
-
     init(configuration: PaywallViewConfiguration) {
         self._introEligibility = .init(wrappedValue: configuration.introEligibility ?? .default())
         self._purchaseHandler = .init(wrappedValue: configuration.purchaseHandler ?? .default())
         self._offering = .init(
             initialValue: configuration.content.extractInitialOffering()
         )
-        self._offeringSelection = .init(wrappedValue: configuration.offeringSelection)
         self._customerInfo = .init(
             initialValue: configuration.customerInfo ?? Self.loadCachedCustomerInfoIfPossible()
         )
@@ -168,13 +138,7 @@ public struct PaywallView: View {
                                 }
 
                                 if self.offering == nil {
-                                    let allOfferings = try await Purchases.shared.offerings()
-
-                                    guard let offering = offeringSelection?(allOfferings) ?? allOfferings.current else {
-                                        throw PaywallError.noCurrentOffering
-                                    }
-
-                                    self.offering = offering
+                                    self.offering = try await self.loadOffering()
                                 }
 
                                 if self.customerInfo == nil {
@@ -455,7 +419,6 @@ struct PaywallView_Previews: PreviewProvider {
                 PaywallView(
                     configuration: .init(
                         offering: offering,
-                        offeringSelection: nil,
                         customerInfo: TestData.customerInfo,
                         mode: mode,
                         introEligibility: PreviewHelpers.introEligibilityChecker,
