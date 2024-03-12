@@ -84,7 +84,8 @@ extension View {
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil
+        onDismiss: (() -> Void)? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         return self.presentPaywallIfNeeded(
             requiredEntitlementIdentifier: requiredEntitlementIdentifier,
@@ -100,7 +101,8 @@ extension View {
             restoreCompleted: restoreCompleted,
             purchaseFailure: purchaseFailure,
             restoreFailure: restoreFailure,
-            onDismiss: onDismiss
+            onDismiss: onDismiss,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -135,14 +137,10 @@ extension View {
         purchaseCancelled: PurchaseCancelledHandler? = nil,
         restoreStarted: RestoreStartedHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-<<<<<<< HEAD
-        onDismiss: (() -> Void)? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
-=======
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+        onDismiss: (() -> Void)? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         return self.presentPaywallIfNeeded(
             offering: offering,
@@ -158,14 +156,10 @@ extension View {
             purchaseCompleted: purchaseCompleted,
             purchaseCancelled: purchaseCancelled,
             restoreCompleted: restoreCompleted,
-<<<<<<< HEAD
-            onDismiss: onDismiss,
-            refreshSubscriptions: refreshSubscriptions
-=======
             purchaseFailure: purchaseFailure,
             restoreFailure: restoreFailure,
-            onDismiss: onDismiss
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+            onDismiss: onDismiss,
+            refreshSubscriptions: refreshSubscriptions
         )
     }
 
@@ -221,25 +215,18 @@ extension View {
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseCancelled: PurchaseCancelledHandler? = nil,
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
-<<<<<<< HEAD
-        onDismiss: (() -> Void)? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
-=======
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+        onDismiss: (() -> Void)? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
         let purchaseHandler = PurchaseHandler()
         purchaseHandler.refreshSubscriptions = refreshSubscriptions
         return self.presentPaywallIfNeeded(
             offering: offering,
             fonts: fonts,
-<<<<<<< HEAD
-            purchaseHandler: purchaseHandler, 
-=======
+            purchaseHandler: purchaseHandler,
             presentationMode: presentationMode,
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
             shouldDisplay: shouldDisplay,
             purchaseStarted: { _ in
                 purchaseStarted()
@@ -311,11 +298,15 @@ extension View {
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil
+        onDismiss: (() -> Void)? = nil,
+        refreshSubscriptions: @escaping () async throws -> Void
     ) -> some View {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         return self.presentPaywallIfNeeded(
             offering: offering,
             fonts: fonts,
+            purchaseHandler: purchaseHandler,
             presentationMode: presentationMode,
             shouldDisplay: shouldDisplay,
             purchaseStarted: purchaseStarted,
@@ -341,12 +332,8 @@ extension View {
         offering: Offering? = nil,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         introEligibility: TrialOrIntroEligibilityChecker? = nil,
-<<<<<<< HEAD
-        purchaseHandler: PurchaseHandler,
-=======
         purchaseHandler: PurchaseHandler? = nil,
         presentationMode: PaywallPresentationMode = .default,
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
         shouldDisplay: @escaping @Sendable (CustomerInfo) -> Bool,
         purchaseStarted: PurchaseOfPackageStartedHandler? = nil,
         purchaseCompleted: PurchaseOrRestoreCompletedHandler? = nil,
@@ -401,19 +388,11 @@ private struct PresentingPaywallModifier: ViewModifier {
     var restoreFailure: PurchaseFailureHandler?
     var onDismiss: (() -> Void)?
 
-<<<<<<< HEAD
-    var offering: Offering?
-    var offeringSelection: ((Offerings) -> Offering?)?
-=======
     var content: PaywallViewConfiguration.Content
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
     var fontProvider: PaywallFontProvider
 
     var customerInfoFetcher: View.CustomerInfoFetcher
     var introEligibility: TrialOrIntroEligibilityChecker?
-<<<<<<< HEAD
-    var purchaseHandler: PurchaseHandler
-=======
 
     init(
         shouldDisplay: @escaping @Sendable (CustomerInfo) -> Bool,
@@ -451,33 +430,11 @@ private struct PresentingPaywallModifier: ViewModifier {
 
     @StateObject
     private var purchaseHandler: PurchaseHandler
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 
     @State
     private var data: Data?
 
     func body(content: Content) -> some View {
-<<<<<<< HEAD
-        content
-            .sheet(item: self.$data, onDismiss: self.onDismiss) { data in
-                PaywallView(
-                    offering: self.offering,
-                    offeringSelection: self.offeringSelection,
-                    customerInfo: data.customerInfo,
-                    fonts: self.fontProvider,
-                    displayCloseButton: true,
-                    introEligibility: self.introEligibility,
-                    purchaseHandler: self.purchaseHandler
-                )
-                .onPurchaseCompleted {
-                    self.purchaseCompleted?($0)
-                }
-                .onRestoreCompleted { customerInfo in
-                    self.restoreCompleted?(customerInfo)
-
-                    if !self.shouldDisplay(customerInfo) {
-                        self.close()
-=======
         Group {
             switch presentationMode {
             case .sheet:
@@ -489,7 +446,6 @@ private struct PresentingPaywallModifier: ViewModifier {
                 content
                     .fullScreenCover(item: self.$data, onDismiss: self.onDismiss) { data in
                         self.paywallView(data)
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
                     }
             }
         }
