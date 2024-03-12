@@ -293,8 +293,6 @@ private struct OnPurchaseStartedModifier: ViewModifier {
                 }
             }
     }
-
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -374,8 +372,7 @@ private struct OnRestoreCompletedModifier: ViewModifier {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-<<<<<<< HEAD
-private struct OnPurchaseInitiatedModifier: ViewModifier {
+private struct OnPurchaseInitiatedModifier: ViewModifier { // VERIFICARE SE E' ANCORA VALIDA
 
     let handler: PurchaseInitiationHandler
 
@@ -387,7 +384,9 @@ private struct OnPurchaseInitiatedModifier: ViewModifier {
                 }
             }
     }
-=======
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 private struct PurchaseFailureModifier: ViewModifier {
 
     let handler: PurchaseFailureHandler
@@ -416,6 +415,4 @@ private struct RestoreFailureModifier: ViewModifier {
                 }
             }
     }
-
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
 }
