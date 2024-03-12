@@ -30,65 +30,50 @@ public final class PaywallFooterViewController: PaywallViewController {
     /// Initialize a `PaywallFooterViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
     /// `Offerings.current` will be used by default.
-<<<<<<< HEAD
     public init(
         offering: Offering? = nil,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
-        super.init(
-            offering: offering,
-            displayCloseButton: false,
-            refreshSubscriptions: refreshSubscriptions
-        )
-=======
-    @objc
-    public init(offering: Offering? = nil) {
         super.init(content: .optionalOffering(offering),
                    fonts: DefaultPaywallFontProvider(),
-                   displayCloseButton: false)
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
     }
 
     /// Initialize a `PaywallFooterViewController` with an `Offering` identifier.
-    @objc
-    public init(offeringIdentifier: String) {
+    public init(
+        offeringIdentifier: String,
+        refreshSubscriptions: @escaping () async throws -> Void
+    ) {
         super.init(content: .offeringIdentifier(offeringIdentifier),
                    fonts: DefaultPaywallFontProvider(),
-                   displayCloseButton: false)
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
     }
 
     /// Initialize a `PaywallFooterViewController` with an `offeringIdentifier` and custom `fontName`.
     /// - Parameter fontName: a custom font name for this paywall. See ``CustomPaywallFontProvider``.
-    @objc
-    public init(offeringIdentifier: String, fontName: String) {
+    public init(
+        offeringIdentifier: String, fontName: String,
+        refreshSubscriptions: @escaping () async throws -> Void
+    ) {
         super.init(content: .offeringIdentifier(offeringIdentifier),
                    fonts: CustomPaywallFontProvider(fontName: fontName),
-                   displayCloseButton: false)
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
     }
 
     @available(*, unavailable)
     override init(
-<<<<<<< HEAD
-        offering: Offering? = nil,
-        offeringSelection: ((Offerings) -> Offering?)? = nil,
+        content: PaywallViewConfiguration.Content,
+        fonts: PaywallFontProvider,
         displayCloseButton: Bool = false,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
-        super.init(
-            offering: offering,
-            offeringSelection: offeringSelection,
-            displayCloseButton: false,
-            refreshSubscriptions: refreshSubscriptions
-        )
-=======
-        content: PaywallViewConfiguration.Content,
-        fonts: PaywallFontProvider,
-        displayCloseButton: Bool = false
-    ) {
         super.init(content: content,
                    fonts: fonts,
-                   displayCloseButton: false)
->>>>>>> 9c0d2b825abfea95ccbedd371bcd4605f7bdc48c
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
     }
 
     // swiftlint:disable:next missing_docs
