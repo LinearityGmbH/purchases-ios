@@ -234,7 +234,7 @@ private extension OfferingsManager {
             if let createdOfferings = self.offeringsFactory.createOfferings(from: productsByID, data: response) {
                 completion(.success(createdOfferings))
             } else {
-				var userInfo = userInfo(for: response)
+				let userInfo = userInfo(for: response)
 				sendError(
 					GenericError(title: Strings.offering.cannot_find_product_configuration_error(
 						identifiers: missingProductIDs

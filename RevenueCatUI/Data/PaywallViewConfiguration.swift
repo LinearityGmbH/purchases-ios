@@ -50,7 +50,7 @@ extension PaywallViewConfiguration {
         case defaultOffering
         case offering(Offering)
         case offeringIdentifier(String)
-        case offeringPlacement(String)
+        case offeringPlacementIdentifier(String)
 
     }
 
