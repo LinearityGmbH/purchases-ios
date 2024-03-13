@@ -91,6 +91,24 @@ public class PaywallViewController: UIViewController {
         )
     }
 
+    /// Initialize a `PaywallViewController` with an offering identifier.
+    /// - Parameter placementidentifier: The identifier for the placement with `PaywallData` to display.
+    /// - Parameter fonts: A ``PaywallFontProvider``.
+    /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
+    public convenience init(
+        placementidentifier: String,
+        fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void
+    ) {
+        self.init(
+            content: .offeringPlacement(placementidentifier),
+            fonts: fonts,
+            displayCloseButton: displayCloseButton,
+            refreshSubscriptions: refreshSubscriptions
+        )
+    }
+
     init(
         content: PaywallViewConfiguration.Content,
         fonts: PaywallFontProvider,
