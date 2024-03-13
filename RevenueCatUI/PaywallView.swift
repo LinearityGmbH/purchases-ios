@@ -121,14 +121,14 @@ public struct PaywallView: View {
     private var content: some View {
         VStack { // Necessary to work around FB12674350 and FB12787354
             if self.introEligibility.isConfigured, self.purchaseHandler.isConfigured {
-                if let offering = self.offering, let customerInfo = self.customerInfo {
-                    self.paywallView(for: offering,
-                                     activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
-                                     fonts: self.fonts,
-                                     checker: self.introEligibility,
-                                     purchaseHandler: self.purchaseHandler)
-                    .transition(Self.transition)
-                } else {
+//                if let offering = self.offering, let customerInfo = self.customerInfo {
+//                    self.paywallView(for: offering,
+//                                     activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
+//                                     fonts: self.fonts,
+//                                     checker: self.introEligibility,
+//                                     purchaseHandler: self.purchaseHandler)
+//                    .transition(Self.transition)
+//                } else {
                     LoadingPaywallView(mode: self.mode, displayCloseButton: self.displayCloseButton)
                         .transition(Self.transition)
                         .task {
@@ -148,7 +148,7 @@ public struct PaywallView: View {
                                 self.error = error
                             }
                         }
-                }
+//                }
             } else {
                 DebugErrorView("Purchases has not been configured.", releaseBehavior: .fatalError)
             }
