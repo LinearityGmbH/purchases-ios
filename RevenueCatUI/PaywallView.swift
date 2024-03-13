@@ -221,6 +221,11 @@ private extension PaywallView {
             return try await Purchases.shared.offerings()
                 .offering(identifier: identifier)
                 .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+
+        case let .offeringPlacement(placementIdentifier):
+            return try await Purchases.shared.offerings()
+                .currentOffering(forPlacement: placementIdentifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier))
         }
     }
 
@@ -235,7 +240,7 @@ private extension PaywallViewConfiguration.Content {
         switch self {
         case let .offering(offering): return offering
         case .defaultOffering: return Self.loadCachedCurrentOfferingIfPossible()
-        case .offeringIdentifier: return nil
+        case .offeringIdentifier, .offeringPlacement: return nil
         }
     }
 
