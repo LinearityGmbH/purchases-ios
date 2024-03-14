@@ -29,7 +29,7 @@ public struct LocalizedAlertError: LocalizedError {
         errorDescription = "\(error.domain) \(error.code)"
         failureReason = switch error {
         case is ErrorCode:
-            error.description
+            "Error \(error.code): \(error.description)"
         default:
             error.localizedDescription
         }
