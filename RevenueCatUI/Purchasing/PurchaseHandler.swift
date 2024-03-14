@@ -331,16 +331,6 @@ struct RestoreErrorPreferenceKey: PreferenceKey {
     }
 }
 
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct InitiatedPurchaseWithSelectedPackagePreferenceKey: PreferenceKey {
-
-    static var defaultValue: Package?
-
-    static func reduce(value: inout Package?, nextValue: () -> Package?) {
-        value = nextValue()
-    }
-}
-
 // MARK: -
 
 private extension CustomerInfo {
