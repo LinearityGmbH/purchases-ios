@@ -115,11 +115,15 @@ public class PaywallViewController: UIViewController {
         displayCloseButton: Bool,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
+        let purchaseHandler = PurchaseHandler()
+        purchaseHandler.refreshSubscriptions = refreshSubscriptions
+
         self.configuration = .init(
             content: content,
             mode: Self.mode,
             fonts: fonts,
-            displayCloseButton: displayCloseButton
+            displayCloseButton: displayCloseButton,
+            purchaseHandler: purchaseHandler
         )
         self.refreshSubscriptions = refreshSubscriptions
 
@@ -280,9 +284,6 @@ public protocol PaywallViewControllerDelegate: AnyObject {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, *)
 private extension PaywallViewController {
     func createHostingController() -> UIHostingController<PaywallContainerView> {
-        let purchaseHandler = PurchaseHandler()
-        purchaseHandler.refreshSubscriptions = refreshSubscriptions // ASPETTA GLI INIT
-
         let container = PaywallContainerView(
             configuration: self.configuration,
             purchaseStarted: { [weak self] package in
