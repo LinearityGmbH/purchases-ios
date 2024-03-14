@@ -269,11 +269,6 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     @objc(paywallViewController:didChangeSizeTo:)
     optional func paywallViewController(_ controller: PaywallViewController,
                                         didChangeSizeTo size: CGSize)
-    
-    /// Notifies that a purchase has been initiated in a ``PaywallViewController``.
-    @objc(paywallViewController:didSelectPackage:)
-    optional func paywallViewController(_ controller: PaywallViewController,
-                                        didInitiatePurchaseWithSelectedPackage package: Package)
 
     /// Notifies ``PaywallViewController`` did appear.
     @objc(paywallViewControllerDidAppear:)
