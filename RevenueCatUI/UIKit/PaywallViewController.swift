@@ -35,8 +35,6 @@ public class PaywallViewController: UIViewController {
         }
     }
 
-    private let refreshSubscriptions: () async throws -> Void
-
     /// Initialize a `PaywallViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
     /// `Offerings.current` will be used by default.
@@ -125,7 +123,6 @@ public class PaywallViewController: UIViewController {
             displayCloseButton: displayCloseButton,
             purchaseHandler: purchaseHandler
         )
-        self.refreshSubscriptions = refreshSubscriptions
 
         super.init(nibName: nil, bundle: nil)
     }
