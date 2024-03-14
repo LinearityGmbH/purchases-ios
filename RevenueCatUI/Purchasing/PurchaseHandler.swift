@@ -46,9 +46,6 @@ public final class PurchaseHandler: ObservableObject {
     /// Set manually by `setRestored(:_)` once the user is notified that restoring was successful..
     @Published
     fileprivate(set) var restoredCustomerInfo: CustomerInfo?
-    
-    @Published
-    var selectedPackage: Package?
 
     /// Error produced during a purchase.
     @Published
@@ -100,7 +97,6 @@ extension PurchaseHandler {
         }
 
         do {
-            self.selectedPackage = package
             let result = try await self.purchases.purchase(package: package)
             self.purchaseResult = result
             try await refreshSubscriptions()

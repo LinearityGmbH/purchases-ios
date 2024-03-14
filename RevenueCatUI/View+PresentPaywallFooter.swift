@@ -155,7 +155,6 @@ extension View {
     /// [Documentation](https://rev.cat/paywalls)
     public func paywallFooter(
         offering: Offering,
-        offeringSelection: ((Offerings) -> Offering?)? = nil,
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         purchaseStarted: PurchaseOfPackageStartedHandler? = nil,
@@ -168,7 +167,6 @@ extension View {
     ) -> some View {
         return self.paywallFooter(
             offering: offering,
-            offeringSelection: offeringSelection,
             customerInfo: nil,
             condensed: condensed,
             fonts: fonts,
@@ -185,7 +183,6 @@ extension View {
 
     func paywallFooter(
         offering: Offering?,
-        offeringSelection: ((Offerings) -> Offering?)? = nil,
         customerInfo: CustomerInfo?,
         condensed: Bool = false,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
