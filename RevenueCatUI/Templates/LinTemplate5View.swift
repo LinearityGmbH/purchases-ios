@@ -59,7 +59,7 @@ struct LinTemplate5View: TemplateViewType {
             self.scrollableContent
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
-                .scrollableIfNecessary(enabled: self.configuration.mode.isFullScreen)
+                .scrollableIfNecessaryWhenAvailable(enabled: self.configuration.mode.isFullScreen)
 
             self.subscribeButton
                 .frame(maxWidth: self.defaultContentWidth)
