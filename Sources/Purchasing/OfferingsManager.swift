@@ -15,6 +15,7 @@ import Foundation
 import StoreKit
 
 public let OfferingsErrorNotification = Notification.Name(rawValue: "Linearity.OfferingsError")
+// swiftlint:disable file_length
 
 class OfferingsManager {
 
@@ -42,17 +43,16 @@ class OfferingsManager {
     func offerings(
         appUserID: String,
         fetchPolicy: FetchPolicy = .default,
+        fetchCurrent: Bool = false,
         completion: (@MainActor @Sendable (Result<Offerings, Error>) -> Void)?
     ) {
-        guard let memoryCachedOfferings = self.cachedOfferings else {
-            Logger.debug(Strings.offering.no_cached_offerings_fetching_from_network)
+        guard !fetchCurrent else {
+            self.fetchFromNetwork(appUserID: appUserID, fetchPolicy: fetchPolicy, completion: completion)
+            return
+        }
 
-            self.systemInfo.isApplicationBackgrounded { isAppBackgrounded in
-                self.updateOfferingsCache(appUserID: appUserID,
-                                          isAppBackgrounded: isAppBackgrounded,
-                                          fetchPolicy: fetchPolicy,
-                                          completion: completion)
-            }
+        guard let memoryCachedOfferings = self.cachedOfferings else {
+            self.fetchFromNetwork(appUserID: appUserID, fetchPolicy: fetchPolicy, completion: completion)
             return
         }
 
@@ -132,6 +132,21 @@ class OfferingsManager {
 }
 
 private extension OfferingsManager {
+
+    func fetchFromNetwork(
+        appUserID: String,
+        fetchPolicy: FetchPolicy = .default,
+        completion: (@MainActor @Sendable (Result<Offerings, Error>) -> Void)?
+    ) {
+        Logger.debug(Strings.offering.no_cached_offerings_fetching_from_network)
+
+        self.systemInfo.isApplicationBackgrounded { isAppBackgrounded in
+            self.updateOfferingsCache(appUserID: appUserID,
+                                      isAppBackgrounded: isAppBackgrounded,
+                                      fetchPolicy: fetchPolicy,
+                                      completion: completion)
+        }
+    }
 
     func fetchCachedOfferingsFromDisk(
         appUserID: String,
@@ -219,7 +234,7 @@ private extension OfferingsManager {
             if let createdOfferings = self.offeringsFactory.createOfferings(from: productsByID, data: response) {
                 completion(.success(createdOfferings))
             } else {
-				var userInfo = userInfo(for: response)
+				let userInfo = userInfo(for: response)
 				sendError(
 					GenericError(title: Strings.offering.cannot_find_product_configuration_error(
 						identifiers: missingProductIDs

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "RevenueCat"
-  s.version          = "4.32.0-SNAPSHOT"
+  s.version          = "4.38.1"
   s.summary          = "Subscription and in-app-purchase backend service."
 
   s.description      = <<-DESC
@@ -20,8 +20,13 @@ Pod::Spec.new do |s|
   s.watchos.deployment_target = '6.2'
   s.tvos.deployment_target = '11.0'
   s.osx.deployment_target = '10.13'
+  s.visionos.deployment_target = '1.0'
   
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=xros*]' => '$(inherited) VISION_OS',
+    'SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=xrsimulator*]' => '$(inherited) VISION_OS',
+  }
 
   s.source_files = 'Sources/**/*.swift'
   s.exclude_files = 'Sources/LocalReceiptParsing/ReceiptParser-only-files/**'

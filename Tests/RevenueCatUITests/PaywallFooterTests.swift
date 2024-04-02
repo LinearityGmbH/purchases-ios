@@ -29,6 +29,26 @@ class PaywallFooterTests: TestCase {
         try AvailabilityChecks.iOS16APIAvailableOrSkipTest()
     }
 
+    func testPresentWithPurchaseStarted() throws {
+        var packageBeingPurchased: Package?
+
+        try Text("")
+            .paywallFooter(
+                offering: Self.offering,
+                customerInfo: TestData.customerInfo,
+                introEligibility: .producing(eligibility: .eligible),
+                purchaseHandler: Self.purchaseHandler,
+                purchaseStarted: { package in packageBeingPurchased = package }
+            )
+            .addToHierarchy()
+
+        Task {
+            _ = try await Self.purchaseHandler.purchase(package: Self.package)
+        }
+
+        expect(packageBeingPurchased).toEventually(be(Self.package))
+    }
+
     func testPresentWithPurchaseHandler() throws {
         var customerInfo: CustomerInfo?
 
@@ -49,6 +69,46 @@ class PaywallFooterTests: TestCase {
         expect(customerInfo).toEventually(be(TestData.customerInfo))
     }
 
+    func testPresentWithPurchaseFailureHandler() throws {
+        var error: NSError?
+
+        try Text("")
+            .paywallFooter(
+                offering: Self.offering,
+                customerInfo: TestData.customerInfo,
+                introEligibility: .producing(eligibility: .eligible),
+                purchaseHandler: Self.failingHandler,
+                purchaseFailure: { error = $0 }
+            )
+            .addToHierarchy()
+
+        Task {
+            _ = try? await Self.failingHandler.purchase(package: Self.package)
+        }
+
+        expect(error).toEventually(matchError(Self.failureError))
+    }
+
+    func testPresentWithRestoreStarted() throws {
+        var started = false
+
+        try Text("")
+            .paywallFooter(
+                offering: Self.offering,
+                customerInfo: TestData.customerInfo,
+                introEligibility: .producing(eligibility: .eligible),
+                purchaseHandler: Self.purchaseHandler,
+                restoreStarted: { started = true }
+            )
+            .addToHierarchy()
+
+        Task {
+            _ = try await Self.purchaseHandler.restorePurchases()
+        }
+
+        expect(started).toEventually(beTrue())
+    }
+
     func testPresentWithRestoreHandler() throws {
         var customerInfo: CustomerInfo?
 
@@ -64,14 +124,38 @@ class PaywallFooterTests: TestCase {
 
         Task {
             _ = try await Self.purchaseHandler.restorePurchases()
+            // Simulates what `RestorePurchasesButton` does after dismissing the alert.
+            Self.purchaseHandler.setRestored(TestData.customerInfo)
         }
 
         expect(customerInfo).toEventually(be(TestData.customerInfo))
     }
 
+    func testPresentWithRestoreFailureHandler() throws {
+        var error: NSError?
+
+        try Text("")
+            .paywallFooter(
+                offering: Self.offering,
+                customerInfo: TestData.customerInfo,
+                introEligibility: .producing(eligibility: .eligible),
+                purchaseHandler: Self.failingHandler,
+                restoreFailure: { error = $0 }
+            )
+            .addToHierarchy()
+
+        Task {
+            _ = try? await Self.failingHandler.restorePurchases()
+        }
+
+        expect(error).toEventually(matchError(Self.failureError))
+    }
+
     private static let purchaseHandler: PurchaseHandler = .mock()
+    private static let failingHandler: PurchaseHandler = .failing(failureError)
     private static let offering = TestData.offeringWithNoIntroOffer
     private static let package = TestData.annualPackage
+    private static let failureError: Error = ErrorCode.storeProblemError
 
 }
 

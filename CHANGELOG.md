@@ -1,3 +1,142 @@
+## 4.38.1
+### Bugfixes
+* Fix for passing `TargetingContext` when using `currentOffering(forPlacement:)` (#3751) via Josh Holtz (@joshdholtz)
+### Other Changes
+* Remove unneeded tests for StoreKit2 with JWS (#3747) via Josh Holtz (@joshdholtz)
+
+## 4.38.0
+### New Features
+* Paywalls: add `updateWithDisplayCloseButton` to `PaywallViewController` (#3708) via Cesar de la Vega (@vegaro)
+* New `syncAttributesAndOfferingsIfNeeded` method (#3709) via Burdock (@lburdock)
+* Add targeting to `PresentedOfferingContext` (#3730) via Josh Holtz (@joshdholtz)
+* Add `currentOffering(forPlacement: String)` to `Offerings` (#3707) via Guido Torres (@guido732)
+* New `Package.presentedOfferingContext` (#3712) via Josh Holtz (@joshdholtz)
+### Bugfixes
+*  Mark methods with StaticString for appUserID as deprecated (#3739) via Mark Villacampa (@MarkVillacampa)
+### Other Changes
+* [EXTERNAL] Spelling typo fix to comment (#3713) via @vdeaugustine (#3740) via Mark Villacampa (@MarkVillacampa)
+
+## 4.37.0
+### New Features
+* `Paywalls`: new `.onPurchaseStarted(package)` modifier (#3693) via Cesar de la Vega (@vegaro)
+* `Paywalls`: new `.onRestoreStarted` modifier (#3694)(#3698) via Cesar de la Vega (@vegaro)
+### Other Changes
+* Add more Paywalls API tests (#3697) via Cesar de la Vega (@vegaro)
+* `Paywalls`: Add `purchaseCancelled` parameter to `paywallFooter` modifier (#3692) via Toni Rico (@tonidero)
+
+## 4.36.3
+### RevenueCatUI
+* `Paywalls`: don't dismiss footer paywalls automatically (#3683) via NachoSoto (@NachoSoto)
+* `Paywalls`: fix `PaywallColor.init(light:dark:)` (#3685) via NachoSoto (@NachoSoto)
+* `Paywalls`: fix template 1 header overflow (#3678) via NachoSoto (@NachoSoto)
+### Other Changes
+* `CI`: skip `RevenueCatUI` API tests when generating snapshots (#3680) via NachoSoto (@NachoSoto)
+* `Paywalls`: improve `PreviewableTemplate`'s display name (#3682) via NachoSoto (@NachoSoto)
+* `CI`: split load shedder integration tests (#3675) via NachoSoto (@NachoSoto)
+* Run load shedder integration tests on release branches (#3673) via Toni Rico (@tonidero)
+
+## 4.36.2
+### RevenueCatUI
+* `Paywalls`: fix localization when installing through `CocoaPods` (#3670) via NachoSoto (@NachoSoto)
+
+## 4.36.1
+### RevenueCatUI
+* `Paywalls`: prioritize `Locale.current` over `Locale.preferredLocales` (#3657) via NachoSoto (@NachoSoto)
+* `Paywalls`: add logs for localization lookup (#3649) via NachoSoto (@NachoSoto)
+### Dependency Updates
+* Bump cocoapods from 1.15.1 to 1.15.2 (#3648) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* `Tests`: fix iOS 15 test crash (#3650) via NachoSoto (@NachoSoto)
+* `CircleCI`: remove duplicate `install-dependencies` (#3643) via NachoSoto (@NachoSoto)
+
+## 4.36.0
+_This release is compatible with `Xcode 15.3 beta 2`_
+
+### New Features
+* `NonSubscriptionTransaction`: expose `storeTransactionIdentifier` (#3639) via NachoSoto (@NachoSoto)
+### RevenueCatUI
+* `Paywalls`: new `presentationMode` parameter (by @Lascorbe) (#3638) via NachoSoto (@NachoSoto)
+### Bugfixes
+* Add explicit `visionOS` deployment target (#3642) via NachoSoto (@NachoSoto)
+### Dependency Updates
+* Bump cocoapods from 1.15.0 to 1.15.1 (#3637) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* `Xcode 15.3 beta 2`: remove `nonisolated` workaround (#3640) via NachoSoto (@NachoSoto)
+
+## 4.35.0
+### RevenueCatUI
+* `Paywalls`: fix finding locales with different regions (#3633) via NachoSoto (@NachoSoto)
+* `Paywalls`: add 4 new variables (#3629) via NachoSoto (@NachoSoto)
+* `Paywalls`: new `.onPurchaseStarted` modifier (#3627) via NachoSoto (@NachoSoto)
+* `PaywallViewController`: expose `fontName` for `CustomFontProvider` (by @Jjastiny) (#3628) via NachoSoto (@NachoSoto)
+### Dependency Updates
+* Bump danger from 9.4.2 to 9.4.3 (#3630) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* `Paywalls`: improve "offering has no configured paywall" error (#3625) via NachoSoto (@NachoSoto)
+
+## 4.34.0
+### New Features
+* `CustomerInfo`: conform to `Identifiable` (#3619) via NachoSoto (@NachoSoto)
+### RevenueCatUI
+* `Paywalls`: new `.onPurchaseFailure` and `.onRestoreFailure` modifiers (#3622) via NachoSoto (@NachoSoto)
+* `Paywalls`: `.onRestoreCompleted` is invoked after the restore dialog is dismissed (#3620) via NachoSoto (@NachoSoto)
+* `Paywalls`: disable interactive `sheet` dismissal during purchases (#3613) via NachoSoto (@NachoSoto)
+### Other Changes
+* `CircleCI`: push pods using Xcode 15 (#3614) via NachoSoto (@NachoSoto)
+
+## 4.33.0
+### New Features
+* `CocoaPods`: enabled `visionOS` (#3262) via NachoSoto (@NachoSoto)
+## 4.32.4
+### RevenueCatUI
+* `Paywalls`: fix template 5 scrolling on iOS 15 (#3608) via NachoSoto (@NachoSoto)
+* `Paywalls`: improve `PaywallData.config(for:)` disambiguation (#3605) via NachoSoto (@NachoSoto)
+### Dependency Updates
+* Bump cocoapods from 1.14.3 to 1.15.0 (#3607) via dependabot[bot] (@dependabot[bot])
+* Bump fastlane-plugin-revenuecat_internal from `e6ba247` to `9c82c7a` (#3606) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* `Integration Tests`: disable failure expectation on `iOS 17.4` (#3604) via NachoSoto (@NachoSoto)
+
+## 4.32.3
+### Bugfixes
+* `Xcode 15.3 beta 1`: fix compilation errors (#3599) via NachoSoto (@NachoSoto)
+### Other Changes
+* `Xcode 15.3 beta 1`: fix warnings on tests (#3600) via NachoSoto (@NachoSoto)
+
+## 4.32.2
+### Other Changes
+* `PaywallViewController`: methods for reconfiguring paywall with new offering (#3592) via NachoSoto (@NachoSoto)
+* `Integration Tests`: verify `PaywallData` images can be loaded (#3596) via NachoSoto (@NachoSoto)
+* Simplify `CocoapodsInstallation` `Podfile` (#3593) via NachoSoto (@NachoSoto)
+## 4.32.1
+### RevenueCatUI
+* `PaywallViewController`: new initializer with `Offering` identifier (#3587) via NachoSoto (@NachoSoto)
+* `Paywalls`: improve template 5 layout for long product names (#3589) via NachoSoto (@NachoSoto)
+### Other Changes
+* `Paywalls`: extracted `PaywallViewConfiguration` (#3586) via NachoSoto (@NachoSoto)
+* `CircleCI`: avoid installing `Xcodes` when not needed (#3585) via NachoSoto (@NachoSoto)
+* `CircleCI`: change all jobs to M1 (#3140) via NachoSoto (@NachoSoto)
+
+## 4.32.0
+### New Features
+* `StoreProduct`: add localized price per period strings (#3546) via Andy Boedo (@aboedo)
+### RevenueCatUI
+* `Paywalls`: new `.onPurchaseCancelled` and `paywallViewControllerDidCancelPurchase:` (#3578) via NachoSoto (@NachoSoto)
+* `Paywalls`: improve error display (#3577) via NachoSoto (@NachoSoto)
+### Dependency Updates
+* Bump fastlane-plugin-revenuecat_internal from `0ddee10` to `e6ba247` (#3575) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* `PurchaseTester`: improved `ReceiptInspector` so it accepts receipts with escape sequences (#3554) via Andy Boedo (@aboedo)
+
+## 4.31.9
+### RevenueCatUI
+* `PaywallViewController`: add `PaywallFontProvider` parameter (#3567) via NachoSoto (@NachoSoto)
+### Other Changes
+* `Integration Tests`: run on iOS 17 (#3107) via NachoSoto (@NachoSoto)
+* `CI`: update to Xcode 15.2 (#3571) via NachoSoto (@NachoSoto)
+* `PaywallViewControllerDelegate`: fixed typo in `@objc` method name (#3569) via NachoSoto (@NachoSoto)
+* `SandboxEnvironmentDetector`: more tests for `macOS` (#3568) via NachoSoto (@NachoSoto)
+
 ## 4.31.8
 ### RevenueCatUI
 * `Paywalls`: remove unscrollable spacing in Template 5 (#3562) via NachoSoto (@NachoSoto)

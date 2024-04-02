@@ -27,10 +27,6 @@ import UIKit
 @objc(RCPaywallFooterViewController)
 public final class PaywallFooterViewController: PaywallViewController {
 
-    override var mode: PaywallViewMode {
-        return .footer
-    }
-
     /// Initialize a `PaywallFooterViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
     /// `Offerings.current` will be used by default.
@@ -38,32 +34,57 @@ public final class PaywallFooterViewController: PaywallViewController {
         offering: Offering? = nil,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
-        super.init(
-            offering: offering,
-            displayCloseButton: false,
-            refreshSubscriptions: refreshSubscriptions
-        )
+        super.init(content: .optionalOffering(offering),
+                   fonts: DefaultPaywallFontProvider(),
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
+    }
+
+    /// Initialize a `PaywallFooterViewController` with an `Offering` identifier.
+    public init(
+        offeringIdentifier: String,
+        refreshSubscriptions: @escaping () async throws -> Void
+    ) {
+        super.init(content: .offeringIdentifier(offeringIdentifier),
+                   fonts: DefaultPaywallFontProvider(),
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
+    }
+
+    /// Initialize a `PaywallFooterViewController` with an `offeringIdentifier` and custom `fontName`.
+    /// - Parameter fontName: a custom font name for this paywall. See ``CustomPaywallFontProvider``.
+    public init(
+        offeringIdentifier: String, fontName: String,
+        refreshSubscriptions: @escaping () async throws -> Void
+    ) {
+        super.init(content: .offeringIdentifier(offeringIdentifier),
+                   fonts: CustomPaywallFontProvider(fontName: fontName),
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
     }
 
     @available(*, unavailable)
     override init(
-        offering: Offering? = nil,
-        offeringSelection: ((Offerings) -> Offering?)? = nil,
+        content: PaywallViewConfiguration.Content,
+        fonts: PaywallFontProvider,
         displayCloseButton: Bool = false,
         refreshSubscriptions: @escaping () async throws -> Void
     ) {
-        super.init(
-            offering: offering,
-            offeringSelection: offeringSelection,
-            displayCloseButton: false,
-            refreshSubscriptions: refreshSubscriptions
-        )
+        super.init(content: content,
+                   fonts: fonts,
+                   displayCloseButton: false,
+                   refreshSubscriptions: refreshSubscriptions)
     }
 
     // swiftlint:disable:next missing_docs
     public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    override class var mode: PaywallViewMode {
+        return .footer
+    }
+
 }
 
 #endif

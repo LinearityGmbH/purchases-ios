@@ -24,6 +24,10 @@ enum PaywallsStrings {
     case caching_presented_paywall
     case clearing_presented_paywall
 
+    case looking_up_localization(preferred: [Locale], search: [Locale])
+    case found_localization(Locale)
+    case fallback_localization(localeIdentifier: String)
+
     // MARK: - Events
 
     case event_manager_initialized
@@ -55,6 +59,16 @@ extension PaywallsStrings: LogMessage {
 
         case .clearing_presented_paywall:
             return "PurchasesOrchestrator: clearing presented paywall"
+
+        case let .looking_up_localization(preferred, search):
+            return "Looking up localized configuration for \(preferred.map(\.identifier)), " +
+            "searching for \(search.map(\.identifier))"
+
+        case let .found_localization(locale):
+            return "Found localized configuration for '\(locale.identifier)'"
+
+        case let .fallback_localization(localeIdentifier):
+            return "Failed looking up localization, using fallback: \(localeIdentifier)"
 
         // MARK: - Events
 

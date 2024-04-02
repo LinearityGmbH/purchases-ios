@@ -23,6 +23,10 @@ public final class PurchaseHandler: ObservableObject {
     /// `false` if this `PurchaseHandler` is not backend by a configured `Purchases`instance.
     let isConfigured: Bool
 
+    /// Whether a purchase is currently in progress
+    @Published
+    fileprivate(set) var packageBeingPurchased: Package?
+
     /// Whether a purchase or restore is currently in progress
     @Published
     fileprivate(set) var actionInProgress: Bool = false
@@ -35,16 +39,21 @@ public final class PurchaseHandler: ObservableObject {
     @Published
     fileprivate(set) var purchaseResult: PurchaseResultData?
 
-    /// Whether a restore was successfully completed.
+    /// Whether a restore is currently in progress
     @Published
-    fileprivate(set) var restored: Bool = false
+    fileprivate(set) var restoreInProgress: Bool = false
 
-    /// When `restored` becomes `true`, this will include the `CustomerInfo` associated to it.
+    /// Set manually by `setRestored(:_)` once the user is notified that restoring was successful..
     @Published
     fileprivate(set) var restoredCustomerInfo: CustomerInfo?
-    
+
+    /// Error produced during a purchase.
     @Published
-    var selectedPackage: Package?
+    fileprivate(set) var purchaseError: Error?
+
+    /// Error produced during restoring..
+    @Published
+    fileprivate(set) var restoreError: Error?
 
     private var eventData: PaywallEvent.Data?
     
@@ -77,44 +86,67 @@ extension PurchaseHandler {
 
     @MainActor
     func purchase(package: Package) async throws -> PurchaseResultData {
-        withAnimation(Constants.fastAnimation) {
-            self.actionInProgress = true
+        self.packageBeingPurchased = package
+        self.purchaseResult = nil
+        self.purchaseError = nil
+
+        self.startAction()
+        defer {
+            self.packageBeingPurchased = nil
+            self.actionInProgress = false
         }
-        defer { self.actionInProgress = false }
 
-        self.selectedPackage = package
-        let result = try await self.purchases.purchase(package: package)
-        try await refreshSubscriptions()
+        do {
+            let result = try await self.purchases.purchase(package: package)
+            self.purchaseResult = result
+            try await refreshSubscriptions()
 
-        if result.userCancelled {
-            self.trackCancelledPurchase()
-        } else {
-            withAnimation(Constants.defaultAnimation) {
-                self.purchased = true
-                self.purchaseResult = result
+            if result.userCancelled {
+                self.trackCancelledPurchase()
+            } else {
+                withAnimation(Constants.defaultAnimation) {
+                    self.purchased = true
+                }
             }
-        }
 
-        return result
+            return result
+        } catch {
+            self.purchaseError = error
+            throw error
+        }
     }
 
     /// - Returns: `success` is `true` only when the resulting `CustomerInfo`
     /// had any transactions
+    /// - Note: `restoredCustomerInfo` will be not be set after this method,
+    /// instead `setRestored(_:)` must be manually called afterwards.
+    /// This allows the UI to display an alert before dismissing the paywall.
     @MainActor
     func restorePurchases() async throws -> (info: CustomerInfo, success: Bool) {
-        self.actionInProgress = true
-        defer { self.actionInProgress = false }
+        self.restoreInProgress = true
+        self.restoredCustomerInfo = nil
+        self.restoreError = nil
 
-        let customerInfo = try await self.purchases.restorePurchases()
-        try await refreshSubscriptions()
-
-        withAnimation(Constants.defaultAnimation) {
-            self.restored = true
-            self.restoredCustomerInfo = customerInfo
+        self.startAction()
+        defer {
+            self.restoreInProgress = false
+            self.actionInProgress = false
         }
 
-        return (info: customerInfo,
-                success: customerInfo.hasActiveSubscriptionsOrNonSubscriptions)
+        do {
+            let customerInfo = try await self.purchases.restorePurchases()
+
+            return (info: customerInfo,
+                    success: customerInfo.hasActiveSubscriptionsOrNonSubscriptions)
+        } catch {
+            self.restoreError = error
+            throw error
+        }
+    }
+
+    @MainActor
+    func setRestored(_ customerInfo: CustomerInfo) {
+        self.restoredCustomerInfo = customerInfo
     }
 
     func trackPaywallImpression(_ eventData: PaywallEvent.Data) {
@@ -145,6 +177,12 @@ extension PurchaseHandler {
 
         self.track(.cancel(.init(), data))
         return true
+    }
+
+    private func startAction() {
+        withAnimation(Constants.fastAnimation) {
+            self.actionInProgress = true
+        }
     }
 
 }
@@ -209,15 +247,39 @@ private final class NotConfiguredPurchases: PaywallPurchasesType {
 // MARK: - Preference Keys
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct PurchaseInProgressPreferenceKey: PreferenceKey {
+
+    static var defaultValue: Package?
+
+    static func reduce(value: inout Package?, nextValue: () -> Package?) {
+        value = nextValue()
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct RestoreInProgressPreferenceKey: PreferenceKey {
+
+    static var defaultValue: Bool = false
+
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = nextValue()
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct PurchasedResultPreferenceKey: PreferenceKey {
 
     struct PurchaseResult: Equatable {
         var transaction: StoreTransaction?
         var customerInfo: CustomerInfo
+        var userCancelled: Bool
 
         init(data: PurchaseResultData) {
             self.transaction = data.transaction
             self.customerInfo = data.customerInfo
+            self.userCancelled = data.userCancelled
         }
 
         init?(data: PurchaseResultData?) {
@@ -246,16 +308,24 @@ struct RestoredCustomerInfoPreferenceKey: PreferenceKey {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct InitiatedPurchaseWithSelectedPackagePreferenceKey: PreferenceKey {
+struct PurchaseErrorPreferenceKey: PreferenceKey {
 
-    static var defaultValue: Package?
+    static var defaultValue: NSError?
 
-    static func reduce(value: inout Package?, nextValue: () -> Package?) {
+    static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
         value = nextValue()
     }
-
 }
 
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct RestoreErrorPreferenceKey: PreferenceKey {
+
+    static var defaultValue: NSError?
+
+    static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
+        value = nextValue()
+    }
+}
 
 // MARK: -
 

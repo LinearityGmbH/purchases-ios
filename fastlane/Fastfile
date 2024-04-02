@@ -250,6 +250,20 @@ platform :ios do
 
   desc "visionOS build"
   lane :build_visionos do |options|
+    pod_lib_lint(
+      verbose: true,
+      podspec: 'RevenueCat.podspec',
+      platforms: "visionos",
+      fail_fast: true
+    )
+    pod_lib_lint(
+      verbose: true,
+      podspec: 'RevenueCatUI.podspec',
+      include_podspecs: 'RevenueCat.podspec',
+      platforms: "visionos",
+      fail_fast: true
+    )
+
     build_release(
       platform: 'visionOS',
       scheme: 'RevenueCat'
@@ -588,6 +602,7 @@ platform :ios do
 
   desc "Run BackendIntegrationTests"
   lane :backend_integration_tests do |options|
+    fetch_snapshots
     replace_api_key_integration_tests
     scan(
       scheme: "BackendIntegrationTests",
@@ -988,6 +1003,8 @@ def carthage_archive
 end
 
 lane :check_pods do
+  # Note: see also `build_visionos`
+  # Fix-me: add `visionOS` when we start building with Xcode 15.1
   pod_lib_lint(
     verbose: true,
     podspec: 'RevenueCat.podspec', 

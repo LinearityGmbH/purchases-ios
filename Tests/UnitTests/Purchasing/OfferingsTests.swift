@@ -113,7 +113,9 @@ class OfferingsTests: TestCase {
                           packages: [
                             .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly")
                           ])
-                ]
+                ],
+                placements: nil,
+                targeting: nil
             )
         )
 
@@ -146,7 +148,9 @@ class OfferingsTests: TestCase {
                                 .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly"),
                                 .init(identifier: "custom_package", platformProductIdentifier: "com.myproduct.custom")
                               ])
-                    ]
+                    ],
+                    placements: nil,
+                    targeting: nil
                 )
             )
         )
@@ -163,6 +167,173 @@ class OfferingsTests: TestCase {
         expect(offeringB.availablePackages[safe: 0]?.packageType) == .monthly
         expect(offeringB.availablePackages[safe: 1]?.identifier) == "custom_package"
         expect(offeringB.availablePackages[safe: 1]?.packageType) == .custom
+    }
+
+    func testOfferingIdsByPlacementWithFallbackOffering() throws {
+        let annualProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.annual")
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.monthly")
+        let customProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.custom")
+        let products = [
+            "com.myproduct.annual": StoreProduct(sk1Product: annualProduct),
+            "com.myproduct.monthly": StoreProduct(sk1Product: monthlyProduct),
+            "com.myproduct.custom": StoreProduct(sk1Product: customProduct)
+        ]
+        let offerings = try XCTUnwrap(
+            self.offeringsFactory.createOfferings(
+                from: products,
+                data: .init(
+                    currentOfferingId: "offering_a",
+                    offerings: [
+                        .init(identifier: "offering_a",
+                              description: "This is the base offering",
+                              packages: [
+                                .init(identifier: "$rc_six_month", platformProductIdentifier: "com.myproduct.annual")
+                              ]),
+                        .init(identifier: "offering_b",
+                              description: "This is the base offering b",
+                              packages: [
+                                .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly"),
+                                .init(identifier: "custom_package", platformProductIdentifier: "com.myproduct.custom")
+                              ]),
+                        .init(identifier: "offering_c",
+                              description: "This is the base offering b",
+                              packages: [
+                                .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly"),
+                                .init(identifier: "custom_package", platformProductIdentifier: "com.myproduct.custom")
+                              ])
+                    ],
+                    placements: .init(fallbackOfferingId: "offering_c",
+                                      offeringIdsByPlacement: .init(wrappedValue: [
+                                        "placement_name": "offering_b",
+                                        "placement_name_with_nil": nil
+                                      ])),
+                    targeting: .init(revision: 1, ruleId: "abc123")
+                )
+            )
+        )
+
+        let offeringA = try XCTUnwrap(offerings["offering_a"])
+        let offeringB = try XCTUnwrap(offerings["offering_b"])
+        let offeringC = try XCTUnwrap(offerings["offering_c"])
+
+        let currentOfferingByPlacement = try XCTUnwrap(offerings.currentOffering(
+            forPlacement: "placement_name")
+        )
+        let currentOfferingByPlacementContext = try XCTUnwrap(
+            currentOfferingByPlacement.availablePackages.first?.presentedOfferingContext
+        )
+
+        let currentOfferingFallback = try XCTUnwrap(offerings.currentOffering(
+            forPlacement: "unexisting_placement_name")
+        )
+        let currentOfferingFallbackContext = try XCTUnwrap(
+            currentOfferingFallback.availablePackages.first?.presentedOfferingContext
+        )
+
+        expect(offerings.current?.identifier) == offeringA.identifier
+
+        expect(currentOfferingByPlacement.identifier) == offeringB.identifier
+        expect(currentOfferingByPlacementContext.offeringIdentifier) == offeringB.identifier
+        expect(currentOfferingByPlacementContext.placementIdentifier) == "placement_name"
+        expect(currentOfferingByPlacementContext.targetingContext!.revision) == 1
+        expect(currentOfferingByPlacementContext.targetingContext!.ruleId) == "abc123"
+
+        expect(currentOfferingFallback.identifier) == offeringC.identifier
+        expect(currentOfferingFallbackContext.offeringIdentifier) == offeringC.identifier
+        expect(currentOfferingFallbackContext.placementIdentifier) == "unexisting_placement_name"
+        expect(currentOfferingFallbackContext.targetingContext!.revision) == 1
+        expect(currentOfferingFallbackContext.targetingContext!.ruleId) == "abc123"
+
+        expect(offerings.currentOffering(forPlacement: "placement_name_with_nil")).to(beNil())
+    }
+
+    func testOfferingIdsByPlacementWithNullFallbackOffering() throws {
+        let annualProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.annual")
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.monthly")
+        let customProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.custom")
+        let products = [
+            "com.myproduct.annual": StoreProduct(sk1Product: annualProduct),
+            "com.myproduct.monthly": StoreProduct(sk1Product: monthlyProduct),
+            "com.myproduct.custom": StoreProduct(sk1Product: customProduct)
+        ]
+        let offerings = try XCTUnwrap(
+            self.offeringsFactory.createOfferings(
+                from: products,
+                data: .init(
+                    currentOfferingId: "offering_a",
+                    offerings: [
+                        .init(identifier: "offering_a",
+                              description: "This is the base offering",
+                              packages: [
+                                .init(identifier: "$rc_six_month", platformProductIdentifier: "com.myproduct.annual")
+                              ]),
+                        .init(identifier: "offering_b",
+                              description: "This is the base offering b",
+                              packages: [
+                                .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly"),
+                                .init(identifier: "custom_package", platformProductIdentifier: "com.myproduct.custom")
+                              ])
+                    ],
+                    placements: .init(fallbackOfferingId: nil,
+                                      offeringIdsByPlacement: .init(wrappedValue: [
+                                        "placement_name": "offering_b",
+                                        "placement_name_with_nil": nil
+                                      ])),
+                    targeting: nil
+                )
+            )
+        )
+
+        let offeringA = try XCTUnwrap(offerings["offering_a"])
+        let offeringB = try XCTUnwrap(offerings["offering_b"])
+        expect(offerings.current) === offeringA
+        expect(offerings.currentOffering(forPlacement: "placement_name")!.identifier) == offeringB.identifier
+        expect(offerings.currentOffering(forPlacement: "placement_name_with_nil")).to(beNil())
+        expect(offerings.currentOffering(forPlacement: "unexisting_placement_name")).to(beNil())
+    }
+
+    func testTargeting() throws {
+        let annualProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.annual")
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.monthly")
+        let customProduct = MockSK1Product(mockProductIdentifier: "com.myproduct.custom")
+        let products = [
+            "com.myproduct.annual": StoreProduct(sk1Product: annualProduct),
+            "com.myproduct.monthly": StoreProduct(sk1Product: monthlyProduct),
+            "com.myproduct.custom": StoreProduct(sk1Product: customProduct)
+        ]
+        let offerings = try XCTUnwrap(
+            self.offeringsFactory.createOfferings(
+                from: products,
+                data: .init(
+                    currentOfferingId: "offering_a",
+                    offerings: [
+                        .init(identifier: "offering_a",
+                              description: "This is the base offering",
+                              packages: [
+                                .init(identifier: "$rc_six_month", platformProductIdentifier: "com.myproduct.annual")
+                              ])
+                    ],
+                    placements: nil,
+                    targeting: .init(revision: 1, ruleId: "abc123")
+                )
+            )
+        )
+
+        let offeringA = try XCTUnwrap(offerings["offering_a"])
+
+        // Current offering should have targeting context
+        expect(offerings.current!.identifier) == offeringA.identifier
+        expect(
+            offerings.current!.availablePackages.first!.presentedOfferingContext.targetingContext!.revision
+        ) == 1
+        expect(
+            offerings.current!.availablePackages.first!.presentedOfferingContext.targetingContext!.ruleId
+        ) == "abc123"
+
+        // Offering accessed directly (even if same as current) should not have targeting context
+        expect(
+            offerings.all.values.first!.availablePackages.first!.presentedOfferingContext.targetingContext
+        ).to(beNil())
     }
 
     func testOfferingsWithMetadataIsCreated() throws {
@@ -213,7 +384,9 @@ class OfferingsTests: TestCase {
                               packages: [
                                 .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly")
                               ])
-                    ]
+                    ],
+                    placements: nil,
+                    targeting: nil
                 )
             )
         )
@@ -337,7 +510,9 @@ class OfferingsTests: TestCase {
                       packages: [
                         .init(identifier: "$rc_six_month", platformProductIdentifier: "com.myproduct.annual")
                       ])
-            ]
+            ],
+            placements: nil,
+            targeting: nil
         )
         let offerings = try XCTUnwrap(
             self.offeringsFactory.createOfferings(from: storeProductsByID, data: response)
@@ -376,7 +551,9 @@ private extension OfferingsTests {
                               packages: [
                                 .init(identifier: identifier, platformProductIdentifier: productIdentifier)
                               ])
-                    ]
+                    ],
+                    placements: nil,
+                    targeting: nil
                 )
             )
         )

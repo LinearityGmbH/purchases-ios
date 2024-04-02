@@ -18,18 +18,18 @@ public struct LocalizedAlertError: LocalizedError {
     public let errorDescription: String?
     public let failureReason: String?
     public let recoverySuggestion: String?
-    
+
     public init(errorDescription: String?, failureReason: String?, recoverySuggestion: String?) {
         self.errorDescription = errorDescription
         self.failureReason = failureReason
         self.recoverySuggestion = recoverySuggestion
     }
-    
+
     public init(error: NSError) {
         errorDescription = "\(error.domain) \(error.code)"
         failureReason = switch error {
         case is ErrorCode:
-            error.description
+            "Error \(error.code): \(error.description)"
         default:
             error.localizedDescription
         }

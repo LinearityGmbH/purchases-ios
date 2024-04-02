@@ -257,6 +257,8 @@ public typealias StartPurchaseBlock = (@escaping PurchaseCompletedBlock) -> Void
     private let storeMessagesHelper: StoreMessagesHelperType?
     private var customerInfoObservationDisposable: (() -> Void)?
 
+    private let syncAttributesAndOfferingsIfNeededRateLimiter = RateLimiter(maxCalls: 5, period: 60)
+
     // swiftlint:disable:next function_body_length
     convenience init(apiKey: String,
                      appUserID: String?,
@@ -696,9 +698,12 @@ public extension Purchases {
 
     internal func getOfferings(
         fetchPolicy: OfferingsManager.FetchPolicy,
+        fetchCurrent: Bool = false,
         completion: @escaping (Offerings?, PublicError?) -> Void
     ) {
-        self.offeringsManager.offerings(appUserID: self.appUserID, fetchPolicy: fetchPolicy) { @Sendable result in
+        self.offeringsManager.offerings(appUserID: self.appUserID,
+                                        fetchPolicy: fetchPolicy,
+                                        fetchCurrent: fetchCurrent) { @Sendable result in
             completion(result.value, result.error?.asPublicError)
         }
     }
@@ -723,6 +728,11 @@ public extension Purchases {
 
 public extension Purchases {
 
+    @available(*, deprecated, message: """
+    The appUserID passed to logIn is a constant string known at compile time.
+    This is likely a programmer error. This ID is used to identify the current user.
+    See https://docs.revenuecat.com/docs/user-ids for more information.
+    """)
     func logIn(_ appUserID: StaticString, completion: @escaping (CustomerInfo?, Bool, PublicError?) -> Void) {
         Logger.warn(Strings.identity.logging_in_with_static_string)
 
@@ -751,6 +761,11 @@ public extension Purchases {
     }
 
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
+    @available(*, deprecated, message: """
+    The appUserID passed to logIn is a constant string known at compile time.
+    This is likely a programmer error. This ID is used to identify the current user.
+    See https://docs.revenuecat.com/docs/user-ids for more information.
+    """)
     func logIn(_ appUserID: StaticString) async throws -> (customerInfo: CustomerInfo, created: Bool) {
         Logger.warn(Strings.identity.logging_in_with_static_string)
 
@@ -791,6 +806,23 @@ public extension Purchases {
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
     func logOut() async throws -> CustomerInfo {
         return try await logOutAsync()
+    }
+
+    @objc func syncAttributesAndOfferingsIfNeeded(completion: @escaping (Offerings?, PublicError?) -> Void) {
+        guard syncAttributesAndOfferingsIfNeededRateLimiter.shouldProceed() else {
+            Logger.warn(
+                Strings.identity.sync_attributes_and_offerings_rate_limit_reached(
+                    maxCalls: syncAttributesAndOfferingsIfNeededRateLimiter.maxCalls,
+                    period: Int(syncAttributesAndOfferingsIfNeededRateLimiter.period)
+                )
+            )
+            self.getOfferings(fetchPolicy: .default, completion: completion)
+            return
+        }
+
+        self.syncSubscriberAttributes(completion: {
+            self.getOfferings(fetchPolicy: .default, fetchCurrent: true, completion: completion)
+        })
     }
 
 }
@@ -1235,9 +1267,21 @@ public extension Purchases {
      *
      * - Returns: An instantiated ``Purchases`` object that has been set as a singleton.
      */
+    @_disfavoredOverload
     @objc(configureWithAPIKey:appUserID:)
     @discardableResult static func configure(withAPIKey apiKey: String, appUserID: String?) -> Purchases {
         Self.configure(withAPIKey: apiKey, appUserID: appUserID, observerMode: false)
+    }
+
+    @available(*, deprecated, message: """
+    The appUserID passed to logIn is a constant string known at compile time.
+    This is likely a programmer error. This ID is used to identify the current user.
+    See https://docs.revenuecat.com/docs/user-ids for more information.
+    """)
+    // swiftlint:disable:next missing_docs
+    @discardableResult static func configure(withAPIKey apiKey: String, appUserID: StaticString) -> Purchases {
+        Logger.warn(Strings.identity.logging_in_with_static_string)
+        return Self.configure(withAPIKey: apiKey, appUserID: "\(appUserID)", observerMode: false)
     }
 
     /**
@@ -1262,6 +1306,7 @@ public extension Purchases {
      * - Warning: This assumes your IAP implementation uses StoreKit 1.
      * Observer mode is not compatible with StoreKit 2.
      */
+    @_disfavoredOverload
     @objc(configureWithAPIKey:appUserID:observerMode:)
     @discardableResult static func configure(withAPIKey apiKey: String,
                                              appUserID: String?,
@@ -1270,6 +1315,25 @@ public extension Purchases {
             with: Configuration
                 .builder(withAPIKey: apiKey)
                 .with(appUserID: appUserID)
+                .with(observerMode: observerMode)
+                .build()
+        )
+    }
+
+    @available(*, deprecated, message: """
+    The appUserID passed to logIn is a constant string known at compile time.
+    This is likely a programmer error. This ID is used to identify the current user.
+    See https://docs.revenuecat.com/docs/user-ids for more information.
+    """)
+    // swiftlint:disable:next missing_docs
+    @discardableResult static func configure(withAPIKey apiKey: String,
+                                             appUserID: StaticString,
+                                             observerMode: Bool) -> Purchases {
+        Logger.warn(Strings.identity.logging_in_with_static_string)
+        return Self.configure(
+            with: Configuration
+                .builder(withAPIKey: apiKey)
+                .with(appUserID: "\(appUserID)")
                 .with(observerMode: observerMode)
                 .build()
         )
@@ -1467,12 +1531,14 @@ extension Purchases: @unchecked Sendable {}
 extension Purchases {
 
     /// Used when purchasing through `SwiftUI` paywalls.
-    func cachePresentedOfferingIdentifier(_ identifier: String, productIdentifier: String) {
-        Logger.debug(Strings.purchase.caching_presented_offering_identifier(offeringID: identifier,
-                                                                            productID: productIdentifier))
+    func cachePresentedOfferingContext(_ context: PresentedOfferingContext, productIdentifier: String) {
+        Logger.debug(Strings.purchase.caching_presented_offering_identifier(
+            offeringID: context.offeringIdentifier,
+            productID: productIdentifier
+        ))
 
-        self.purchasesOrchestrator.cachePresentedOfferingIdentifier(
-            identifier,
+        self.purchasesOrchestrator.cachePresentedOfferingContext(
+            context,
             productIdentifier: productIdentifier
         )
     }

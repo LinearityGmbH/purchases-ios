@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "RevenueCatUI"
-  s.version          = "4.32.0-SNAPSHOT"
+  s.version          = "4.38.1"
   s.summary          = "UI library for RevenueCat paywalls."
 
   s.description      = <<-DESC
@@ -23,6 +23,7 @@ Pod::Spec.new do |s|
   s.watchos.deployment_target = '6.2'
   s.tvos.deployment_target = '11.0'
   s.osx.deployment_target = '10.13'
+  s.visionos.deployment_target = '1.0'
   
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
 
@@ -32,6 +33,8 @@ Pod::Spec.new do |s|
 
   s.resource_bundles = {
     'RevenueCat_RevenueCatUI' => [
+      # This is done automatically by SPM but must be added manually here:
+      'RevenueCatUI/Resources/*.lproj/*.strings',
        # Note: these have to match the values in Package.swift
        'RevenueCatUI/Resources/background.jpg',
        'RevenueCatUI/Resources/icons.xcassets',

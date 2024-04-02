@@ -42,6 +42,9 @@ func main() -> Int {
     checkPackageAPI()
     checkPackageEnums()
 
+    checkPresentedOfferingContextAPI()
+    checkTargetingContextAPI()
+
     checkReceiptParserAPI()
     checkAppleReceiptAPI()
 
