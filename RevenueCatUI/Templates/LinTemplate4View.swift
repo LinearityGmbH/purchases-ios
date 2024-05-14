@@ -71,11 +71,10 @@ struct LinTemplate4View: TemplateViewType {
                 Spacer().frame(width: 40)
                 VStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        TestimonialsView()
-                        Spacer()
-                    }
+                    TestimonialsView()
+                    Spacer()
+                    CompanyLogosView()
+                    Spacer().frame(height: 24)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 Spacer().frame(width: 40)
