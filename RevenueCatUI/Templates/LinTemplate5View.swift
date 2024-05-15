@@ -16,6 +16,35 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate5View: TemplateViewType {
+    var configuration: TemplateViewConfiguration {
+        configurableTemplate5.configuration
+    }
+    var userInterfaceIdiom: UserInterfaceIdiom {
+        configurableTemplate5.userInterfaceIdiom
+    }
+    var verticalSizeClass: UserInterfaceSizeClass? {
+        configurableTemplate5.verticalSizeClass
+    }
+    let configurableTemplate5: LinConfigurableTemplate5View<EmptyView>
+    
+    init(_ configuration: TemplateViewConfiguration) {
+        configurableTemplate5 = LinConfigurableTemplate5View(
+            configuration,
+            .init(footer: { EmptyView() }), 
+            getDefaultContentWidth: Constants.defaultContentWidth
+        )
+    }
+    
+    var body: some View {
+        configurableTemplate5.body
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct LinConfigurableTemplate5View<FooterTextView: View>: View {
+    struct Template5Configuration {
+        let footer: () -> FooterTextView
+    }
 
     let configuration: TemplateViewConfiguration
 
@@ -41,11 +70,24 @@ struct LinTemplate5View: TemplateViewType {
     private var introEligibilityViewModel: IntroEligibilityViewModel
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
+    
+    private let template5Configuration: Template5Configuration
+    private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
 
-    init(_ configuration: TemplateViewConfiguration) {
+    init(
+        _ configuration: TemplateViewConfiguration,
+        _ template5Config: Template5Configuration,
+        getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?
+    ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
+        self.template5Configuration = template5Config
+        self.getDefaultContentWidth = getDefaultContentWidth
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
+    }
+    
+    private var defaultContentWidth: CGFloat? {
+        getDefaultContentWidth(userInterfaceIdiom)
     }
 
     var body: some View {
@@ -62,8 +104,10 @@ struct LinTemplate5View: TemplateViewType {
                 .scrollableIfNecessaryWhenAvailable(enabled: self.configuration.mode.isFullScreen)
 
             self.subscribeButton
-                .frame(maxWidth: self.defaultContentWidth)
+                .frame(maxWidth: defaultContentWidth)
                 .defaultHorizontalPadding()
+            
+            template5Configuration.footer()
             
             FooterView(configuration: self.configuration,
                        purchaseHandler: self.purchaseHandler,
@@ -176,7 +220,7 @@ struct LinTemplate5View: TemplateViewType {
             .font(self.font(for: .body).weight(.medium))
             .defaultPadding()
             .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: Self.packageButtonAlignment)
+            .frame(maxWidth: .infinity, alignment: Template5Constants.packageButtonAlignment)
             .overlay {
                 self.roundedRectangle
                     .stroke(
@@ -220,7 +264,7 @@ struct LinTemplate5View: TemplateViewType {
     }
 
     private var roundedRectangle: some Shape {
-        RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+        RoundedRectangle(cornerRadius: Template5Constants.cornerRadius, style: .continuous)
     }
 
     @ViewBuilder
@@ -240,20 +284,23 @@ struct LinTemplate5View: TemplateViewType {
                 .frame(width: 24, height: 24)
                 .foregroundColor(color)
 
-            VStack(alignment: Self.packageButtonAlignment.horizontal, spacing: 5) {
+            VStack(alignment: Template5Constants.packageButtonAlignment.horizontal, spacing: 5) {
                 Text(package.localization.offerName ?? package.content.productName)
                 self.offerDetails(package: package, selected: selected)
             }
         }
     }
 
-    private func offerDetails(package: TemplateViewConfiguration.Package, selected: Bool) -> some View {
+    private func offerDetails(
+        package: TemplateViewConfiguration.Package,
+        selected: Bool
+    ) -> some View {
         IntroEligibilityStateView(
             display: .offerDetails,
             localization: package.localization,
             introEligibility: self.introEligibility[package.content],
             foregroundColor: self.configuration.colors.text1Color,
-            alignment: Self.packageButtonAlignment
+            alignment: Template5Constants.packageButtonAlignment
         )
         .fixedSize(horizontal: false, vertical: true)
         .font(self.font(for: .body))
@@ -276,8 +323,6 @@ struct LinTemplate5View: TemplateViewType {
     @ScaledMetric(relativeTo: .body)
     private var iconSize = 25
 
-    private static let cornerRadius: CGFloat = Constants.defaultPackageCornerRadius
-    private static let packageButtonAlignment: Alignment = .leading
 
     private var headerAspectRatio: CGFloat {
         switch self.userInterfaceIdiom {
@@ -285,7 +330,12 @@ struct LinTemplate5View: TemplateViewType {
         default: return 2
         }
     }
+}
 
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+enum Template5Constants {
+    static let packageButtonAlignment: Alignment = .leading
+    static let cornerRadius: CGFloat = Constants.defaultPackageCornerRadius
 }
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
@@ -302,12 +352,15 @@ private extension PaywallData.Configuration.Colors {
 // MARK: - Extensions
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private extension LinTemplate5View {
+private extension LinConfigurableTemplate5View {
 
     var selectedLocalization: ProcessedLocalizedConfiguration {
         return self.selectedPackage.localization
     }
-
+    
+    func font(for textStyle: Font.TextStyle) -> Font {
+        return self.configuration.fonts.font(for: textStyle)
+    }
 }
 
 // MARK: -

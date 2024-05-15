@@ -11,44 +11,31 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate4View: TemplateViewType {
-    
-    let configuration: TemplateViewConfiguration
-    
-    @State
-    private var selectedPackage: TemplateViewConfiguration.Package
-    
-    @State
-    private var displayingAllPlans: Bool
-    
-    @Environment(\.userInterfaceIdiom)
-    var userInterfaceIdiom
-    
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
-    
-    @Environment(\.verticalSizeClass)
-    var verticalSizeClass
-    
-    @Environment(\.locale)
-    var locale
-    
-    @EnvironmentObject
-    private var introEligibilityViewModel: IntroEligibilityViewModel
-    @EnvironmentObject
-    private var purchaseHandler: PurchaseHandler
+    var configuration: TemplateViewConfiguration {
+        configurableTemplate5.configuration
+    }
+    var userInterfaceIdiom: UserInterfaceIdiom {
+        configurableTemplate5.userInterfaceIdiom
+    }
+    var verticalSizeClass: UserInterfaceSizeClass? {
+        configurableTemplate5.verticalSizeClass
+    }
+    let configurableTemplate5: LinConfigurableTemplate5View<EmptyView>
     
     init(_ configuration: TemplateViewConfiguration) {
-        self._selectedPackage = .init(initialValue: configuration.packages.default)
-        self.configuration = configuration
-        self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
+        configurableTemplate5 = LinConfigurableTemplate5View(
+            configuration,
+            .init(footer: { EmptyView() }),
+            getDefaultContentWidth: Constants.defaultContentWidth
+        )
     }
-    
+            
     var body: some View {
-        switch horizontalSizeClass {
+        switch configurableTemplate5.horizontalSizeClass {
         case .regular:
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    LinTemplate5View(configuration)
+                    configurableTemplate5.body
                         .frame(
                             width: geometry.size.width * 0.5,
                             height: geometry.size.height
@@ -61,7 +48,7 @@ struct LinTemplate4View: TemplateViewType {
                 }
             }
         default:
-            LinTemplate5View(configuration)
+            configurableTemplate5
         }
     }
     
