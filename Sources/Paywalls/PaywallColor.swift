@@ -192,7 +192,7 @@ public extension Color {
 #if canImport(UIKit)
 
     @available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
-    private extension Color {
+    public extension Color {
 
         init(light: UIColor, dark: UIColor) {
             self.init(UIColor(light: light, dark: dark))
