@@ -81,7 +81,12 @@ struct LinTemplate4View: TemplateViewType {
             }
             .background {
                 Rectangle()
-                    .fill(Color(red: 242 / 255.0, green: 242 / 255.0, blue: 242 / 255.0))
+                    .fill(
+                        Color(
+                            light: Color(red: 242 / 255.0, green: 242 / 255.0, blue: 242 / 255.0),
+                            dark: Color(red: 44 / 255.0, green: 44 / 255.0, blue: 46 / 255.0)
+                        )
+                    )
             }
         }
     }

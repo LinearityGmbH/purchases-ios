@@ -10,21 +10,27 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct CompanyLogosView: View {
+    private func colorise(_ image: Image) -> some View {
+        image
+            .renderingMode(.template)
+            .foregroundStyle(.primary)
+    }
+    
     var body: some View {
         HStack {
-            Image(.iconAmazon)
+            colorise(Image(.iconAmazon))
             Spacer()
-            Image(.iconApple)
+            colorise(Image(.iconApple))
             Spacer()
-            Image(.iconUniversalPictures)
+            colorise(Image(.iconUniversalPictures))
             Spacer()
-            Image(.iconMcdonalds)
+            colorise(Image(.iconMcdonalds))
             Spacer()
-            Image(.iconNasa)
+            colorise(Image(.iconNasa))
             Spacer()
-            Image(.iconSpacex)
+            colorise(Image(.iconSpacex))
             Spacer()
-            Image(.iconGoogle)
+            colorise(Image(.iconGoogle))
         }
         .frame(height: 18)
     }
