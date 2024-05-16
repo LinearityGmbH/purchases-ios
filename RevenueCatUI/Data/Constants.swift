@@ -78,10 +78,6 @@ extension TemplateViewType {
         return Constants.defaultVerticalPaddingLength(self.userInterfaceIdiom)
     }
 
-    var defaultContentWidth: CGFloat? {
-        return Constants.defaultContentWidth(self.userInterfaceIdiom)
-    }
-
     var shouldUseLandscapeLayout: Bool {
         #if os(tvOS)
         // tvOS never reports UserInterfaceSizeClass.compact

@@ -47,6 +47,7 @@ struct TestimonialsView: View {
                         .foregroundStyle(.secondary)
                         .font(.system(size: 11, weight: .regular))
                 }
+                Spacer()
             }
         }
     }
