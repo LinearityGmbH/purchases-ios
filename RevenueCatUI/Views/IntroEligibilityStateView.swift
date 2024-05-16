@@ -47,7 +47,7 @@ struct IntroEligibilityStateView: View {
         )
     }
 
-    fileprivate init(
+    init(
         textWithNoIntroOffer: String?,
         textWithIntroOffer: String?,
         introEligibility: IntroEligibilityStatus?,
