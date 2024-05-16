@@ -30,7 +30,7 @@ struct LinTemplate5View: TemplateViewType {
     init(_ configuration: TemplateViewConfiguration) {
         configurableTemplate5 = LinConfigurableTemplate5View(
             configuration,
-            .init(footer: { EmptyView() }), 
+            .init(footer: { _,_,_ in EmptyView() }),
             getDefaultContentWidth: Constants.defaultContentWidth
         )
     }
@@ -43,7 +43,11 @@ struct LinTemplate5View: TemplateViewType {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinConfigurableTemplate5View<FooterTextView: View>: View {
     struct Template5Configuration {
-        let footer: () -> FooterTextView
+        let footer: (
+            _ selectedPackage: Package,
+            _ eligibility: IntroEligibilityStatus?,
+            _ locale: Locale
+        ) -> FooterTextView
     }
 
     let configuration: TemplateViewConfiguration
@@ -107,7 +111,13 @@ struct LinConfigurableTemplate5View<FooterTextView: View>: View {
                 .frame(maxWidth: defaultContentWidth)
                 .defaultHorizontalPadding()
             
-            template5Configuration.footer()
+            template5Configuration.footer(
+                self.selectedPackage.content,
+                self.introEligibility[self.selectedPackage.content],
+                self.locale
+            )        
+            .fixedSize(horizontal: false, vertical: true)
+            .font(self.font(for: .body))
             
             FooterView(configuration: self.configuration,
                        purchaseHandler: self.purchaseHandler,

@@ -61,6 +61,32 @@ enum Localization {
 
         return formatter.string(from: subscriptionPeriod.components) ?? ""
     }
+    
+    static func localizedStartingDay(
+        for subscriptionPeriod: SubscriptionPeriod,
+        locale: Locale = .current
+    ) -> String {
+        var calendar: Calendar = .current
+        calendar.locale = locale
+
+        let unit = subscriptionPeriod.unit.calendarUnit
+        let component = unit.component
+        let value = subscriptionPeriod.value
+        
+        print("localizedStartingDay: \(component), \(value)")
+
+        guard let date = calendar.date(byAdding: component,
+                                       value: value,
+                                       to: Date()) else {
+            return ""
+        }
+
+        let formatter = DateFormatter()
+        formatter.calendar?.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
+        
+        return formatter.string(from: date)
+    }
 
     static func localized(
         packageType: PackageType,

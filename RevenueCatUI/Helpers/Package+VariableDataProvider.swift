@@ -77,6 +77,13 @@ extension Package: VariableDataProvider {
 
         return Localization.localizedDuration(for: period, locale: locale)
     }
+    
+    func subscriptionStartingDay(_ locale: Locale) -> String? {
+        guard let discount = self.storeProduct.introductoryDiscount else {
+            return nil
+        }
+        return Localization.localizedStartingDay(for: discount.subscriptionPeriod, locale: locale)
+    }
 
     func normalizedSubscriptionDuration(_ locale: Locale) -> String? {
         guard let period = self.storeProduct.subscriptionPeriod else {
