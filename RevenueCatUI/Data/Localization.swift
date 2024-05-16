@@ -64,7 +64,8 @@ enum Localization {
     
     static func localizedStartingDay(
         for subscriptionPeriod: SubscriptionPeriod,
-        locale: Locale = .current
+        locale: Locale = .current,
+        now: Date = Date()
     ) -> String {
         var calendar: Calendar = .current
         calendar.locale = locale
@@ -75,7 +76,8 @@ enum Localization {
         
         guard let date = calendar.date(byAdding: component,
                                        value: value,
-                                       to: Date()) else {
+                                       to: now) else {
+            assertionFailure("incorrect date math: \(now), \(value), \(component)")
             return ""
         }
 
