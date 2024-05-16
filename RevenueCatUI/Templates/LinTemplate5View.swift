@@ -115,9 +115,7 @@ struct LinConfigurableTemplate5View<FooterTextView: View>: View {
                 self.selectedPackage.content,
                 self.introEligibility[self.selectedPackage.content],
                 self.locale
-            )        
-            .fixedSize(horizontal: false, vertical: true)
-            .font(self.font(for: .body))
+            )
             
             FooterView(configuration: self.configuration,
                        purchaseHandler: self.purchaseHandler,

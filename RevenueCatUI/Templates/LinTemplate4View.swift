@@ -20,19 +20,28 @@ struct LinTemplate4View: TemplateViewType {
     var verticalSizeClass: UserInterfaceSizeClass? {
         configurableTemplate5.verticalSizeClass
     }
-    let configurableTemplate5: LinConfigurableTemplate5View<IntroEligibilityStateView>
+    
+    private struct WrapperView<Content: View>: View {
+        let content: Content
+        var body: some View {
+            content
+            .fixedSize(horizontal: false, vertical: true)
+            .font(.system(size: 13))
+        }
+    }
+    private let configurableTemplate5: LinConfigurableTemplate5View<WrapperView<IntroEligibilityStateView>>
     
     init(_ configuration: TemplateViewConfiguration) {
         configurableTemplate5 = LinConfigurableTemplate5View(
             configuration,
             .init(footer: { (_ selectedPackage: Package, _ eligibility: IntroEligibilityStatus?, locale: Locale) in
                 let msgProvider = CTAFooterMessageProvider(locale: locale)
-                
-                return IntroEligibilityStateView(
+                let view = IntroEligibilityStateView(
                     textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
                     textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
                     introEligibility: eligibility
                 )
+                return WrapperView(content: view)
             }),
             getDefaultContentWidth: Constants.defaultContentWidth
         )
