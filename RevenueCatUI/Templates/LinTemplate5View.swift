@@ -36,7 +36,7 @@ struct LinTemplate5View: TemplateViewType {
     }
     
     var body: some View {
-        configurableTemplate5.body
+        configurableTemplate5
     }
 }
 
