@@ -26,21 +26,18 @@ struct LinTemplate4View: TemplateViewType {
         configurableTemplate5 = LinConfigurableTemplate5View(
             configuration,
             .init(footer: { (_ selectedPackage: Package, _ eligibility: IntroEligibilityStatus?, locale: Locale) in
-                print("eligibility: \(eligibility)")
                 let msgProvider = CTAFooterMessageProvider(locale: locale)
                 
                 return IntroEligibilityStateView(
-                    textWithNoIntroOffer: msgProvider
-                        .makeTextWithIntroOffer(selectedPackage),
-                    textWithIntroOffer: msgProvider
-                        .makeTextWithNoIntroOffer(selectedPackage),
+                    textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
+                    textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
                     introEligibility: eligibility
                 )
             }),
             getDefaultContentWidth: Constants.defaultContentWidth
         )
     }
-            
+    
     var body: some View {
         switch configurableTemplate5.horizontalSizeClass {
         case .regular:
