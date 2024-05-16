@@ -73,8 +73,6 @@ enum Localization {
         let component = unit.component
         let value = subscriptionPeriod.value
         
-        print("localizedStartingDay: \(component), \(value)")
-
         guard let date = calendar.date(byAdding: component,
                                        value: value,
                                        to: Date()) else {
