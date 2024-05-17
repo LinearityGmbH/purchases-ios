@@ -7,30 +7,7 @@
 
 import SwiftUI
 import UIKit
-
-extension NSLayoutConstraint.Axis {
-    
-    var opposite: NSLayoutConstraint.Axis {
-        switch self {
-        case .vertical:
-            return .horizontal
-        case .horizontal:
-            return .vertical
-        @unknown default:
-            return self
-        }
-    }
-}
-
-@available(iOS 13.0, *)
-extension HorizontalAlignment {
-    private enum IconAlignment: AlignmentID {
-        static func defaultValue(in dimensions: ViewDimensions) -> CGFloat {
-            return dimensions[HorizontalAlignment.center]
-        }
-    }
-    static let iconAlignment = HorizontalAlignment(IconAlignment.self)
-}
+import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable)
@@ -40,27 +17,12 @@ struct TimelineView: View {
     enum Colors {
         static let green = Color(red: 8.0 / 255.0, green: 195.0 / 255.0, blue: 130.0 / 255.0)
         static let linearityOrange = Color(red: 253.0 / 255.0, green: 122.0 / 255.0, blue: 15.0 / 255.0)
-        static let link = Color(uiColor: UIColor(dynamicProvider: { trait in
-            if trait.userInterfaceStyle == .light {
-                return UIColor(red: 225.0 / 255.0, green: 225.0 / 255.0, blue: 225.0 / 255.0, alpha: 1)
-            } else {
-                return UIColor(red: 174.0 / 255.0, green: 174.0 / 255.0, blue: 178.0 / 255.0, alpha: 1)
-            }
-        }))
-        static let bell = Color(uiColor: UIColor(dynamicProvider: { trait in
-            if trait.userInterfaceStyle == .light {
-                return .black
-            } else {
-                return UIColor(Colors.link)
-            }
-        }))
-        static let iconBackground = Color(uiColor: UIColor(dynamicProvider: { trait in
-            if trait.userInterfaceStyle == .light {
-                return .white
-            } else {
-                return .secondarySystemBackground
-            }
-        }))
+        static let link = Color(
+            light: Color(red: 225.0 / 255.0, green: 225.0 / 255.0, blue: 225.0 / 255.0),
+            dark: Color(red: 174.0 / 255.0, green: 174.0 / 255.0, blue: 178.0 / 255.0)
+        )
+        static let bell = Color(light: .black, dark: Self.link)
+        static let iconBackground = Color(light: .white, dark: .secondarySystemBackground)
     }
     
     let stepConfigurations: [TimelineStepView.Configuration]
@@ -111,7 +73,7 @@ struct TimelineStepView: View {
             iconBackgroundColor: Color = TimelineView.Colors.iconBackground,
             iconForegroundColor: Color = .primary,
             subtitle: String, 
-            linkColor: Color = TimelineView.Colors.link,
+            linkColor: Color,
             linkPosition: LinkPosition
         ) {
             self.title = title
@@ -146,12 +108,10 @@ struct TimelineStepView: View {
             }
             .frame(minWidth: 100)
         } else {
-            ZStack(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
-                link
-                content
+            content
+                .background(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
+                    linkSegment(configuration.linkColor)
             }
-            .frame(minHeight: 50)
-            .padding([.leading, .trailing], 20)
         }
     }
     
@@ -188,11 +148,11 @@ struct TimelineStepView: View {
         if axis == .vertical {
             Rectangle()
                 .fill(color)
-                .frame(width: .infinity, height: 2)
+                .frame(height: 2)
         } else {
             Rectangle()
                 .fill(color)
-                .frame(width: 2, height: .infinity)
+                .frame(width: 2)
         }
     }
     
@@ -221,6 +181,8 @@ struct TimelineStepView: View {
                     Text(configuration.subtitle)
                         .foregroundStyle(.secondary)
                         .font(.system(size: 12))
+                    Spacer()
+                        .frame(height: 8)
                 }
             }
         }
@@ -245,78 +207,103 @@ struct TimelineStepView: View {
     }
 }
 
-#if DEBUG
-
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-struct Preview: View {
+extension TimelineStepView {
     
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
+    static var defaultIPad: [TimelineStepView.Configuration] {[
+        TimelineStepView.Configuration(
+            title: NSLocalizedString("iPad.step1.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            icon: "gift",
+            iconBackgroundColor: TimelineView.Colors.green,
+            iconForegroundColor: .black,
+            subtitle: NSLocalizedString("iPad.step1.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            linkColor: TimelineView.Colors.green,
+            linkPosition: .trailing
+        ),
+        TimelineStepView.Configuration(
+            title: NSLocalizedString("iPad.step2.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            icon: "bell",
+            iconForegroundColor: TimelineView.Colors.bell,
+            subtitle: NSLocalizedString("iPad.step2.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            linkColor: TimelineView.Colors.link,
+            linkPosition: .both
+        ),
+        TimelineStepView.Configuration(
+            title: NSLocalizedString("iPad.step3.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            icon: "crown.fill",
+            iconForegroundColor: TimelineView.Colors.linearityOrange,
+            subtitle: NSLocalizedString("iPad.step3.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            linkColor: .clear,
+            linkPosition: .leading
+        )
+    ]}
     
-    var body: some View {
-        if horizontalSizeClass == .regular {
-            TimelineView(stepConfigurations: [
-                TimelineStepView.Configuration(
-                    title: "Today: Free trial for 7 days",
-                    icon: "gift",
-                    iconBackgroundColor: TimelineView.Colors.green,
-                    iconForegroundColor: .black,
-                    subtitle: "Get full access to design and animation tools",
-                    linkColor: TimelineView.Colors.green,
-                    linkPosition: .trailing
-                ),
-                TimelineStepView.Configuration(
-                    title: "Day 5: Reminder",
-                    icon: "bell",
-                    iconForegroundColor: TimelineView.Colors.bell,
-                    subtitle: "We’ll send you a reminder 2 days before your free trial ends.",
-                    linkPosition: .both
-                ),
-                TimelineStepView.Configuration(
-                    title: "Day 7: Trial ends",
-                    icon: "crown.fill",
-                    iconForegroundColor: TimelineView.Colors.linearityOrange,
-                    subtitle: "Your Pro subscription starts, unless you’ve canceled during the trial.",
-                    linkPosition: .leading
-                )
-            ])
-            .frame(width: 326, height: 176)
-        } else {
-            TimelineView(stepConfigurations: [
-                TimelineStepView.Configuration(
-                    title: "Start free trial",
-                    icon: "gift",
-                    iconBackgroundColor: TimelineView.Colors.green,
-                    iconForegroundColor: .black,
-                    subtitle: "Today",
-                    linkColor: TimelineView.Colors.green,
-                    linkPosition: .trailing
-                ),
-                TimelineStepView.Configuration(
-                    title: "Reminder",
-                    icon: "bell",
-                    subtitle: "Day 5",
-                    linkPosition: .both
-                ),
-                TimelineStepView.Configuration(
-                    title: "Trial ends",
-                    icon: "crown.fill",
-                    iconForegroundColor: TimelineView.Colors.linearityOrange,
-                    subtitle: "Day 7",
-                    linkPosition: .leading
-                )
-            ])
+    static var defaultIPhone: [TimelineStepView.Configuration] {[
+        TimelineStepView.Configuration(
+            title: NSLocalizedString("iPhone.step1.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            icon: "gift",
+            iconBackgroundColor: TimelineView.Colors.green,
+            iconForegroundColor: .black,
+            subtitle: NSLocalizedString("iPhone.step1.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            linkColor: TimelineView.Colors.green,
+            linkPosition: .trailing
+        ),
+        TimelineStepView.Configuration(
+            title: NSLocalizedString("iPhone.step2.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            icon: "bell",
+            subtitle: NSLocalizedString("iPhone.step2.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            linkColor: TimelineView.Colors.link,
+            linkPosition: .both
+        ),
+        TimelineStepView.Configuration(
+            title: NSLocalizedString("iPhone.step3.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            icon: "crown.fill",
+            iconForegroundColor: TimelineView.Colors.linearityOrange,
+            subtitle: NSLocalizedString("iPhone.step3.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            linkColor: TimelineView.Colors.link,
+            linkPosition: .leading
+        )
+    ]}
+}
+
+private extension NSLayoutConstraint.Axis {
+    var opposite: NSLayoutConstraint.Axis {
+        switch self {
+        case .vertical:
+            return .horizontal
+        case .horizontal:
+            return .vertical
+        @unknown default:
+            return self
         }
     }
 }
 
+@available(iOS 13.0, *)
+private extension HorizontalAlignment {
+    private enum IconAlignment: AlignmentID {
+        static func defaultValue(in dimensions: ViewDimensions) -> CGFloat {
+            return dimensions[HorizontalAlignment.center]
+        }
+    }
+    static let iconAlignment = HorizontalAlignment(IconAlignment.self)
+}
+
+#if DEBUG
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-#Preview {
-    Preview()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        TimelineView(stepConfigurations: TimelineStepView.defaultIPhone)
+            .previewDevice(PreviewDevice(rawValue: "iPhone 15 Pro"))
+            .previewDisplayName("iPhone")
+        
+        TimelineView(stepConfigurations: TimelineStepView.defaultIPad)
+            .previewDevice(PreviewDevice(rawValue: "iPad Pro 11-inch (M4)"))
+            .previewDisplayName("iPad")
+    }
 }
-
 #endif
