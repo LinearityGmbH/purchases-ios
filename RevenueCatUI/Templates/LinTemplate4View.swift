@@ -52,7 +52,7 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    configurableTemplate5.body
+                    configurableTemplate5
                         .frame(
                             width: geometry.size.width * 0.5,
                             height: geometry.size.height
