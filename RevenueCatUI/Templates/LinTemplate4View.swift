@@ -23,6 +23,9 @@ struct LinTemplate4View: TemplateViewType {
     
     private struct WrapperView<Content: View>: View {
         let content: Content
+        init(@ViewBuilder content: () -> Content) {
+            self.content = content()
+        }
         var body: some View {
             content
             .fixedSize(horizontal: false, vertical: true)
@@ -31,24 +34,27 @@ struct LinTemplate4View: TemplateViewType {
     }
     private let configurableTemplate5: LinConfigurableTemplate5View<WrapperView<IntroEligibilityStateView>>
     
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+    
     init(_ configuration: TemplateViewConfiguration) {
         configurableTemplate5 = LinConfigurableTemplate5View(
             configuration,
-            .init(footer: { (_ selectedPackage: Package, _ eligibility: IntroEligibilityStatus?, locale: Locale) in
-                let msgProvider = CTAFooterMessageProvider(locale: locale)
-                let view = IntroEligibilityStateView(
+            getDefaultContentWidth: Constants.defaultContentWidth
+        ) { (_ selectedPackage: Package, _ eligibility: IntroEligibilityStatus?, locale: Locale) in
+            let msgProvider = CTAFooterMessageProvider(locale: locale)
+            WrapperView {
+                IntroEligibilityStateView(
                     textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
                     textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
                     introEligibility: eligibility
                 )
-                return WrapperView(content: view)
-            }),
-            getDefaultContentWidth: Constants.defaultContentWidth
-        )
+            }
+        }
     }
     
     var body: some View {
-        switch configurableTemplate5.horizontalSizeClass {
+        switch horizontalSizeClass {
         case .regular:
             GeometryReader { geometry in
                 HStack(spacing: 0) {
