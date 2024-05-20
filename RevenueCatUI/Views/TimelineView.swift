@@ -27,11 +27,7 @@ struct TimelineView: View {
     
     let stepConfigurations: [TimelineStepView.Configuration]
     
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
-    var axis: NSLayoutConstraint.Axis {
-        horizontalSizeClass == .regular ? .vertical : .horizontal
-    }
+    let axis: NSLayoutConstraint.Axis
     
     var body: some View {
         if axis == .horizontal {
@@ -297,13 +293,19 @@ private extension HorizontalAlignment {
 @available(tvOS, unavailable)
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        TimelineView(stepConfigurations: TimelineStepView.defaultIPhone)
-            .previewDevice(PreviewDevice(rawValue: "iPhone 15 Pro"))
-            .previewDisplayName("iPhone")
+        TimelineView(
+            stepConfigurations: TimelineStepView.defaultIPhone,
+            axis: .horizontal
+        )
+        .previewDevice(PreviewDevice(rawValue: "iPhone 15 Pro"))
+        .previewDisplayName("iPhone")
         
-        TimelineView(stepConfigurations: TimelineStepView.defaultIPad)
-            .previewDevice(PreviewDevice(rawValue: "iPad Pro 11-inch (M4)"))
-            .previewDisplayName("iPad")
+        TimelineView(
+            stepConfigurations: TimelineStepView.defaultIPad,
+            axis: .vertical
+        )
+        .previewDevice(PreviewDevice(rawValue: "iPad Pro 11-inch (M4)"))
+        .previewDisplayName("iPad")
     }
 }
 #endif
