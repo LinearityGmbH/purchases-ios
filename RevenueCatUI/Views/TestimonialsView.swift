@@ -66,7 +66,7 @@ struct TestimonialsView: View {
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 #Preview {
-    TestimonialsView()
+    TestimonialsView().frame(width: 300)
 }
 
 #endif
