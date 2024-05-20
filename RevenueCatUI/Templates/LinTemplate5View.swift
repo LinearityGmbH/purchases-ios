@@ -16,33 +16,31 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate5View: TemplateViewType {
-    var configuration: TemplateViewConfiguration {
-        configurableTemplate5.configuration
-    }
-    var userInterfaceIdiom: UserInterfaceIdiom {
-        configurableTemplate5.userInterfaceIdiom
-    }
-    var verticalSizeClass: UserInterfaceSizeClass? {
-        configurableTemplate5.verticalSizeClass
-    }
-    let configurableTemplate5: LinConfigurableTemplate5View<EmptyView>
-    
+    let configuration: TemplateViewConfiguration
+    @Environment(\.userInterfaceIdiom)
+    var userInterfaceIdiom
+    @Environment(\.verticalSizeClass)
+    var verticalSizeClass
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+
     init(_ configuration: TemplateViewConfiguration) {
-        configurableTemplate5 = LinConfigurableTemplate5View(
-            configuration,
-            getDefaultContentWidth: Constants.defaultContentWidth
-        ) { (_, _ , _) in
-            EmptyView()
-        }
+        self.configuration = configuration
     }
     
     var body: some View {
-        configurableTemplate5
+        LinConfigurableTemplate5View(
+            configuration,
+            getDefaultContentWidth: Constants.defaultContentWidth,
+            subtitleBuilder: { EmptyView() },
+            buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
+        )
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
+struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View>: View {
+    typealias SubtitleBuilder = () -> SubtitleView
     typealias ButtonSubtitleBuilder = (
             _ selectedPackage: Package,
             _ eligibility: IntroEligibilityStatus?,
@@ -75,15 +73,18 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
     private var purchaseHandler: PurchaseHandler
     
     private let buttonSubtitleBuilder: ButtonSubtitleBuilder
+    private let subtitleBuilder: SubtitleBuilder
     private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
 
     init(
         _ configuration: TemplateViewConfiguration,
         getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
+        @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
+        self.subtitleBuilder = subtitleBuilder
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.getDefaultContentWidth = getDefaultContentWidth
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
@@ -152,6 +153,8 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
                         .font(self.font(for: .title2).bold())
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    self.subtitleBuilder()
 
                     self.features
 

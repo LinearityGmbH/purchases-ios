@@ -11,16 +11,14 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate4View: TemplateViewType {
-    var configuration: TemplateViewConfiguration {
-        configurableTemplate5.configuration
-    }
-    var userInterfaceIdiom: UserInterfaceIdiom {
-        configurableTemplate5.userInterfaceIdiom
-    }
-    var verticalSizeClass: UserInterfaceSizeClass? {
-        configurableTemplate5.verticalSizeClass
-    }
-    
+    let configuration: TemplateViewConfiguration
+    @Environment(\.userInterfaceIdiom)
+    var userInterfaceIdiom
+    @Environment(\.verticalSizeClass)
+    var verticalSizeClass
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+
     private struct WrapperView<Content: View>: View {
         let content: Content
         init(@ViewBuilder content: () -> Content) {
@@ -32,24 +30,27 @@ struct LinTemplate4View: TemplateViewType {
             .font(.system(size: 13))
         }
     }
-    private let configurableTemplate5: LinConfigurableTemplate5View<WrapperView<IntroEligibilityStateView>>
-    
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
     
     init(_ configuration: TemplateViewConfiguration) {
-        configurableTemplate5 = LinConfigurableTemplate5View(
+        self.configuration = configuration
+    }
+    
+    @ViewBuilder
+    private func paywallContent(_ includeTimeline: Bool) -> some View {
+        LinConfigurableTemplate5View(
             configuration,
             getDefaultContentWidth: Constants.defaultContentWidth
-        ) { (_ selectedPackage: Package, _ eligibility: IntroEligibilityStatus?, locale: Locale) in
-            let msgProvider = CTAFooterMessageProvider(locale: locale)
-            WrapperView {
-                IntroEligibilityStateView(
-                    textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
-                    textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
-                    introEligibility: eligibility
-                )
+        ) {
+            if includeTimeline {
+                TimelineView(stepConfigurations: TimelineView.defaultIPhone, axis: .horizontal)
             }
+        } buttonSubtitleBuilder: { selectedPackage, eligibility, locale in
+            let msgProvider = CTAFooterMessageProvider(locale: locale)
+            IntroEligibilityStateView(
+                textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
+                textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
+                introEligibility: eligibility
+            )
         }
     }
     
@@ -58,11 +59,11 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    configurableTemplate5
-                        .frame(
-                            width: geometry.size.width * 0.5,
-                            height: geometry.size.height
-                        )
+                    paywallContent(false)
+                    .frame(
+                        width: geometry.size.width * 0.5,
+                        height: geometry.size.height
+                    )
                     AuxiliaryDetailsView()
                         .frame(
                             width: geometry.size.width * 0.5,
@@ -71,7 +72,7 @@ struct LinTemplate4View: TemplateViewType {
                 }
             }
         default:
-            configurableTemplate5
+            paywallContent(true)
         }
     }
     
@@ -81,6 +82,8 @@ struct LinTemplate4View: TemplateViewType {
                 Spacer().frame(width: 40)
                 VStack {
                     Spacer()
+                    TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                    Spacer().frame(height: 60)
                     TestimonialsView()
                     Spacer()
                     CompanyLogosView()
