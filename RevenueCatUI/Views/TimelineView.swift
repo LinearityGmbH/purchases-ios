@@ -207,30 +207,45 @@ struct TimelineStepView: View {
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 extension TimelineStepView {
+    private static func localize(_ key: String, value: String) -> String {
+        NSLocalizedString(
+            key,
+            tableName: "Paywall",
+            bundle: Bundle.main,
+            value: value,
+            comment: ""
+        )
+    }
     
     static var defaultIPad: [TimelineStepView.Configuration] {[
         TimelineStepView.Configuration(
-            title: NSLocalizedString("iPad.step1.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            title: localize("iPad.step1.title", value: "Today: Free trial for 7 days"),
             icon: "gift",
             iconBackgroundColor: TimelineView.Colors.green,
             iconForegroundColor: .black,
-            subtitle: NSLocalizedString("iPad.step1.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            subtitle: localize("iPad.step1.subtitle", value: "Get full access to design and animation tools"),
             linkColor: TimelineView.Colors.green,
             linkPosition: .trailing
         ),
         TimelineStepView.Configuration(
-            title: NSLocalizedString("iPad.step2.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            title: localize("iPad.step2.title", value: "Day 5: Reminder"),
             icon: "bell",
             iconForegroundColor: TimelineView.Colors.bell,
-            subtitle: NSLocalizedString("iPad.step2.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            subtitle: localize(
+                "iPad.step2.subtitle",
+                value: "We’ll send you a reminder 2 days before your free trial ends."
+            ),
             linkColor: TimelineView.Colors.link,
             linkPosition: .both
         ),
         TimelineStepView.Configuration(
-            title: NSLocalizedString("iPad.step3.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            title: localize("iPad.step3.title", value: "Day 7: Trial ends"),
             icon: "crown.fill",
             iconForegroundColor: TimelineView.Colors.linearityOrange,
-            subtitle: NSLocalizedString("iPad.step3.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            subtitle: localize(
+                "iPad.step3.subtitle",
+                value: "Your Pro subscription starts, unless you’ve canceled during the trial."
+            ),
             linkColor: .clear,
             linkPosition: .leading
         )
@@ -238,26 +253,26 @@ extension TimelineStepView {
     
     static var defaultIPhone: [TimelineStepView.Configuration] {[
         TimelineStepView.Configuration(
-            title: NSLocalizedString("iPhone.step1.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            title: localize("iPhone.step1.title", value: "Start free trial"),
             icon: "gift",
             iconBackgroundColor: TimelineView.Colors.green,
             iconForegroundColor: .black,
-            subtitle: NSLocalizedString("iPhone.step1.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            subtitle: localize("iPhone.step1.subtitle", value: "Today"),
             linkColor: TimelineView.Colors.green,
             linkPosition: .trailing
         ),
         TimelineStepView.Configuration(
-            title: NSLocalizedString("iPhone.step2.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            title: localize("iPhone.step1.title", value: "Start free trial"),
             icon: "bell",
-            subtitle: NSLocalizedString("iPhone.step2.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            subtitle: localize("iPhone.step2.subtitle", value: "Day 5"),
             linkColor: TimelineView.Colors.link,
             linkPosition: .both
         ),
         TimelineStepView.Configuration(
-            title: NSLocalizedString("iPhone.step3.title", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            title: localize("iPhone.step3.title", value: "Trial ends"),
             icon: "crown.fill",
             iconForegroundColor: TimelineView.Colors.linearityOrange,
-            subtitle: NSLocalizedString("iPhone.step3.subtitle", tableName: "Paywall", bundle: Bundle.module, comment: ""),
+            subtitle: localize("iPhone.step3.subtitle", value: "Day 7"),
             linkColor: TimelineView.Colors.link,
             linkPosition: .leading
         )

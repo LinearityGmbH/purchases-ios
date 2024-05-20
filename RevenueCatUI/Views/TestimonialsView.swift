@@ -11,7 +11,13 @@ import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct TestimonialsView: View {
-    private let text = NSLocalizedString("Testimonial.Message", tableName: "Paywall", bundle: Bundle.main, comment: "")
+    private let text = NSLocalizedString(
+        "Testimonial.Message",
+        tableName: "Paywall",
+        bundle: Bundle.main,
+        value: "Curve's user-friendly interface provides an amazing user experience, and this is one of the main reasons that made me choose Linearity Curve instead of other alternatives.",
+        comment: ""
+    )
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -59,7 +65,7 @@ struct TestimonialsView: View {
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 #Preview {
-    TestimonialsView()
+    TestimonialsView().frame(width: 300)
 }
 
 #endif
