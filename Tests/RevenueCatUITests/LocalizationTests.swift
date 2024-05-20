@@ -197,6 +197,28 @@ class SubscriptionPeriodEnglishLocalizationTests: BaseLocalizationTests {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+class SubscriptionStartingDayLocalizationTests: BaseLocalizationTests {
+    
+    override var locale: Locale { return .init(identifier: "en_US") }
+    
+    func testDayPeriod() {
+        verify(startingDayValue: 1, .day, "17 May")
+        verify(startingDayValue: 7, .day, "23 May")
+    }
+
+    func testsWeekPeriod() {
+        verify(startingDayValue: 1, .week, "23 May")
+        verify(startingDayValue: 3, .week, "6 June")
+    }
+
+    func testMonthPeriod() {
+        verify(startingDayValue: 1, .month, "16 June")
+        verify(startingDayValue: 3, .month, "16 August")
+        verify(startingDayValue: 6, .month, "16 November")
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 class SubscriptionPeriodGermanLocalizationTests: BaseLocalizationTests {
 
     override var locale: Locale { return .init(identifier: "de_DE") }
@@ -446,6 +468,21 @@ private extension BaseLocalizationTests {
     ) {
         let result = Localization.localizedDuration(for: SubscriptionPeriod(value: value, unit: unit),
                                                     locale: self.locale)
+        expect(file: file, line: line, result) == expected
+    }
+    
+    func verify(
+        startingDayValue value: Int,
+        _ unit: SubscriptionPeriod.Unit,
+        _ expected: String,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        let result = Localization.localizedStartingDay(
+            for: SubscriptionPeriod(value: value, unit: unit),
+            locale: locale,
+            now: Date(timeIntervalSinceReferenceDate: 737554789)
+        )
         expect(file: file, line: line, result) == expected
     }
 

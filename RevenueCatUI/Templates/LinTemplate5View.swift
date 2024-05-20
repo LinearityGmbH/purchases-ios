@@ -30,9 +30,10 @@ struct LinTemplate5View: TemplateViewType {
     init(_ configuration: TemplateViewConfiguration) {
         configurableTemplate5 = LinConfigurableTemplate5View(
             configuration,
-            .init(footer: { EmptyView() }), 
             getDefaultContentWidth: Constants.defaultContentWidth
-        )
+        ) { (_, _ , _) in
+            EmptyView()
+        }
     }
     
     var body: some View {
@@ -41,10 +42,12 @@ struct LinTemplate5View: TemplateViewType {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplate5View<FooterTextView: View>: View {
-    struct Template5Configuration {
-        let footer: () -> FooterTextView
-    }
+struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
+    typealias ButtonSubtitleBuilder = (
+            _ selectedPackage: Package,
+            _ eligibility: IntroEligibilityStatus?,
+            _ locale: Locale
+        ) -> ButtonSubtitleView
 
     let configuration: TemplateViewConfiguration
 
@@ -71,17 +74,17 @@ struct LinConfigurableTemplate5View<FooterTextView: View>: View {
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
     
-    private let template5Configuration: Template5Configuration
+    private let buttonSubtitleBuilder: ButtonSubtitleBuilder
     private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
 
     init(
         _ configuration: TemplateViewConfiguration,
-        _ template5Config: Template5Configuration,
-        getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?
+        getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
+        @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
-        self.template5Configuration = template5Config
+        self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.getDefaultContentWidth = getDefaultContentWidth
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
@@ -107,7 +110,11 @@ struct LinConfigurableTemplate5View<FooterTextView: View>: View {
                 .frame(maxWidth: defaultContentWidth)
                 .defaultHorizontalPadding()
             
-            template5Configuration.footer()
+            buttonSubtitleBuilder(
+                selectedPackage.content,
+                introEligibility[self.selectedPackage.content],
+                locale
+            )
             
             FooterView(configuration: self.configuration,
                        purchaseHandler: self.purchaseHandler,
