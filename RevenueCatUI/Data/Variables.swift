@@ -41,6 +41,7 @@ protocol VariableDataProvider {
     func periodNameAbbreviation(_ locale: Locale) -> String?
     func periodLength(_ locale: Locale) -> String?
     func subscriptionDuration(_ locale: Locale) -> String?
+    func subscriptionStartingDay(_ locale: Locale) -> String?
     func normalizedSubscriptionDuration(_ locale: Locale) -> String?
     func introductoryOfferDuration(_ locale: Locale) -> String?
 

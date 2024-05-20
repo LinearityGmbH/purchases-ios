@@ -11,14 +11,15 @@ import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct TestimonialsView: View {
-    private let text = NSLocalizedString(
-        "Testimonial.Message",
-        tableName: "Paywall",
-        bundle: Bundle.main,
+    private let text = Bundle.main.localizedString(
+        forKey: "Testimonial.Message",
         value: "Curve's user-friendly interface provides an amazing user experience, and this is one of the main reasons that made me choose Linearity Curve instead of other alternatives.",
-        comment: ""
+        table: "Paywall"
     )
     
+    private let author = "Nastya Kulyabina"
+    private let role = "Illustrator and graphic designer"
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 2) {
@@ -44,12 +45,12 @@ struct TestimonialsView: View {
                     .frame(width: 42, height: 42)
                     .cornerRadius(21)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Nastya Kulyabina")
+                    Text(author)
                         .foregroundStyle(
                             .primary
                         )
                         .font(.system(size: 13, weight: .medium))
-                    Text("Illustrator and graphic designer")
+                    Text(role)
                         .foregroundStyle(.secondary)
                         .font(.system(size: 11, weight: .regular))
                 }
