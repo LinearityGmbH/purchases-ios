@@ -20,27 +20,19 @@ struct LinTemplate4View: TemplateViewType {
     var horizontalSizeClass
     @EnvironmentObject
     private var introEligibilityViewModel: IntroEligibilityViewModel
+    @State
+    private var selectedPackage: TemplateViewConfiguration.Package
 
-    private struct WrapperView<Content: View>: View {
-        let content: Content
-        init(@ViewBuilder content: () -> Content) {
-            self.content = content()
-        }
-        var body: some View {
-            content
-            .fixedSize(horizontal: false, vertical: true)
-            .font(.system(size: 13))
-        }
-    }
-    
     init(_ configuration: TemplateViewConfiguration) {
+        self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
     }
     
     @ViewBuilder
     private func paywallContent(displayTimeline: Bool) -> some View {
         LinConfigurableTemplate5View(
-            configuration,
+            configuration, 
+            selectedPackage: $selectedPackage,
             displayImage: false,
             titleProvider: { [introEligibilityViewModel] package in
                 let eligible = introEligibilityViewModel.allEligibility[package.content] == .eligible
@@ -69,18 +61,25 @@ struct LinTemplate4View: TemplateViewType {
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
                     .padding([.top, .bottom], 40)
-                AuxiliaryDetailsView()
+                AuxiliaryDetailsView(eligible: eligible)
             }
         default:
-            paywallContent(displayTimeline: true)
+            paywallContent(displayTimeline: eligible)
         }
     }
     
+    var eligible: Bool {
+        introEligibilityViewModel.allEligibility[selectedPackage.content] == .eligible
+    }
+    
     private struct AuxiliaryDetailsView: View {
+        let eligible: Bool
         var body: some View {
             VStack(alignment: .leading) {
                 Spacer()
-                TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                if eligible {
+                    TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                }
                 Spacer().frame(height: 60)
                 TestimonialsView()
                 Spacer()

@@ -23,15 +23,19 @@ struct LinTemplate5View: TemplateViewType {
     var verticalSizeClass
     @Environment(\.horizontalSizeClass)
     var horizontalSizeClass
+    @State
+    private var selectedPackage: TemplateViewConfiguration.Package
 
     init(_ configuration: TemplateViewConfiguration) {
+        self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
     }
     
     var body: some View {
         LinConfigurableTemplate5View(
             configuration, 
-            displayImage: true, 
+            selectedPackage: $selectedPackage,
+            displayImage: true,
             titleProvider: { package in package.localization.title },
             getDefaultContentWidth: Constants.defaultContentWidth,
             subtitleBuilder: { EmptyView() },
@@ -51,7 +55,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
     let configuration: TemplateViewConfiguration
 
-    @State
+    @Binding
     private var selectedPackage: TemplateViewConfiguration.Package
 
     @State
@@ -82,13 +86,14 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
     init(
         _ configuration: TemplateViewConfiguration,
+        selectedPackage: Binding<TemplateViewConfiguration.Package>,
         displayImage: Bool,
         titleProvider: @escaping (TemplateViewConfiguration.Package) -> String,
         getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
         @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
-        self._selectedPackage = .init(initialValue: configuration.packages.default)
+        self._selectedPackage = selectedPackage
         self.configuration = configuration
         self.displayImage = displayImage
         self.subtitleBuilder = subtitleBuilder
@@ -131,7 +136,6 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         }
         .foregroundColor(self.configuration.colors.text1Color)
         .edgesIgnoringSafeArea(.top, apply: self.displayImage)
-        .animation(Constants.fastAnimation, value: self.selectedPackage)
         .frame(maxHeight: .infinity)
     }
 
@@ -229,7 +233,9 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                 let isSelected = self.selectedPackage.content === package.content
 
                 Button {
-                    self.selectedPackage = package
+                    withAnimation(.smooth) {
+                        self.selectedPackage = package
+                    }
                 } label: {
                     self.packageButton(package, selected: isSelected)
                 }
