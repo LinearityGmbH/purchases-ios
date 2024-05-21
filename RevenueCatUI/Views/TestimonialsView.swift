@@ -11,14 +11,25 @@ import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct TestimonialsView: View {
-    private let text = Bundle.main.localizedString(
-        forKey: "Testimonial.Message",
+    static var bundle = Foundation.Bundle.main
+    private let text = NSLocalizedString(
+        "Testimonial.Message",
+        bundle: Self.bundle,
         value: "Curve's user-friendly interface provides an amazing user experience, and this is one of the main reasons that made me choose Linearity Curve instead of other alternatives.",
-        table: "Paywall"
+        comment: ""
     )
-    
-    private let author = "Nastya Kulyabina"
-    private let role = "Illustrator and graphic designer"
+    private let author = NSLocalizedString(
+        "Testimonial.Author",
+        bundle: Self.bundle,
+        value: "Nastya Kulyabina",
+        comment: ""
+    )
+    private let role = NSLocalizedString(
+        "Testimonial.Role",
+        bundle: Self.bundle,
+        value: "Illustrator and graphic designer",
+        comment: ""
+    )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

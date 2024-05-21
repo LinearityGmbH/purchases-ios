@@ -13,6 +13,7 @@ import RevenueCat
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 struct TimelineView: View {
+    static var bundle = Foundation.Bundle.main
     
     enum Colors {
         static let green = Color(red: 8.0 / 255.0, green: 195.0 / 255.0, blue: 130.0 / 255.0)
@@ -207,7 +208,7 @@ private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
         tableName: "Paywall",
-        bundle: Bundle.main,
+        bundle: TimelineView.bundle,
         value: value,
         comment: ""
     )
