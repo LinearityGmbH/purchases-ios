@@ -126,7 +126,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                        displayingAllPlans: self.$displayingAllPlans)
         }
         .foregroundColor(self.configuration.colors.text1Color)
-        .edgesIgnoringSafeArea(.top)
+        .edgesIgnoringSafeArea(.top, apply: self.displayImage)
         .animation(Constants.fastAnimation, value: self.selectedPackage)
         .frame(maxHeight: .infinity)
     }
@@ -161,8 +161,14 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                     self.subtitleBuilder()
 
                     self.features
-
+                        .padding([.bottom], 20)
+                    if horizontalSizeClass == .compact {
+                        Spacer()
+                    }
                     self.packages
+                    if horizontalSizeClass == .regular && !self.displayImage {
+                        Spacer(minLength: 20)
+                    }
                 } else {
                     self.packages
                         .hideFooterContent(self.configuration,
@@ -363,6 +369,23 @@ private extension PaywallData.Configuration.Colors {
 
 }
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
+struct IgnoreSafeAreaConditionally: ViewModifier {
+    
+    let edges: Edge.Set
+    let ignoreSafeArea: Bool
+    
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if ignoreSafeArea {
+            content
+                .edgesIgnoringSafeArea(edges)
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - Extensions
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -377,6 +400,12 @@ private extension LinConfigurableTemplate5View {
     }
 }
 
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension View {
+    func edgesIgnoringSafeArea(_ edges: Edge.Set, apply: Bool) -> some View {
+        modifier(IgnoreSafeAreaConditionally(edges: edges, ignoreSafeArea: apply))
+    }
+}
 // MARK: -
 
 #if DEBUG

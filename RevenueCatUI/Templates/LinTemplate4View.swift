@@ -58,19 +58,10 @@ struct LinTemplate4View: TemplateViewType {
     var body: some View {
         switch horizontalSizeClass {
         case .regular:
-            GeometryReader { geometry in
-                HStack(spacing: 0) {
-                    paywallContent(displayTimeline: true)
-                    .frame(
-                        width: geometry.size.width * 0.5,
-                        height: geometry.size.height
-                    )
-                    AuxiliaryDetailsView()
-                        .frame(
-                            width: geometry.size.width * 0.5,
-                            height: geometry.size.height
-                        )
-                }
+            HStack(spacing: 0) {
+                paywallContent(displayTimeline: false)
+                    .padding([.top, .bottom], 40)
+                AuxiliaryDetailsView()
             }
         default:
             paywallContent(displayTimeline: true)
@@ -79,32 +70,20 @@ struct LinTemplate4View: TemplateViewType {
     
     private struct AuxiliaryDetailsView: View {
         var body: some View {
-            HStack {
-                Spacer().frame(width: 40)
-                VStack {
-                    VStack {
-                        Spacer()
-                        TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
-                        Spacer().frame(height: 60)
-                        TestimonialsView()
-                        Spacer()
-                    }
-                    .scrollableIfNecessaryWhenAvailable(enabled: true)
-                    CompanyLogosView()
-                    Spacer().frame(height: 24)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                Spacer().frame(width: 40)
+            VStack(alignment: .leading) {
+                Spacer()
+                TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                Spacer().frame(height: 60)
+                TestimonialsView()
+                Spacer()
+                CompanyLogosView()
+                Spacer().frame(height: 24)
             }
-            .background {
-                Rectangle()
-                    .fill(
-                        Color(
-                            light: Color(red: 242 / 255.0, green: 242 / 255.0, blue: 242 / 255.0),
-                            dark: Color(red: 44 / 255.0, green: 44 / 255.0, blue: 46 / 255.0)
-                        )
-                    )
-            }
+            .padding([.leading, .trailing], 40)
+            .background(Color(
+                light: Color(red: 242 / 255.0, green: 242 / 255.0, blue: 242 / 255.0),
+                dark: Color(red: 44 / 255.0, green: 44 / 255.0, blue: 46 / 255.0)
+            ))
         }
     }
 }
