@@ -30,7 +30,8 @@ struct LinTemplate5View: TemplateViewType {
     
     var body: some View {
         LinConfigurableTemplate5View(
-            configuration,
+            configuration, 
+            displayImage: true,
             getDefaultContentWidth: Constants.defaultContentWidth,
             subtitleBuilder: { EmptyView() },
             buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
@@ -72,18 +73,21 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
     
+    private let displayImage: Bool
     private let buttonSubtitleBuilder: ButtonSubtitleBuilder
     private let subtitleBuilder: SubtitleBuilder
     private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
 
     init(
         _ configuration: TemplateViewConfiguration,
+        displayImage: Bool,
         getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
         @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
+        self.displayImage = displayImage
         self.subtitleBuilder = subtitleBuilder
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.getDefaultContentWidth = getDefaultContentWidth
@@ -131,7 +135,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     private var scrollableContent: some View {
         VStack(spacing: 16) {
             if self.configuration.mode.isFullScreen {
-                if let header = self.configuration.headerImageURL {
+                if let header = self.configuration.headerImageURL, self.displayImage {
                     Spacer()
                         .frame(
                             maxWidth: .infinity,

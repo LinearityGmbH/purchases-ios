@@ -36,12 +36,13 @@ struct LinTemplate4View: TemplateViewType {
     }
     
     @ViewBuilder
-    private func paywallContent(_ includeTimeline: Bool) -> some View {
+    private func paywallContent(displayTimeline: Bool) -> some View {
         LinConfigurableTemplate5View(
             configuration,
+            displayImage: false,
             getDefaultContentWidth: Constants.defaultContentWidth
         ) {
-            if includeTimeline {
+            if displayTimeline {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone, axis: .horizontal)
             }
         } buttonSubtitleBuilder: { selectedPackage, eligibility, locale in
@@ -59,7 +60,7 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    paywallContent(false)
+                    paywallContent(displayTimeline: true)
                     .frame(
                         width: geometry.size.width * 0.5,
                         height: geometry.size.height
@@ -72,7 +73,7 @@ struct LinTemplate4View: TemplateViewType {
                 }
             }
         default:
-            paywallContent(true)
+            paywallContent(displayTimeline: true)
         }
     }
     
@@ -81,11 +82,14 @@ struct LinTemplate4View: TemplateViewType {
             HStack {
                 Spacer().frame(width: 40)
                 VStack {
-                    Spacer()
-                    TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
-                    Spacer().frame(height: 60)
-                    TestimonialsView()
-                    Spacer()
+                    VStack {
+                        Spacer()
+                        TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                        Spacer().frame(height: 60)
+                        TestimonialsView()
+                        Spacer()
+                    }
+                    .scrollableIfNecessaryWhenAvailable(enabled: true)
                     CompanyLogosView()
                     Spacer().frame(height: 24)
                 }
