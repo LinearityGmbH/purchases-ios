@@ -13,19 +13,19 @@ import RevenueCat
 struct TestimonialsView: View {
     static var bundle = Foundation.Bundle.module
     private let text = NSLocalizedString(
-        "Testimonial.Message",
+        "Message",
         bundle: Self.bundle,
         value: "Curve's user-friendly interface provides an amazing user experience, and this is one of the main reasons that made me choose Linearity Curve instead of other alternatives.",
         comment: ""
     )
     private let author = NSLocalizedString(
-        "Testimonial.Author",
+        "Author",
         bundle: Self.bundle,
         value: "Nastya Kulyabina",
         comment: ""
     )
     private let role = NSLocalizedString(
-        "Testimonial.Role",
+        "Role",
         bundle: Self.bundle,
         value: "Illustrator and graphic designer",
         comment: ""
@@ -46,7 +46,7 @@ struct TestimonialsView: View {
                 )
                 .font(.system(size: 13, weight: .regular))
             HStack {
-                Image(ImageResource(name: "Testimonial.Author", bundle: Self.bundle))
+                Image(ImageResource(name: "Author", bundle: Self.bundle))
                     .resizable(resizingMode: .stretch)
                     .background(content: {
                         Rectangle().fill(

@@ -207,7 +207,6 @@ struct TimelineView: View {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        tableName: "Paywall",
         bundle: TimelineView.bundle,
         value: value,
         comment: ""
