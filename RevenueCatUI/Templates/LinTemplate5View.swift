@@ -253,7 +253,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                         : self.configuration.colors.unselectedOutline,
                         lineWidth: Constants.defaultPackageBorderWidth
                     ).background {
-                        Rectangle().fill(
+                        self.roundedRectangle.fill(
                             selected
                             ? Color(
                                 light: Color(
