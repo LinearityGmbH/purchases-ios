@@ -245,14 +245,30 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
             .defaultPadding()
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: Template5Constants.packageButtonAlignment)
-            .overlay {
+            .background {
                 self.roundedRectangle
                     .stroke(
                         selected
                         ? self.configuration.colors.selectedOutline
                         : self.configuration.colors.unselectedOutline,
                         lineWidth: Constants.defaultPackageBorderWidth
-                    )
+                    ).background {
+                        Rectangle().fill(
+                            selected
+                            ? Color(
+                                light: Color(
+                                    red: 0xFF / 255.0, green: 0xF8 / 255.0, blue: 0xF3 / 255.0
+                                ),
+                                dark: Color(
+                                    red: 0xFF / 255.0,
+                                    green: 0x96 / 255.0,
+                                    blue: 0x14 / 255.0,
+                                    opacity: 0x0D / 255.0
+                                )
+                            )
+                            : .clear
+                        )
+                    }
             }
             .overlay(alignment: .topTrailing) {
                 self.packageDiscountLabel(package, selected: selected)
