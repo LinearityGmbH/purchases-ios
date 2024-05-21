@@ -11,7 +11,7 @@ import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct TestimonialsView: View {
-    static var bundle = Foundation.Bundle.main
+    static var bundle = Foundation.Bundle.module
     private let text = NSLocalizedString(
         "Testimonial.Message",
         bundle: Self.bundle,
@@ -46,7 +46,7 @@ struct TestimonialsView: View {
                 )
                 .font(.system(size: 13, weight: .regular))
             HStack {
-                Image(.nastyaCropped)
+                Image(ImageResource(name: "Testimonial.Author", bundle: Self.bundle))
                     .resizable(resizingMode: .stretch)
                     .background(content: {
                         Rectangle().fill(

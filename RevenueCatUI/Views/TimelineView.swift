@@ -13,7 +13,7 @@ import RevenueCat
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 struct TimelineView: View {
-    static var bundle = Foundation.Bundle.main
+    static var bundle = Foundation.Bundle.module
     
     enum Colors {
         static let green = Color(red: 8.0 / 255.0, green: 195.0 / 255.0, blue: 130.0 / 255.0)

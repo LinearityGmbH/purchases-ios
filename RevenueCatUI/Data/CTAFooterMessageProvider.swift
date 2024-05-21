@@ -9,7 +9,7 @@ import Foundation
 
 struct CTAFooterMessageProvider {
     let locale: Locale
-    static var bundle = Foundation.Bundle.main
+    static var bundle = Foundation.Bundle.module
 
     private let introOfferText = NSLocalizedString(
         "Offering.IntroOffering.Description",
