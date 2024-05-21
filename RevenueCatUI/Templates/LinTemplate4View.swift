@@ -18,6 +18,8 @@ struct LinTemplate4View: TemplateViewType {
     var verticalSizeClass
     @Environment(\.horizontalSizeClass)
     var horizontalSizeClass
+    @EnvironmentObject
+    private var introEligibilityViewModel: IntroEligibilityViewModel
 
     private struct WrapperView<Content: View>: View {
         let content: Content
@@ -40,6 +42,12 @@ struct LinTemplate4View: TemplateViewType {
         LinConfigurableTemplate5View(
             configuration,
             displayImage: false,
+            titleProvider: { [introEligibilityViewModel] package in
+                let eligible = introEligibilityViewModel.allEligibility[package.content] == .eligible
+                return eligible
+                ? localize("Title.EligibleOffering", value: "Try Linearity Pro for free")
+                : localize("Title.NonEligibleOffering", value: "Upgrade to Linearity Pro")
+            },
             getDefaultContentWidth: Constants.defaultContentWidth
         ) {
             if displayTimeline {
@@ -86,6 +94,18 @@ struct LinTemplate4View: TemplateViewType {
             ))
         }
     }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+private func localize(_ key: String, value: String) -> String {
+    NSLocalizedString(
+        key,
+        bundle: TimelineView.bundle,
+        value: value,
+        comment: ""
+    )
 }
 
 #if DEBUG

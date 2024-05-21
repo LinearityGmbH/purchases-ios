@@ -31,7 +31,8 @@ struct LinTemplate5View: TemplateViewType {
     var body: some View {
         LinConfigurableTemplate5View(
             configuration, 
-            displayImage: true,
+            displayImage: true, 
+            titleProvider: { package in package.localization.title },
             getDefaultContentWidth: Constants.defaultContentWidth,
             subtitleBuilder: { EmptyView() },
             buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
@@ -77,10 +78,12 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     private let buttonSubtitleBuilder: ButtonSubtitleBuilder
     private let subtitleBuilder: SubtitleBuilder
     private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
+    private let titleProvider: (TemplateViewConfiguration.Package) -> String
 
     init(
         _ configuration: TemplateViewConfiguration,
         displayImage: Bool,
+        titleProvider: @escaping (TemplateViewConfiguration.Package) -> String,
         getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
         @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
@@ -91,6 +94,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         self.subtitleBuilder = subtitleBuilder
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.getDefaultContentWidth = getDefaultContentWidth
+        self.titleProvider = titleProvider
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
     
@@ -153,7 +157,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
             Group {
                 if self.configuration.mode.isFullScreen {
-                    Text(.init(self.selectedLocalization.title))
+                    Text(.init(titleProvider(selectedPackage)))
                         .font(self.font(for: .title2).bold())
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)

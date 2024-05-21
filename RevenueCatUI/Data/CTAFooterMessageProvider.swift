@@ -12,7 +12,7 @@ struct CTAFooterMessageProvider {
     static var bundle = Foundation.Bundle.module
 
     private let introOfferText = NSLocalizedString(
-        "Offering.IntroOffering.Description",
+        "Footer.IntroOffering.Description",
         bundle: Self.bundle,
         value: "%1$@ free, then %2$@ from %3$@",
         comment: ""
@@ -27,7 +27,7 @@ struct CTAFooterMessageProvider {
     }
 
     private let noIntroOfferText = NSLocalizedString(
-        "Offering.NoIntroOffering.Description",
+        "Footer.NoIntroOffering.Description",
         bundle: Self.bundle,
         value: "%@ recurring, cancel anytime",
         comment: ""
