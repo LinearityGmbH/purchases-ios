@@ -263,7 +263,7 @@ extension TimelineView {
             linkPosition: .trailing
         ),
         StepConfiguration(
-            title: localize("iPhone.step1.title", value: "Start free trial"),
+            title: localize("iPhone.step2.title", value: "Reminder"),
             icon: "bell",
             subtitle: localize("iPhone.step2.subtitle", value: "Day 5"),
             linkColor: TimelineView.Colors.link,
