@@ -13,6 +13,7 @@ import RevenueCat
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 struct TimelineView: View {
+    static var bundle = Foundation.Bundle.module
     
     enum Colors {
         static let green = Color(red: 8.0 / 255.0, green: 195.0 / 255.0, blue: 130.0 / 255.0)
@@ -206,8 +207,7 @@ struct TimelineView: View {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        tableName: "Paywall",
-        bundle: Bundle.main,
+        bundle: TimelineView.bundle,
         value: value,
         comment: ""
     )
@@ -263,7 +263,7 @@ extension TimelineView {
             linkPosition: .trailing
         ),
         StepConfiguration(
-            title: localize("iPhone.step1.title", value: "Start free trial"),
+            title: localize("iPhone.step2.title", value: "Reminder"),
             icon: "bell",
             subtitle: localize("iPhone.step2.subtitle", value: "Day 5"),
             linkColor: TimelineView.Colors.link,

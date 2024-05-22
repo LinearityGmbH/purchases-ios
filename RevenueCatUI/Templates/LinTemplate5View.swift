@@ -16,33 +16,37 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate5View: TemplateViewType {
-    var configuration: TemplateViewConfiguration {
-        configurableTemplate5.configuration
-    }
-    var userInterfaceIdiom: UserInterfaceIdiom {
-        configurableTemplate5.userInterfaceIdiom
-    }
-    var verticalSizeClass: UserInterfaceSizeClass? {
-        configurableTemplate5.verticalSizeClass
-    }
-    let configurableTemplate5: LinConfigurableTemplate5View<EmptyView>
-    
+    let configuration: TemplateViewConfiguration
+    @Environment(\.userInterfaceIdiom)
+    var userInterfaceIdiom
+    @Environment(\.verticalSizeClass)
+    var verticalSizeClass
+    @Environment(\.horizontalSizeClass)
+    var horizontalSizeClass
+    @State
+    private var selectedPackage: TemplateViewConfiguration.Package
+
     init(_ configuration: TemplateViewConfiguration) {
-        configurableTemplate5 = LinConfigurableTemplate5View(
-            configuration,
-            getDefaultContentWidth: Constants.defaultContentWidth
-        ) { (_, _ , _) in
-            EmptyView()
-        }
+        self._selectedPackage = .init(initialValue: configuration.packages.default)
+        self.configuration = configuration
     }
     
     var body: some View {
-        configurableTemplate5
+        LinConfigurableTemplate5View(
+            configuration, 
+            selectedPackage: $selectedPackage,
+            displayImage: true,
+            titleProvider: { package in package.localization.title },
+            getDefaultContentWidth: Constants.defaultContentWidth,
+            subtitleBuilder: { EmptyView() },
+            buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
+        )
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
+struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View>: View {
+    typealias SubtitleBuilder = () -> SubtitleView
     typealias ButtonSubtitleBuilder = (
             _ selectedPackage: Package,
             _ eligibility: IntroEligibilityStatus?,
@@ -51,7 +55,7 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
 
     let configuration: TemplateViewConfiguration
 
-    @State
+    @Binding
     private var selectedPackage: TemplateViewConfiguration.Package
 
     @State
@@ -74,18 +78,28 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
     
+    private let displayImage: Bool
     private let buttonSubtitleBuilder: ButtonSubtitleBuilder
+    private let subtitleBuilder: SubtitleBuilder
     private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
+    private let titleProvider: (TemplateViewConfiguration.Package) -> String
 
     init(
         _ configuration: TemplateViewConfiguration,
+        selectedPackage: Binding<TemplateViewConfiguration.Package>,
+        displayImage: Bool,
+        titleProvider: @escaping (TemplateViewConfiguration.Package) -> String,
         getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
+        @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
-        self._selectedPackage = .init(initialValue: configuration.packages.default)
+        self._selectedPackage = selectedPackage
         self.configuration = configuration
+        self.displayImage = displayImage
+        self.subtitleBuilder = subtitleBuilder
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.getDefaultContentWidth = getDefaultContentWidth
+        self.titleProvider = titleProvider
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
     
@@ -121,8 +135,7 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
                        displayingAllPlans: self.$displayingAllPlans)
         }
         .foregroundColor(self.configuration.colors.text1Color)
-        .edgesIgnoringSafeArea(.top)
-        .animation(Constants.fastAnimation, value: self.selectedPackage)
+        .edgesIgnoringSafeArea(.top, apply: self.displayImage)
         .frame(maxHeight: .infinity)
     }
 
@@ -130,7 +143,7 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
     private var scrollableContent: some View {
         VStack(spacing: 16) {
             if self.configuration.mode.isFullScreen {
-                if let header = self.configuration.headerImageURL {
+                if let header = self.configuration.headerImageURL, self.displayImage {
                     Spacer()
                         .frame(
                             maxWidth: .infinity,
@@ -148,14 +161,22 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
 
             Group {
                 if self.configuration.mode.isFullScreen {
-                    Text(.init(self.selectedLocalization.title))
+                    Text(.init(titleProvider(selectedPackage)))
                         .font(self.font(for: .title2).bold())
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    self.subtitleBuilder()
 
                     self.features
-
+                        .padding([.bottom], 20)
+                    if horizontalSizeClass == .compact {
+                        Spacer()
+                    }
                     self.packages
+                    if horizontalSizeClass == .regular && !self.displayImage {
+                        Spacer(minLength: 20)
+                    }
                 } else {
                     self.packages
                         .hideFooterContent(self.configuration,
@@ -212,7 +233,9 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
                 let isSelected = self.selectedPackage.content === package.content
 
                 Button {
-                    self.selectedPackage = package
+                    withAnimation(.smooth) {
+                        self.selectedPackage = package
+                    }
                 } label: {
                     self.packageButton(package, selected: isSelected)
                 }
@@ -228,14 +251,30 @@ struct LinConfigurableTemplate5View<ButtonSubtitleView: View>: View {
             .defaultPadding()
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: Template5Constants.packageButtonAlignment)
-            .overlay {
+            .background {
                 self.roundedRectangle
                     .stroke(
                         selected
                         ? self.configuration.colors.selectedOutline
                         : self.configuration.colors.unselectedOutline,
                         lineWidth: Constants.defaultPackageBorderWidth
-                    )
+                    ).background {
+                        self.roundedRectangle.fill(
+                            selected
+                            ? Color(
+                                light: Color(
+                                    red: 0xFF / 255.0, green: 0xF8 / 255.0, blue: 0xF3 / 255.0
+                                ),
+                                dark: Color(
+                                    red: 0xFF / 255.0,
+                                    green: 0x96 / 255.0,
+                                    blue: 0x14 / 255.0,
+                                    opacity: 0x0D / 255.0
+                                )
+                            )
+                            : .clear
+                        )
+                    }
             }
             .overlay(alignment: .topTrailing) {
                 self.packageDiscountLabel(package, selected: selected)
@@ -356,6 +395,23 @@ private extension PaywallData.Configuration.Colors {
 
 }
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
+struct IgnoreSafeAreaConditionally: ViewModifier {
+    
+    let edges: Edge.Set
+    let ignoreSafeArea: Bool
+    
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if ignoreSafeArea {
+            content
+                .edgesIgnoringSafeArea(edges)
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - Extensions
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -370,6 +426,12 @@ private extension LinConfigurableTemplate5View {
     }
 }
 
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension View {
+    func edgesIgnoringSafeArea(_ edges: Edge.Set, apply: Bool) -> some View {
+        modifier(IgnoreSafeAreaConditionally(edges: edges, ignoreSafeArea: apply))
+    }
+}
 // MARK: -
 
 #if DEBUG

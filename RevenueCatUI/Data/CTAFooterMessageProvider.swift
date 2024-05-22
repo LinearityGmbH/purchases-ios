@@ -9,11 +9,13 @@ import Foundation
 
 struct CTAFooterMessageProvider {
     let locale: Locale
-    
-    private let introOfferText = Bundle.main.localizedString(
-        forKey: "Offering.IntroOffering.Description",
+    static var bundle = Foundation.Bundle.module
+
+    private let introOfferText = NSLocalizedString(
+        "Footer.IntroOffering.Description",
+        bundle: Self.bundle,
         value: "%1$@ free, then %2$@ from %3$@",
-        table: "Paywall"
+        comment: ""
     )
     func makeTextWithIntroOffer(_ variableDataProvider: VariableDataProvider) -> String {
         String(
@@ -24,10 +26,11 @@ struct CTAFooterMessageProvider {
         )
     }
 
-    private let noIntroOfferText = Bundle.main.localizedString(
-        forKey: "Offering.NoIntroOffering.Description",
+    private let noIntroOfferText = NSLocalizedString(
+        "Footer.NoIntroOffering.Description",
+        bundle: Self.bundle,
         value: "%@ recurring, cancel anytime",
-        table: "Paywall"
+        comment: ""
     )
     func makeTextWithNoIntroOffer(_ variableDataProvider: VariableDataProvider) -> String {
         String(format: noIntroOfferText, variableDataProvider.localizedPricePerPeriodFull(locale))
