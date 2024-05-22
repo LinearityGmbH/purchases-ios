@@ -262,15 +262,10 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                         self.roundedRectangle.fill(
                             selected
                             ? Color(
-                                light: Color(
-                                    red: 0xFF / 255.0, green: 0xF8 / 255.0, blue: 0xF3 / 255.0
-                                ),
-                                dark: Color(
-                                    red: 0xFF / 255.0,
-                                    green: 0x96 / 255.0,
-                                    blue: 0x14 / 255.0,
-                                    opacity: 0x0D / 255.0
-                                )
+                                red: 0xFF / 255.0,
+                                green: 0x96 / 255.0,
+                                blue: 0x14 / 255.0,
+                                opacity: 0x0D / 255.0
                             )
                             : .clear
                         )
