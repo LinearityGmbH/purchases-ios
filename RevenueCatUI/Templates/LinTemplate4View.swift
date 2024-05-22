@@ -60,7 +60,6 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
-                    .padding([.top, .bottom], 40)
                 AuxiliaryDetailsView(eligible: eligible)
             }
         default:
@@ -76,15 +75,17 @@ struct LinTemplate4View: TemplateViewType {
         let eligible: Bool
         var body: some View {
             VStack(alignment: .leading) {
-                Spacer()
-                if eligible {
-                    TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                VStack(alignment: .leading) {
+                    Spacer()
+                    if eligible {
+                        TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                        Spacer().frame(height: 60)
+                    }
+                    TestimonialsView()
+                    Spacer()
                 }
-                Spacer().frame(height: 60)
-                TestimonialsView()
-                Spacer()
                 CompanyLogosView()
-                Spacer().frame(height: 24)
+                Spacer().frame(height: 12)
             }
             .padding([.leading, .trailing], 40)
             .background(Color(
