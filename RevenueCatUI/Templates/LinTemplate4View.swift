@@ -102,7 +102,7 @@ struct LinTemplate4View: TemplateViewType {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        bundle: TimelineView.bundle,
+        bundle: CTAFooterMessageProvider.bundle,
         value: value,
         comment: ""
     )
