@@ -174,6 +174,7 @@ struct TimelineView: View {
                         Text(configuration.subtitle)
                             .foregroundStyle(.secondary)
                             .font(.system(size: 12))
+                            .frame(minHeight: 30, alignment: .top)
                         Spacer()
                             .frame(height: 8)
                     }

@@ -95,7 +95,7 @@ extension PaywallData {
                                   fonts: fonts,
                                   locale: locale) {
         case let .success(configuration):
-            Self.createView(template: template, configuration: configuration)
+            Self.createView(offering: offering, template: template, configuration: configuration)
                 .adaptTemplateView(with: configuration)
                 .task(id: offering) {
                     await introEligibility.computeEligibility(for: configuration.packages)
@@ -134,7 +134,8 @@ extension PaywallData {
     }
 
     @ViewBuilder
-    private static func createView(template: PaywallTemplate,
+    private static func createView(offering: Offering,
+                                   template: PaywallTemplate,
                                    configuration: TemplateViewConfiguration) -> some View {
         #if os(watchOS)
         WatchTemplateView(configuration)
@@ -149,7 +150,11 @@ extension PaywallData {
         case .template4:
             Template4View(configuration)
         case .template5:
-            LinTemplate4View(configuration)
+            if offering.getMetadataValue(for: "show_new_paywall", default: false) {
+                LinTemplate4View(configuration)
+            } else {
+                LinTemplate5View(configuration)
+            }
         }
         #endif
     }
