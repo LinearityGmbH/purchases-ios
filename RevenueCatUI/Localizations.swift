@@ -13,6 +13,7 @@ public func installLocalizations(
     timelineBundle: Bundle,
     testimonialsBundle: Bundle
 ) {
+    LinTemplate4View.bundle = paywallBundle
     CTAFooterMessageProvider.bundle = paywallBundle
     TimelineView.bundle = timelineBundle
     TestimonialsView.bundle = testimonialsBundle
