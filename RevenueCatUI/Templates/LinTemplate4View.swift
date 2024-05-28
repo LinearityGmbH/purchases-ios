@@ -11,6 +11,7 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate4View: TemplateViewType {
+    static var bundle = Foundation.Bundle.module
     let configuration: TemplateViewConfiguration
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
@@ -102,7 +103,7 @@ struct LinTemplate4View: TemplateViewType {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        bundle: CTAFooterMessageProvider.bundle,
+        bundle: LinTemplate4View.bundle,
         value: value,
         comment: ""
     )
