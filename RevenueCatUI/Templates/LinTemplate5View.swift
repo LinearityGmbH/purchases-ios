@@ -208,7 +208,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                         if icon == .tick {
                             Image(.icCheckmark)
                                 .foregroundColor(self.configuration.colors.featureIcon)
-                                .font(self.font(for: .subheadline))
+                                .font(.system(size: 15))
                         } else {
                             IconView(icon: icon, tint: self.configuration.colors.featureIcon)
                                 .frame(width: self.iconSize, height: self.iconSize)
@@ -216,7 +216,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                     }
 
                     Text(.init(feature.title))
-                        .font(self.font(for: .subheadline))
+                        .font(.system(size: 15))
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -252,14 +252,14 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: Template5Constants.packageButtonAlignment)
             .background {
-                self.roundedRectangle
+                self.roundedRectangle(cornerRadius: 12)
                     .stroke(
                         selected
                         ? self.configuration.colors.selectedOutline
                         : self.configuration.colors.unselectedOutline,
                         lineWidth: Constants.defaultPackageBorderWidth
                     ).background {
-                        self.roundedRectangle.fill(
+                        self.roundedRectangle(cornerRadius: 12).fill(
                             selected
                             ? Color(
                                 red: 0xFF / 255.0,
@@ -289,7 +289,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                 .textCase(.uppercase)
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
-                .background(self.roundedRectangle.foregroundColor(
+                .background(self.roundedRectangle(cornerRadius: 6).foregroundColor(
                     selected
                     ? colors.selectedOutline
                     : colors.unselectedOutline
@@ -304,8 +304,8 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         }
     }
 
-    private var roundedRectangle: some Shape {
-        RoundedRectangle(cornerRadius: Template5Constants.cornerRadius, style: .continuous)
+    private func roundedRectangle(cornerRadius: CGFloat) -> some Shape {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
     }
 
     @ViewBuilder

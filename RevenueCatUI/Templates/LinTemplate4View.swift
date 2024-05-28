@@ -11,6 +11,7 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate4View: TemplateViewType {
+    static var bundle = Foundation.Bundle.module
     let configuration: TemplateViewConfiguration
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
@@ -60,7 +61,6 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
-                    .padding([.top, .bottom], 40)
                 AuxiliaryDetailsView(eligible: eligible)
             }
         default:
@@ -76,15 +76,17 @@ struct LinTemplate4View: TemplateViewType {
         let eligible: Bool
         var body: some View {
             VStack(alignment: .leading) {
-                Spacer()
-                if eligible {
-                    TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                VStack(alignment: .leading) {
+                    Spacer()
+                    if eligible {
+                        TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
+                        Spacer().frame(height: 60)
+                    }
+                    TestimonialsView()
+                    Spacer()
                 }
-                Spacer().frame(height: 60)
-                TestimonialsView()
-                Spacer()
                 CompanyLogosView()
-                Spacer().frame(height: 24)
+                Spacer().frame(height: 12)
             }
             .padding([.leading, .trailing], 40)
             .background(Color(
@@ -101,7 +103,7 @@ struct LinTemplate4View: TemplateViewType {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        bundle: TimelineView.bundle,
+        bundle: LinTemplate4View.bundle,
         value: value,
         comment: ""
     )
