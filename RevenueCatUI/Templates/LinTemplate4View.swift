@@ -63,7 +63,7 @@ struct LinTemplate4View: TemplateViewType {
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
                     .padding(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
-                AuxiliaryDetailsView(eligible: eligible).frame(width: 335)
+                AuxiliaryDetailsView(eligible: eligible).frame(maxWidth: 335)
             }
         default:
             paywallContent(displayTimeline: eligible)
