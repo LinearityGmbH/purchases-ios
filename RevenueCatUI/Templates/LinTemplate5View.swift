@@ -37,7 +37,8 @@ struct LinTemplate5View: TemplateViewType {
             selectedPackage: $selectedPackage,
             displayImage: true,
             titleProvider: { package in package.localization.title },
-            getDefaultContentWidth: Constants.defaultContentWidth,
+            getDefaultContentWidth: Constants.defaultContentWidth, 
+            horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
             subtitleBuilder: { EmptyView() },
             buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
         )
@@ -45,7 +46,7 @@ struct LinTemplate5View: TemplateViewType {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View>: View {
+struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View, HorizontalPadding: ViewModifier>: View {
     typealias SubtitleBuilder = () -> SubtitleView
     typealias ButtonSubtitleBuilder = (
             _ selectedPackage: Package,
@@ -83,6 +84,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     private let subtitleBuilder: SubtitleBuilder
     private let getDefaultContentWidth: (UserInterfaceIdiom) -> CGFloat?
     private let titleProvider: (TemplateViewConfiguration.Package) -> String
+    private let horizontalPaddingModifier: HorizontalPadding
 
     init(
         _ configuration: TemplateViewConfiguration,
@@ -90,6 +92,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         displayImage: Bool,
         titleProvider: @escaping (TemplateViewConfiguration.Package) -> String,
         getDefaultContentWidth: @escaping (UserInterfaceIdiom) -> CGFloat?,
+        horizontalPaddingModifier: HorizontalPadding,
         @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
@@ -100,6 +103,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.getDefaultContentWidth = getDefaultContentWidth
         self.titleProvider = titleProvider
+        self.horizontalPaddingModifier = horizontalPaddingModifier
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
     
@@ -122,7 +126,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
             self.subscribeButton
                 .frame(maxWidth: defaultContentWidth)
-                .defaultHorizontalPadding()
+                .modifier(horizontalPaddingModifier)
             
             buttonSubtitleBuilder(
                 selectedPackage.content,
@@ -188,7 +192,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                 }
             }
             .frame(maxWidth: self.defaultContentWidth)
-            .defaultHorizontalPadding()
+            .modifier(horizontalPaddingModifier)
         }
         .frame(maxHeight: .infinity)
     }

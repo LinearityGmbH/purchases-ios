@@ -41,7 +41,8 @@ struct LinTemplate4View: TemplateViewType {
                 ? localize("Title.EligibleOffering", value: "Try Linearity Pro for free")
                 : localize("Title.NonEligibleOffering", value: "Upgrade to Linearity Pro")
             },
-            getDefaultContentWidth: Constants.defaultContentWidth
+            getDefaultContentWidth: Constants.defaultContentWidth,
+            horizontalPaddingModifier: NoPaddingModifier()
         ) {
             if displayTimeline {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone, axis: .horizontal)
@@ -53,7 +54,7 @@ struct LinTemplate4View: TemplateViewType {
                 textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
                 introEligibility: eligibility
             )
-        }
+        }.font(.footnote)
     }
     
     var body: some View {
@@ -61,10 +62,12 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
-                AuxiliaryDetailsView(eligible: eligible)
+                    .padding(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
+                AuxiliaryDetailsView(eligible: eligible).frame(maxWidth: 335)
             }
         default:
             paywallContent(displayTimeline: eligible)
+                .padding(EdgeInsets(top: 0, leading: 24, bottom: 0, trailing: 24))
         }
     }
     
