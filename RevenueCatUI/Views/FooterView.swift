@@ -50,7 +50,7 @@ struct FooterView: View {
         )
     }
 
-    fileprivate init(
+    init(
         configuration: PaywallData.Configuration,
         mode: PaywallViewMode,
         fonts: PaywallFontProvider,

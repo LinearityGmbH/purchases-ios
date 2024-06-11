@@ -44,7 +44,7 @@ struct LinTemplate4View: TemplateViewType {
             getDefaultContentWidth: Constants.defaultContentWidth,
             horizontalPaddingModifier: NoPaddingModifier()
         ) {
-            if displayTimeline {
+            if true {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone, axis: .horizontal)
             }
         } buttonSubtitleBuilder: { selectedPackage, eligibility, locale in
@@ -54,7 +54,7 @@ struct LinTemplate4View: TemplateViewType {
                 textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
                 introEligibility: eligibility
             )
-        }.font(.footnote)
+        }.font(.system(size: 13))
     }
     
     var body: some View {
@@ -62,7 +62,7 @@ struct LinTemplate4View: TemplateViewType {
         case .regular:
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
-                    .padding(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
+                    .padding(EdgeInsets(top: 0, leading: 32, bottom: 6, trailing: 32))
                 AuxiliaryDetailsView(eligible: eligible).frame(maxWidth: 335)
             }
         default:
@@ -89,7 +89,7 @@ struct LinTemplate4View: TemplateViewType {
                     Spacer()
                 }
                 CompanyLogosView()
-                Spacer().frame(height: 12)
+                Spacer().frame(height: 18)
             }
             .padding([.leading, .trailing], 40)
             .background(Color(

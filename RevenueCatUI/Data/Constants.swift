@@ -22,7 +22,7 @@ enum Constants {
 
     static let defaultCornerRadius: CGFloat = 20
     static let defaultPackageCornerRadius: CGFloat = 16
-    static let defaultPackageBorderWidth: CGFloat = 2
+    static let defaultPackageBorderWidth: CGFloat = 1
 
     static let purchaseInProgressButtonOpacity: CGFloat = 0.4
 

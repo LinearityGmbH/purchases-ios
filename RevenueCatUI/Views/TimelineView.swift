@@ -169,8 +169,7 @@ struct TimelineView: View {
                         }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(configuration.title)
-                            .font(.system(size: 17))
-                            .bold()
+                            .font(.system(size: 17, weight: .semibold))
                         Text(configuration.subtitle)
                             .foregroundStyle(.secondary)
                             .font(.system(size: 12))
