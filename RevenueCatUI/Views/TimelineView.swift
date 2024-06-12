@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Guillaume LAURES on 15/05/2024.
 //
@@ -31,8 +31,19 @@ struct TimelineView: View {
             case leading
             case trailing
             case both
+            
+            var alignmentGuide: Alignment {
+                switch self {
+                case .leading:
+                    return .trailing
+                case .both:
+                    return .center
+                case .trailing:
+                    return .leading
+                }
+            }
         }
-
+        
         let title: String
         let icon: String
         let iconBackgroundColor: Color
@@ -65,7 +76,6 @@ struct TimelineView: View {
     }
     
     let stepConfigurations: [StepConfiguration]
-    
     let axis: NSLayoutConstraint.Axis
     
     var body: some View {
@@ -92,19 +102,26 @@ struct TimelineView: View {
         let configuration: StepConfiguration
         let axis: NSLayoutConstraint.Axis
         let iconSize: CGFloat = 32
+        @State var iconFrame: CGRect = .zero
         
         var body: some View {
             if axis == .vertical {
-                ZStack {
-                    link
+                GeometryReader { geometry in
                     content
+                        .background(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
+                            link
+                                .frame(
+                                    width: geometry.size.width
+                                    + iconFrame.origin.x
+                                    - geometry.frame(in: .global).origin.x
+                                )
+                        }
                 }
-                .frame(minWidth: 100)
             } else {
                 content
                     .background(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
                         linkSegment(configuration.linkColor)
-                }
+                    }
             }
         }
         
@@ -157,10 +174,14 @@ struct TimelineView: View {
                         .font(.system(size: 13))
                         .bold()
                     iconWithBackground
+                        .alignmentGuide(.iconAlignment) {
+                            $0[HorizontalAlignment.center]
+                        }
                     Text(configuration.subtitle)
                         .foregroundStyle(.secondary)
                         .font(.system(size: 11))
                 }
+                .frame(maxWidth: .infinity, alignment: configuration.linkPosition.alignmentGuide)
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     iconWithBackground
@@ -183,18 +204,23 @@ struct TimelineView: View {
         
         @ViewBuilder
         var iconWithBackground: some View {
-            ZStack {
-                Circle()
-                    .fill(configuration.iconBackgroundColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: iconSize / 2)
-                            .stroke(TimelineView.Colors.link, lineWidth: 1)
-                    )
-                Image(systemName: configuration.icon)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconSize / 2, height: iconSize / 2)
-                    .foregroundColor(configuration.iconForegroundColor)
+            GeometryReader { geometry in
+                ZStack {
+                    Circle()
+                        .fill(configuration.iconBackgroundColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: iconSize / 2)
+                                .stroke(TimelineView.Colors.link, lineWidth: 1)
+                        )
+                        .onAppear {
+                            iconFrame = geometry.frame(in: .global)
+                        }
+                    Image(systemName: configuration.icon)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: iconSize / 2, height: iconSize / 2)
+                        .foregroundColor(configuration.iconForegroundColor)
+                }
             }
             .frame(width: iconSize, height: iconSize)
         }
