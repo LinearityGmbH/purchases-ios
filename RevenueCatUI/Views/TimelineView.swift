@@ -102,19 +102,13 @@ struct TimelineView: View {
         let configuration: StepConfiguration
         let axis: NSLayoutConstraint.Axis
         let iconSize: CGFloat = 32
-        @State var iconFrame: CGRect = .zero
         
         var body: some View {
             if axis == .vertical {
                 GeometryReader { geometry in
                     content
-                        .background(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
+                        .background {
                             link
-                                .frame(
-                                    width: geometry.size.width
-                                    + iconFrame.origin.x
-                                    - geometry.frame(in: .global).origin.x
-                                )
                         }
                 }
             } else {
@@ -174,14 +168,11 @@ struct TimelineView: View {
                         .font(.system(size: 13))
                         .bold()
                     iconWithBackground
-                        .alignmentGuide(.iconAlignment) {
-                            $0[HorizontalAlignment.center]
-                        }
                     Text(configuration.subtitle)
                         .foregroundStyle(.secondary)
                         .font(.system(size: 11))
                 }
-                .frame(maxWidth: .infinity, alignment: configuration.linkPosition.alignmentGuide)
+                .frame(maxWidth: .infinity)
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     iconWithBackground
@@ -212,9 +203,6 @@ struct TimelineView: View {
                             RoundedRectangle(cornerRadius: iconSize / 2)
                                 .stroke(TimelineView.Colors.link, lineWidth: 1)
                         )
-                        .onAppear {
-                            iconFrame = geometry.frame(in: .global)
-                        }
                     Image(systemName: configuration.icon)
                         .resizable()
                         .scaledToFit()
