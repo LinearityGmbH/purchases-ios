@@ -134,7 +134,10 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                 locale
             )
             
-            FooterView(configuration: self.configuration,
+            FooterView(configuration: self.configuration.configuration,
+                       mode: configuration.mode,
+                       fonts: configuration.fonts,
+                       color: .secondary,
                        purchaseHandler: self.purchaseHandler,
                        displayingAllPlans: self.$displayingAllPlans)
         }
@@ -166,7 +169,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
             Group {
                 if self.configuration.mode.isFullScreen {
                     Text(.init(titleProvider(selectedPackage)))
-                        .font(self.font(for: .title2).bold())
+                        .font(.system(size: 21, weight: .bold))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
@@ -331,6 +334,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
             VStack(alignment: Template5Constants.packageButtonAlignment.horizontal, spacing: 5) {
                 Text(package.localization.offerName ?? package.content.productName)
+                    .font(.system(size: 17, weight: .semibold))
                 self.offerDetails(package: package, selected: selected)
             }
         }

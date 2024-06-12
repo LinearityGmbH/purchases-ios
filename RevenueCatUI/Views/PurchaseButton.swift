@@ -117,6 +117,7 @@ struct PurchaseButton: View {
     private var backgroundView: some View {
         RoundedRectangle(cornerSize: CGSize(width: 10, height: 10), style: .continuous)
             .foregroundStyle(self.backgroundColor)
+            .frame(height: 45)
     }
 
     private var backgroundColor: some ShapeStyle {

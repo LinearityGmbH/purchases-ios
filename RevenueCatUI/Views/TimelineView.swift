@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Guillaume LAURES on 15/05/2024.
 //
@@ -32,7 +32,7 @@ struct TimelineView: View {
             case trailing
             case both
         }
-
+        
         let title: String
         let icon: String
         let iconBackgroundColor: Color
@@ -40,7 +40,7 @@ struct TimelineView: View {
         let subtitle: String
         let linkColor: Color
         let linkPosition: LinkPosition
-        
+
         init(
             title: String,
             icon: String,
@@ -65,7 +65,6 @@ struct TimelineView: View {
     }
     
     let stepConfigurations: [StepConfiguration]
-    
     let axis: NSLayoutConstraint.Axis
     
     var body: some View {
@@ -95,16 +94,15 @@ struct TimelineView: View {
         
         var body: some View {
             if axis == .vertical {
-                ZStack {
-                    link
-                    content
-                }
-                .frame(minWidth: 100)
+                content
+                    .background {
+                        link
+                    }
             } else {
                 content
                     .background(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
                         linkSegment(configuration.linkColor)
-                }
+                    }
             }
         }
         
@@ -161,6 +159,7 @@ struct TimelineView: View {
                         .foregroundStyle(.secondary)
                         .font(.system(size: 11))
                 }
+                .frame(maxWidth: configuration.linkPosition == .both ? .infinity : nil)
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     iconWithBackground
@@ -169,8 +168,7 @@ struct TimelineView: View {
                         }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(configuration.title)
-                            .font(.system(size: 17))
-                            .bold()
+                            .font(.system(size: 17, weight: .semibold))
                         Text(configuration.subtitle)
                             .foregroundStyle(.secondary)
                             .font(.system(size: 12))
