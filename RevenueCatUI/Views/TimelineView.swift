@@ -174,6 +174,9 @@ struct TimelineView: View {
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     iconWithBackground
+                        .alignmentGuide(.iconAlignment) {
+                            $0[HorizontalAlignment.center]
+                        }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(configuration.title)
                             .font(.system(size: 17, weight: .semibold))
