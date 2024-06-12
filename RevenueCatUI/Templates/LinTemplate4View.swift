@@ -44,7 +44,7 @@ struct LinTemplate4View: TemplateViewType {
             getDefaultContentWidth: Constants.defaultContentWidth,
             horizontalPaddingModifier: NoPaddingModifier()
         ) {
-            if displayTimeline || true {
+            if displayTimeline {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone, axis: .horizontal)
             }
         } buttonSubtitleBuilder: { selectedPackage, eligibility, locale in
