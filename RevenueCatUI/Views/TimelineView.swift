@@ -51,7 +51,7 @@ struct TimelineView: View {
         let subtitle: String
         let linkColor: Color
         let linkPosition: LinkPosition
-        
+
         init(
             title: String,
             icon: String,
@@ -105,12 +105,10 @@ struct TimelineView: View {
         
         var body: some View {
             if axis == .vertical {
-                GeometryReader { geometry in
-                    content
-                        .background {
-                            link
-                        }
-                }
+                content
+                    .background {
+                        link
+                    }
             } else {
                 content
                     .background(alignment: .init(horizontal: .iconAlignment, vertical: .center)) {
@@ -163,7 +161,7 @@ struct TimelineView: View {
         @ViewBuilder
         var content: some View {
             if axis == .vertical {
-                VStack(spacing: 12) {
+                VStack(alignment: .center, spacing: 12) {
                     Text(configuration.title)
                         .font(.system(size: 13))
                         .bold()
@@ -172,13 +170,10 @@ struct TimelineView: View {
                         .foregroundStyle(.secondary)
                         .font(.system(size: 11))
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: configuration.linkPosition == .both ? .infinity : nil)
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     iconWithBackground
-                        .alignmentGuide(.iconAlignment) {
-                            $0[HorizontalAlignment.center]
-                        }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(configuration.title)
                             .font(.system(size: 17, weight: .semibold))
@@ -195,20 +190,18 @@ struct TimelineView: View {
         
         @ViewBuilder
         var iconWithBackground: some View {
-            GeometryReader { geometry in
-                ZStack {
-                    Circle()
-                        .fill(configuration.iconBackgroundColor)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: iconSize / 2)
-                                .stroke(TimelineView.Colors.link, lineWidth: 1)
-                        )
-                    Image(systemName: configuration.icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: iconSize / 2, height: iconSize / 2)
-                        .foregroundColor(configuration.iconForegroundColor)
-                }
+            ZStack {
+                Circle()
+                    .fill(configuration.iconBackgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: iconSize / 2)
+                            .stroke(TimelineView.Colors.link, lineWidth: 1)
+                    )
+                Image(systemName: configuration.icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconSize / 2, height: iconSize / 2)
+                    .foregroundColor(configuration.iconForegroundColor)
             }
             .frame(width: iconSize, height: iconSize)
         }
