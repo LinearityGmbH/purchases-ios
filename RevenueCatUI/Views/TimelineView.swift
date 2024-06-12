@@ -161,7 +161,7 @@ struct TimelineView: View {
         @ViewBuilder
         var content: some View {
             if axis == .vertical {
-                VStack(alignment: .center, spacing: 12) {
+                VStack(spacing: 12) {
                     Text(configuration.title)
                         .font(.system(size: 13))
                         .bold()
