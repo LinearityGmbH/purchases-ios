@@ -31,17 +31,6 @@ struct TimelineView: View {
             case leading
             case trailing
             case both
-            
-            var alignmentGuide: Alignment {
-                switch self {
-                case .leading:
-                    return .trailing
-                case .both:
-                    return .center
-                case .trailing:
-                    return .leading
-                }
-            }
         }
         
         let title: String
