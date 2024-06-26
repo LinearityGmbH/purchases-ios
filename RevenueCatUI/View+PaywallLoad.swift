@@ -46,3 +46,44 @@ extension View {
     }
     
 }
+
+// MARK: - did fail loading
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct PaywallDidFailLoadingPreferenceKey: PreferenceKey {
+
+    static var defaultValue: NSError?
+
+    static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
+        value = nextValue()
+    }
+    
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct OnPaywallDidFailLoadModifier: ViewModifier {
+    
+    let handler: (NSError) -> Void
+    
+    func body(content: Content) -> some View {
+        content
+            .onPreferenceChange(PaywallDidFailLoadingPreferenceKey.self) { error in
+                if let error {
+                    handler(error)
+                }
+            }
+    }
+    
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable, message: "RevenueCatUI does not support macOS yet")
+extension View {
+    
+    public func onPaywallDidFailLoad(
+        _ handler: @escaping (NSError) -> Void
+    ) -> some View {
+        return self.modifier(OnPaywallDidFailLoadModifier(handler: handler))
+    }
+    
+}
