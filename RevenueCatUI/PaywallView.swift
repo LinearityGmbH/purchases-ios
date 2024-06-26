@@ -114,6 +114,8 @@ public struct PaywallView: View {
     public var body: some View {
         self.content
             .displayError(self.$error, dismissOnClose: true)
+            .preference(key: PaywallDidLoadPreferenceKey.self,
+                        value: self.offering != nil && self.customerInfo != nil)
     }
 
     @MainActor

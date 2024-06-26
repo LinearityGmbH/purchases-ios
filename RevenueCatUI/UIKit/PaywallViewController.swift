@@ -274,6 +274,10 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     /// Notifies ``PaywallViewController`` did appear.
     @objc(paywallViewControllerDidAppear:)
     optional func paywallViewControllerDidAppear(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did load paywall.
+    @objc(paywallViewControllerDidLoadPaywall:)
+    optional func paywallViewControllerDidLoadPaywall(_ controller: PaywallViewController)
 }
 
 // MARK: - Private
@@ -318,6 +322,10 @@ private extension PaywallViewController {
             onSizeChange: { [weak self] in
                 guard let self else { return }
                 self.delegate?.paywallViewController?(self, didChangeSizeTo: $0)
+            },
+            onPaywallDidLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewControllerDidLoadPaywall?(self)
             }
         )
 
@@ -347,6 +355,7 @@ private struct PaywallContainerView: View {
     let restoreFailure: PurchaseFailureHandler
 
     let onSizeChange: (CGSize) -> Void
+    let onPaywallDidLoad: () -> Void
 
     var body: some View {
         PaywallView(configuration: self.configuration)
@@ -358,6 +367,7 @@ private struct PaywallContainerView: View {
             .onRestoreCompleted(self.restoreCompleted)
             .onRestoreFailure(self.restoreFailure)
             .onSizeChange(self.onSizeChange)
+            .onPaywallDidLoad(self.onPaywallDidLoad)
 
     }
 
