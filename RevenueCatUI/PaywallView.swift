@@ -44,7 +44,13 @@ public struct PaywallView: View {
     @State
     private var customerInfo: CustomerInfo?
     @State
-    private var error: NSError?
+    private var error: NSError? {
+        didSet {
+            if let error {
+                Logger.warning(Strings.error_load_paywall(error))
+            }
+        }
+    }
 
     /// Create a view to display the paywall in `Offerings.current`.
     ///
