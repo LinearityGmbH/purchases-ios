@@ -228,14 +228,16 @@ private extension PaywallView {
             return try await Purchases.shared.offerings().current.orThrow(PaywallError.noCurrentOffering)
 
         case let .offeringIdentifier(identifier):
-            return try await Purchases.shared.offerings()
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
                 .offering(identifier: identifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
 
         case let .offeringPlacementIdentifier(placementIdentifier):
-            return try await Purchases.shared.offerings()
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
                 .currentOffering(forPlacement: placementIdentifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier))
+                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier, offerings: offerings))
         }
     }
 
