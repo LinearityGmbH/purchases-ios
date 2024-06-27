@@ -108,6 +108,7 @@ public extension Offerings {
             description += "\t\(offering)\n"
         }
         description += "\tcurrentOffering=\(current?.description ?? "<none>")>"
+        description += "\nPlacements: \(String(describing: placements))>"
         return description
     }
 

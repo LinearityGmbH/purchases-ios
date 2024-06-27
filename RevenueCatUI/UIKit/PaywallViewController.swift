@@ -274,6 +274,15 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     /// Notifies ``PaywallViewController`` did appear.
     @objc(paywallViewControllerDidAppear:)
     optional func paywallViewControllerDidAppear(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did load paywall.
+    @objc(paywallViewControllerDidLoadPaywall:)
+    optional func paywallViewControllerDidLoadPaywall(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did fail to load paywall.
+    @objc(paywallViewController:didFailLoadPaywallWithError:)
+    optional func paywallViewController(_ controller: PaywallViewController,
+                                        didFailLoadPaywallWith error: NSError)
 }
 
 // MARK: - Private
@@ -318,6 +327,14 @@ private extension PaywallViewController {
             onSizeChange: { [weak self] in
                 guard let self else { return }
                 self.delegate?.paywallViewController?(self, didChangeSizeTo: $0)
+            },
+            onPaywallDidLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewControllerDidLoadPaywall?(self)
+            },
+            onPaywallDidFailLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewController?(self, didFailLoadPaywallWith: $0)
             }
         )
 
@@ -347,6 +364,8 @@ private struct PaywallContainerView: View {
     let restoreFailure: PurchaseFailureHandler
 
     let onSizeChange: (CGSize) -> Void
+    let onPaywallDidLoad: () -> Void
+    let onPaywallDidFailLoad: (NSError) -> Void
 
     var body: some View {
         PaywallView(configuration: self.configuration)
@@ -358,6 +377,8 @@ private struct PaywallContainerView: View {
             .onRestoreCompleted(self.restoreCompleted)
             .onRestoreFailure(self.restoreFailure)
             .onSizeChange(self.onSizeChange)
+            .onPaywallDidLoad(self.onPaywallDidLoad)
+            .onPaywallDidFailLoad(self.onPaywallDidFailLoad)
 
     }
 

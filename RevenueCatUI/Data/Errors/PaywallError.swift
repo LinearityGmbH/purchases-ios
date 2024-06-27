@@ -12,6 +12,7 @@
 //  Created by Nacho Soto on 7/21/23.
 
 import Foundation
+import RevenueCat
 
 /// Error produced when displaying paywalls.
 enum PaywallError: Error {
@@ -23,7 +24,7 @@ enum PaywallError: Error {
     case noCurrentOffering
 
     /// The selected offering was not found.
-    case offeringNotFound(identifier: String)
+    case offeringNotFound(identifier: String, offerings: Offerings)
 
 }
 
@@ -43,8 +44,8 @@ extension PaywallError: CustomNSError {
         case .noCurrentOffering:
             return "The RevenueCat dashboard does not have a current offering configured."
 
-        case let .offeringNotFound(identifier):
-            return "The RevenueCat dashboard does not have an offering with identifier '\(identifier)'."
+        case let .offeringNotFound(identifier, offerings):
+            return "The RevenueCat dashboard does not have an offering with identifier '\(identifier)' in the \(offerings.description)."
         }
     }
 

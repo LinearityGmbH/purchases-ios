@@ -44,7 +44,13 @@ public struct PaywallView: View {
     @State
     private var customerInfo: CustomerInfo?
     @State
-    private var error: NSError?
+    private var error: NSError? {
+        didSet {
+            if let error {
+                Logger.warning(Strings.error_load_paywall(error))
+            }
+        }
+    }
 
     /// Create a view to display the paywall in `Offerings.current`.
     ///
@@ -114,6 +120,10 @@ public struct PaywallView: View {
     public var body: some View {
         self.content
             .displayError(self.$error, dismissOnClose: true)
+            .preference(key: PaywallDidLoadPreferenceKey.self,
+                        value: self.offering != nil && self.customerInfo != nil)
+            .preference(key: PaywallDidFailLoadingPreferenceKey.self,
+                        value: self.error)
     }
 
     @MainActor
@@ -218,14 +228,16 @@ private extension PaywallView {
             return try await Purchases.shared.offerings().current.orThrow(PaywallError.noCurrentOffering)
 
         case let .offeringIdentifier(identifier):
-            return try await Purchases.shared.offerings()
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
                 .offering(identifier: identifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
 
         case let .offeringPlacementIdentifier(placementIdentifier):
-            return try await Purchases.shared.offerings()
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
                 .currentOffering(forPlacement: placementIdentifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier))
+                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier, offerings: offerings))
         }
     }
 
