@@ -222,7 +222,7 @@ extension TimelineView {
         let introductoryOfferDaysDuration = introductoryOfferDaysDuration ?? Self.defaultIntroductoryOfferDaysDuration
         return [
             StepConfiguration(
-            title: String(format:localize("iPad.step1.title", value: "Today: Free trial for 7 days"), introductoryOfferDaysDuration),
+            title: String(format: localize("iPad.step1.title", value: "Today: Free trial for 7 days"), introductoryOfferDaysDuration),
             icon: "gift",
             iconBackgroundColor: TimelineView.Colors.green,
             iconForegroundColor: .black,

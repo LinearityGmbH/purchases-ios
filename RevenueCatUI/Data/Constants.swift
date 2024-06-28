@@ -52,7 +52,7 @@ enum Constants {
         }
     }
     
-    static func defaultContentWidth(_ idiom: UserInterfaceIdiom) -> CGFloat? {
+    static var defaultContentWidth: CGFloat? {
         return 400
     }
 

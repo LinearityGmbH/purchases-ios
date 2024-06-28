@@ -163,10 +163,9 @@ extension PaywallData {
             case .defaultRC:
                 LinTemplate5View(configuration)
             case .canvaStyleOneStep:
-                LinTemplate4View(configuration)
+                LinTemplate5Step2View(configuration)
             case .canvaStyleTwoSteps:
-                // As it's not ready yet, we return the previous version
-                LinTemplate4View(configuration)
+                LinTemplate5Step1View(configuration)
             }
         }
         #endif

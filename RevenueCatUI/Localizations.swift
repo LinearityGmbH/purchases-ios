@@ -6,15 +6,21 @@
 //
 
 import Foundation
+import UIKit
+import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-public func installLocalizations(
-    paywallBundle: Bundle,
+public func setupPaywall(
+    paywallFirstStepImageBackgroundColor: UIColor,
+    paywallFirstStepBundle: Bundle,
+    paywallSecondStepBundle: Bundle,
     timelineBundle: Bundle,
     testimonialsBundle: Bundle
 ) {
-    LinTemplate4View.bundle = paywallBundle
-    CTAFooterMessageProvider.bundle = paywallBundle
+    LinTemplate5Step1View.paywallFirstStepImageBackgroundColor = Color(uiColor: paywallFirstStepImageBackgroundColor)
+    LinTemplate5Step1View.bundle = paywallFirstStepBundle
+    LinTemplate5Step2View.bundle = paywallSecondStepBundle
+    CTAFooterMessageProvider.bundle = paywallSecondStepBundle
     TimelineView.bundle = timelineBundle
     TestimonialsView.bundle = testimonialsBundle
 }
