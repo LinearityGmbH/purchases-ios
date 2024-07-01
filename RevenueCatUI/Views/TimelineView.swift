@@ -13,6 +13,7 @@ import RevenueCat
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 struct TimelineView: View {
+    static let defaultIntroductoryOfferDaysDuration = 7
     static var bundle = Foundation.Bundle.module
     
     enum Colors {
@@ -217,9 +218,11 @@ private func localize(_ key: String, value: String) -> String {
 @available(tvOS, unavailable)
 extension TimelineView {
     
-    static var defaultIPad: [StepConfiguration] {[
-        StepConfiguration(
-            title: localize("iPad.step1.title", value: "Today: Free trial for 7 days"),
+    static func defaultIPad(introductoryOfferDaysDuration: Int? = nil) -> [StepConfiguration] {
+        let introductoryOfferDaysDuration = introductoryOfferDaysDuration ?? Self.defaultIntroductoryOfferDaysDuration
+        return [
+            StepConfiguration(
+            title: String(format:localize("iPad.step1.title", value: "Today: Free trial for 7 days"), introductoryOfferDaysDuration),
             icon: "gift",
             iconBackgroundColor: TimelineView.Colors.green,
             iconForegroundColor: .black,
@@ -228,7 +231,7 @@ extension TimelineView {
             linkPosition: .trailing
         ),
         StepConfiguration(
-            title: localize("iPad.step2.title", value: "Day 5: Reminder"),
+            title: String(format: localize("iPad.step2.title", value: "Day 5: Reminder"), introductoryOfferDaysDuration - 2),
             icon: "bell",
             iconForegroundColor: TimelineView.Colors.bell,
             subtitle: localize(
@@ -239,7 +242,7 @@ extension TimelineView {
             linkPosition: .both
         ),
         StepConfiguration(
-            title: localize("iPad.step3.title", value: "Day 7: Trial ends"),
+            title: String(format: localize("iPad.step3.title", value: "Day 7: Trial ends"), introductoryOfferDaysDuration),
             icon: "crown.fill",
             iconForegroundColor: TimelineView.Colors.linearityOrange,
             subtitle: localize(
@@ -251,32 +254,34 @@ extension TimelineView {
         )
     ]}
     
-    static var defaultIPhone: [StepConfiguration] {[
-        StepConfiguration(
-            title: localize("iPhone.step1.title", value: "Start free trial"),
-            icon: "gift",
-            iconBackgroundColor: TimelineView.Colors.green,
-            iconForegroundColor: .black,
-            subtitle: localize("iPhone.step1.subtitle", value: "Today"),
-            linkColor: TimelineView.Colors.green,
-            linkPosition: .trailing
-        ),
-        StepConfiguration(
-            title: localize("iPhone.step2.title", value: "Reminder"),
-            icon: "bell",
-            subtitle: localize("iPhone.step2.subtitle", value: "Day 5"),
-            linkColor: TimelineView.Colors.link,
-            linkPosition: .both
-        ),
-        StepConfiguration(
-            title: localize("iPhone.step3.title", value: "Trial ends"),
-            icon: "crown.fill",
-            iconForegroundColor: TimelineView.Colors.linearityOrange,
-            subtitle: localize("iPhone.step3.subtitle", value: "Day 7"),
-            linkColor: TimelineView.Colors.link,
-            linkPosition: .leading
-        )
-    ]}
+    static func defaultIPhone(introductoryOfferDaysDuration: Int? = nil) -> [StepConfiguration] {
+        let introductoryOfferDaysDuration = introductoryOfferDaysDuration ?? Self.defaultIntroductoryOfferDaysDuration
+        return [
+            StepConfiguration(
+                title: localize("iPhone.step1.title", value: "Start free trial"),
+                icon: "gift",
+                iconBackgroundColor: TimelineView.Colors.green,
+                iconForegroundColor: .black,
+                subtitle: localize("iPhone.step1.subtitle", value: "Today"),
+                linkColor: TimelineView.Colors.green,
+                linkPosition: .trailing
+            ),
+            StepConfiguration(
+                title: localize("iPhone.step2.title", value: "Reminder"),
+                icon: "bell",
+                subtitle: String(format: localize("iPhone.step2.subtitle", value: "Day 5"), introductoryOfferDaysDuration - 2),
+                linkColor: TimelineView.Colors.link,
+                linkPosition: .both
+            ),
+            StepConfiguration(
+                title: localize("iPhone.step3.title", value: "Trial ends"),
+                icon: "crown.fill",
+                iconForegroundColor: TimelineView.Colors.linearityOrange,
+                subtitle: String(format: localize("iPhone.step3.subtitle", value: "Day 7"), introductoryOfferDaysDuration),
+                linkColor: TimelineView.Colors.link,
+                linkPosition: .leading
+            )
+        ]}
 }
 
 private extension NSLayoutConstraint.Axis {
@@ -309,14 +314,14 @@ private extension HorizontalAlignment {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         TimelineView(
-            stepConfigurations: TimelineView.defaultIPhone,
+            stepConfigurations: TimelineView.defaultIPhone(),
             axis: .horizontal
         )
         .previewDevice(PreviewDevice(rawValue: "iPhone 15 Pro"))
         .previewDisplayName("iPhone")
         
         TimelineView(
-            stepConfigurations: TimelineView.defaultIPad,
+            stepConfigurations: TimelineView.defaultIPad(),
             axis: .vertical
         )
         .previewDevice(PreviewDevice(rawValue: "iPad Pro 11-inch (M4)"))

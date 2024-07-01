@@ -57,6 +57,14 @@ extension TemplateViewConfiguration {
         case single(Package)
         case multiple(first: Package, default: Package, all: [Package])
 
+        var introductoryOfferDaysDuration: Int? {
+            switch self {
+            case .single(let package):
+                package.content.introductoryOfferDaysDuration
+            case .multiple(_, _, let all):
+                all.first(where: { $0.content.introductoryOfferDaysDuration != nil })?.content.introductoryOfferDaysDuration
+            }
+        }
     }
 
 }
