@@ -45,7 +45,7 @@ struct LinTemplate4View: TemplateViewType {
             horizontalPaddingModifier: NoPaddingModifier()
         ) {
             if displayTimeline {
-                TimelineView(stepConfigurations: TimelineView.defaultIPhone, axis: .horizontal)
+                TimelineView(stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .horizontal)
             }
         } buttonSubtitleBuilder: { selectedPackage, eligibility, locale in
             let msgProvider = CTAFooterMessageProvider(locale: locale)
@@ -63,7 +63,7 @@ struct LinTemplate4View: TemplateViewType {
             HStack(spacing: 0) {
                 paywallContent(displayTimeline: false)
                     .padding(EdgeInsets(top: 0, leading: 32, bottom: 6, trailing: 32))
-                AuxiliaryDetailsView(eligible: eligible).frame(maxWidth: 335)
+                auxiliaryDetailsView(eligible: eligible).frame(maxWidth: 335)
             }
         default:
             paywallContent(displayTimeline: eligible)
@@ -75,28 +75,26 @@ struct LinTemplate4View: TemplateViewType {
         introEligibilityViewModel.allEligibility[selectedPackage.content] == .eligible
     }
     
-    private struct AuxiliaryDetailsView: View {
-        let eligible: Bool
-        var body: some View {
+    @ViewBuilder
+    func auxiliaryDetailsView(eligible: Bool) -> some View {
+        VStack(alignment: .leading) {
             VStack(alignment: .leading) {
-                VStack(alignment: .leading) {
-                    Spacer()
-                    if eligible {
-                        TimelineView(stepConfigurations: TimelineView.defaultIPad, axis: .vertical)
-                        Spacer().frame(height: 60)
-                    }
-                    TestimonialsView()
-                    Spacer()
+                Spacer()
+                if eligible {
+                    TimelineView(stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .vertical)
+                    Spacer().frame(height: 60)
                 }
-                CompanyLogosView()
-                Spacer().frame(height: 18)
+                TestimonialsView()
+                Spacer()
             }
-            .padding([.leading, .trailing], 40)
-            .background(Color(
-                light: Color(red: 242 / 255.0, green: 242 / 255.0, blue: 242 / 255.0),
-                dark: Color(red: 44 / 255.0, green: 44 / 255.0, blue: 46 / 255.0)
-            ))
+            CompanyLogosView()
+            Spacer().frame(height: 18)
         }
+        .padding([.leading, .trailing], 40)
+        .background(Color(
+            light: Color(red: 242 / 255.0, green: 242 / 255.0, blue: 242 / 255.0),
+            dark: Color(red: 44 / 255.0, green: 44 / 255.0, blue: 46 / 255.0)
+        ))
     }
 }
 
