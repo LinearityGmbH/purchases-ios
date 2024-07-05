@@ -165,7 +165,7 @@ extension PaywallData {
             case .canvaStyleOneStep:
                 LinTemplate5Step2View(configuration)
             case .canvaStyleTwoSteps:
-                LinTemplate5Step1View(configuration)
+                LinTemplateNavigation(configuration)
             }
         }
         #endif

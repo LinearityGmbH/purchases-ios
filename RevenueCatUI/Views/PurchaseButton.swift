@@ -160,7 +160,7 @@ private extension PurchaseButton {
 // MARK: -
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private struct PurchaseButtonLabel: View {
+struct PurchaseButtonLabel: View {
 
     let package: TemplateViewConfiguration.Package
     let colors: PaywallData.Configuration.Colors

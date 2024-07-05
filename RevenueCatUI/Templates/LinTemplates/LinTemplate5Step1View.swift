@@ -10,23 +10,16 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5Step1View: TemplateViewType {
-    static var paywallFirstStepImageBackgroundColor = Color(red: 255 / 255.0, green: 239 / 255.0, blue: 94 / 255.0)
-    static var bundle = Foundation.Bundle.module
-    let configuration: TemplateViewConfiguration
-    @Environment(\.userInterfaceIdiom)
-    var userInterfaceIdiom
-    @Environment(\.verticalSizeClass)
-    var verticalSizeClass
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
-    @EnvironmentObject
-    private var introEligibilityViewModel: IntroEligibilityViewModel
-    @State
-    private var selectedPackage: TemplateViewConfiguration.Package
+struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
     
-    var isEligibleToFreeTrial: Bool {
-        introEligibilityViewModel.allEligibility[selectedPackage.content] == .eligible
+    let configuration: TemplateViewConfiguration
+    
+    private let buttonView: () -> ButtonView
+    
+    @EnvironmentObject
+    var introEligibilityViewModel: IntroEligibilityViewModel
+    var selectedPackage: TemplateViewConfiguration.Package {
+        configuration.packages.default
     }
     
     let features = [
@@ -40,9 +33,12 @@ struct LinTemplate5Step1View: TemplateViewType {
          subtitle: localize("Step1.Feature4.Subtitle", value: "Extend your design space"))
     ]
     
-    init(_ configuration: TemplateViewConfiguration) {
-        self._selectedPackage = .init(initialValue: configuration.packages.default)
+    init(
+        _ configuration: TemplateViewConfiguration,
+        buttonView: @escaping () -> ButtonView
+    ) {
         self.configuration = configuration
+        self.buttonView = buttonView
     }
     
     var body: some View {
@@ -60,13 +56,7 @@ struct LinTemplate5Step1View: TemplateViewType {
                 .frame(maxWidth: .infinity)
                 .scrollableIfNecessaryWhenAvailable(enabled: configuration.mode.isFullScreen)
             Spacer()
-            PurchaseButton(
-                packages: configuration.packages,
-                selectedPackage: selectedPackage,
-                configuration: configuration
-            ) {
-                print("Go to next step")
-            }
+            buttonView()
             .frame(maxWidth: Constants.defaultContentWidth)
             .padding([.bottom], 29)
         }
@@ -75,7 +65,7 @@ struct LinTemplate5Step1View: TemplateViewType {
     @ViewBuilder
     private var contentView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TitleView(type: .dynamic(isEligibleToFreeTrial: isEligibleToFreeTrial, bundle: Self.bundle))
+            TitleView(type: .dynamic(isEligibleToIntro: isEligibleToIntro, bundle: LinTemplatesResources.linTemplate5Step1Bundle))
             subtitle
                 .padding([.bottom], 15)
             featureList
@@ -130,7 +120,7 @@ struct LinTemplate5Step1View: TemplateViewType {
         #else
         let imageName = "paywall-first-step-iOS"
         #endif
-        let imageResource = ImageResource(name: imageName, bundle: Self.bundle)
+        let imageResource = ImageResource(name: imageName, bundle: LinTemplatesResources.linTemplate5Step1Bundle)
         VStack() {
             Spacer()
             // wrap around LocalizedStringKey to have Markdown support
@@ -142,7 +132,7 @@ struct LinTemplate5Step1View: TemplateViewType {
                 .aspectRatio(contentMode: .fit)
             Spacer()
         }
-        .background(Self.paywallFirstStepImageBackgroundColor)
+        .background(LinTemplatesResources.paywallFirstStepImageBackgroundColor)
     }
 }
 
@@ -152,7 +142,7 @@ struct LinTemplate5Step1View: TemplateViewType {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        bundle: LinTemplate5Step1View.bundle,
+        bundle: LinTemplatesResources.linTemplate5Step1Bundle,
         value: value,
         comment: ""
     )
@@ -171,12 +161,33 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
             PreviewableTemplate(
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
-            ) {
-                LinTemplate5Step1View($0)
+            ) { configuration in
+                LinTemplate5Step1View(configuration) {
+                    LinNavigationLink(
+                        configuration: configuration,
+                        label: Text("Continue"),
+                        destination: EmptyView()
+                    )
+                }
             }
         }
     }
     
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension LinTemplate5Step1View: TemplateViewType {
+    var userInterfaceIdiom: UserInterfaceIdiom {
+        .unknown
+    }
+    
+    var verticalSizeClass: UserInterfaceSizeClass? {
+        .compact
+    }
+    
+    init(_ configuration: TemplateViewConfiguration) {
+        fatalError("Used only for preview")
+    }
 }
 
 #endif
