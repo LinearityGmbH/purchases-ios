@@ -132,6 +132,12 @@ extension PaywallData {
             )
         }
     }
+    
+    enum LinPaywall: Int {
+        case defaultRC
+        case canvaStyleOneStep
+        case canvaStyleTwoSteps
+    }
 
     @ViewBuilder
     private static func createView(offering: Offering,
@@ -150,10 +156,17 @@ extension PaywallData {
         case .template4:
             Template4View(configuration)
         case .template5:
-            if offering.getMetadataValue(for: "show_new_paywall", default: false) {
-                LinTemplate4View(configuration)
-            } else {
+            // In case the offering was not updated yet, keep reading the previous selection value.
+            let oldSelectionFallback: LinPaywall = offering.getMetadataValue(for: "show_new_paywall", default: false) ? .canvaStyleOneStep : .defaultRC
+            let paywallVersion = LinPaywall(rawValue: offering.getMetadataValue(for: "paywall_version", default: oldSelectionFallback.rawValue)) ?? oldSelectionFallback
+            switch paywallVersion {
+            case .defaultRC:
                 LinTemplate5View(configuration)
+            case .canvaStyleOneStep:
+                LinTemplate4View(configuration)
+            case .canvaStyleTwoSteps:
+                // As it's not ready yet, we return the previous version
+                LinTemplate4View(configuration)
             }
         }
         #endif
