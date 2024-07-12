@@ -19,13 +19,15 @@ struct LinNavigationLink<Label: View, Destination: View>: View {
         NavigationLink(destination: destination) {
             label
                 .frame(maxWidth: .infinity)
+                #if targetEnvironment(macCatalyst)
+                .contentShape(Rectangle())
+                #endif
         }
-        .frame(maxWidth: .infinity)
         .font(configuration.fonts.font(for: .title3).weight(.semibold))
         .background(backgroundView)
+        .frame(maxWidth: .infinity)
         .dynamicTypeSize(...Constants.maximumDynamicTypeSize)
         #if targetEnvironment(macCatalyst)
-        .contentShape(Rectangle())
         .buttonStyle(.plain)
         #endif
     }

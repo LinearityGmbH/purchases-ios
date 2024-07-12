@@ -182,10 +182,14 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                                 dismiss()
                             }, label: {
                                 Image(systemName: "chevron.backward")
+                                    .font(.title2)
                                     .foregroundColor(.secondary)
+                                    #if targetEnvironment(macCatalyst)
+                                    .padding([.trailing], 4)
+                                    .contentShape(Rectangle())
+                                    #endif
                             })
                             #if targetEnvironment(macCatalyst)
-                            .contentShape(Rectangle())
                             .buttonStyle(.plain)
                             #endif
                         }
