@@ -58,7 +58,7 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
             Spacer()
             buttonView()
             .frame(maxWidth: Constants.defaultContentWidth)
-            .padding([.bottom], 29)
+            .padding([.bottom], 40)
         }
     }
     
@@ -67,7 +67,7 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
         VStack(alignment: .leading, spacing: 10) {
             TitleView(type: .dynamic(isEligibleToIntro: isEligibleToIntro, bundle: LinTemplatesResources.linTemplate5Step1Bundle))
             subtitle
-                .padding([.bottom], 15)
+                .padding([.bottom], 10)
             featureList
         }
     }
