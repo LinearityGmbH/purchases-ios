@@ -23,10 +23,20 @@ struct LinTemplate5View: TemplateViewType {
     var verticalSizeClass
     @Environment(\.horizontalSizeClass)
     var horizontalSizeClass
+    
+    private let showBackButton: Bool
     @State
     private var selectedPackage: TemplateViewConfiguration.Package
 
     init(_ configuration: TemplateViewConfiguration) {
+        self.init(configuration, showBackButton: false)
+    }
+    
+    init(
+        _ configuration: TemplateViewConfiguration,
+        showBackButton: Bool
+    ) {
+        self.showBackButton = showBackButton
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
     }
@@ -38,6 +48,7 @@ struct LinTemplate5View: TemplateViewType {
             displayImage: true,
             titleTypeProvider: { package in .fixed(package.localization.title) },
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
+            showBackButton: showBackButton,
             subtitleBuilder: { EmptyView() },
             buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
         )
@@ -77,12 +88,15 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     private var introEligibilityViewModel: IntroEligibilityViewModel
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
+    @Environment(\.dismiss)
+    private var dismiss
     
     private let displayImage: Bool
     private let buttonSubtitleBuilder: ButtonSubtitleBuilder
     private let subtitleBuilder: SubtitleBuilder
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     private let horizontalPaddingModifier: HorizontalPadding
+    private let showBackButton: Bool
 
     init(
         _ configuration: TemplateViewConfiguration,
@@ -90,6 +104,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         displayImage: Bool,
         titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType,
         horizontalPaddingModifier: HorizontalPadding,
+        showBackButton: Bool = false,
         @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
@@ -100,6 +115,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.titleTypeProvider = titleTypeProvider
         self.horizontalPaddingModifier = horizontalPaddingModifier
+        self.showBackButton = showBackButton
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
 
@@ -160,7 +176,21 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
             Group {
                 if self.configuration.mode.isFullScreen {
-                    TitleView(type: titleTypeProvider(selectedPackage))
+                    HStack {
+                        if showBackButton {
+                            Button(action: {
+                                dismiss()
+                            }, label: {
+                                Image(systemName: "chevron.backward")
+                                    .foregroundColor(.secondary)
+                            })
+                            #if targetEnvironment(macCatalyst)
+                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
+                            #endif
+                        }
+                        TitleView(type: titleTypeProvider(selectedPackage))
+                    }
                     
                     self.subtitleBuilder()
 

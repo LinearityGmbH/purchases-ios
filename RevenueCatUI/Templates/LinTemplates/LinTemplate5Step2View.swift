@@ -12,6 +12,7 @@ import SwiftUI
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
     let configuration: TemplateViewConfiguration
+    let showBackButton: Bool
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
     @Environment(\.verticalSizeClass)
@@ -22,10 +23,15 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
     var introEligibilityViewModel: IntroEligibilityViewModel
     @State
     var selectedPackage: TemplateViewConfiguration.Package
-
+    
     init(_ configuration: TemplateViewConfiguration) {
+        self.init(configuration, showBackButton: false)
+    }
+
+    init(_ configuration: TemplateViewConfiguration, showBackButton: Bool) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
+        self.showBackButton = showBackButton
     }
 
     var body: some View {
@@ -49,7 +55,8 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
                     bundle: LinTemplatesResources.linTemplate5Step2Bundle
                 )
             },
-            horizontalPaddingModifier: NoPaddingModifier()
+            horizontalPaddingModifier: NoPaddingModifier(),
+            showBackButton: showBackButton
         ) {
             if displayTimeline {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .horizontal)
