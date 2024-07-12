@@ -56,7 +56,7 @@ struct LinTemplate5Step1View: TemplateViewType {
     @ViewBuilder
     private var titleFeaturesView: some View {
         VStack {
-            scrollableView
+            contentView
                 .frame(maxWidth: .infinity)
                 .scrollableIfNecessaryWhenAvailable(enabled: configuration.mode.isFullScreen)
             Spacer()
@@ -73,7 +73,7 @@ struct LinTemplate5Step1View: TemplateViewType {
     }
     
     @ViewBuilder
-    private var scrollableView: some View {
+    private var contentView: some View {
         VStack(alignment: .leading, spacing: 10) {
             TitleView(type: .dynamic(isEligibleToFreeTrial: isEligibleToFreeTrial, bundle: Self.bundle))
             subtitle
@@ -101,13 +101,13 @@ struct LinTemplate5Step1View: TemplateViewType {
     private var featureList: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(features, id: \.title) { titleSubtitle in
-                titleSubtitleView(title: titleSubtitle.title, subtitle: titleSubtitle.subtitle)
+                featureListItemView(title: titleSubtitle.title, subtitle: titleSubtitle.subtitle)
             }
         }
     }
     
     @ViewBuilder
-    private func titleSubtitleView(title: String, subtitle: String) -> some View {
+    private func featureListItemView(title: String, subtitle: String) -> some View {
         HStack(alignment: .top) {
             Image(.icCheckmark)
                 .foregroundColor(configuration.colors.accent1Color)
