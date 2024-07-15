@@ -10,7 +10,7 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate4View: TemplateViewType {
+struct LinTemplate5Step2View: TemplateViewType {
     static var bundle = Foundation.Bundle.module
     let configuration: TemplateViewConfiguration
     @Environment(\.userInterfaceIdiom)
@@ -23,10 +23,22 @@ struct LinTemplate4View: TemplateViewType {
     private var introEligibilityViewModel: IntroEligibilityViewModel
     @State
     private var selectedPackage: TemplateViewConfiguration.Package
+    
+    var isEligibleToFreeTrial: Bool {
+        introEligibilityViewModel.allEligibility[selectedPackage.content] == .eligible
+    }
 
     init(_ configuration: TemplateViewConfiguration) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
+    }
+
+    var body: some View {
+        SideBySideView {
+            paywallContent(displayTimeline: horizontalSizeClass != .regular && isEligibleToFreeTrial)
+        } rightView: {
+            auxiliaryDetailsView(isEligibleToFreeTrial: isEligibleToFreeTrial)
+        }
     }
     
     @ViewBuilder
@@ -35,13 +47,10 @@ struct LinTemplate4View: TemplateViewType {
             configuration, 
             selectedPackage: $selectedPackage,
             displayImage: false,
-            titleProvider: { [introEligibilityViewModel] package in
-                let eligible = introEligibilityViewModel.allEligibility[package.content] == .eligible
-                return eligible
-                ? localize("Title.EligibleOffering", value: "Try Linearity Pro for free")
-                : localize("Title.NonEligibleOffering", value: "Upgrade to Linearity Pro")
+            titleTypeProvider: { [introEligibilityViewModel] package in
+                let isEligibleToFreeTrial = introEligibilityViewModel.allEligibility[package.content] == .eligible
+                return .dynamic(isEligibleToFreeTrial: isEligibleToFreeTrial, bundle: Self.bundle)
             },
-            getDefaultContentWidth: Constants.defaultContentWidth,
             horizontalPaddingModifier: NoPaddingModifier()
         ) {
             if displayTimeline {
@@ -57,30 +66,12 @@ struct LinTemplate4View: TemplateViewType {
         }.font(.system(size: 13))
     }
     
-    var body: some View {
-        switch horizontalSizeClass {
-        case .regular:
-            HStack(spacing: 0) {
-                paywallContent(displayTimeline: false)
-                    .padding(EdgeInsets(top: 0, leading: 32, bottom: 6, trailing: 32))
-                auxiliaryDetailsView(eligible: eligible).frame(maxWidth: 335)
-            }
-        default:
-            paywallContent(displayTimeline: eligible)
-                .padding(EdgeInsets(top: 0, leading: 24, bottom: 0, trailing: 24))
-        }
-    }
-    
-    var eligible: Bool {
-        introEligibilityViewModel.allEligibility[selectedPackage.content] == .eligible
-    }
-    
     @ViewBuilder
-    func auxiliaryDetailsView(eligible: Bool) -> some View {
+    private func auxiliaryDetailsView(isEligibleToFreeTrial: Bool) -> some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 Spacer()
-                if eligible {
+                if isEligibleToFreeTrial {
                     TimelineView(stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .vertical)
                     Spacer().frame(height: 60)
                 }
@@ -104,7 +95,7 @@ struct LinTemplate4View: TemplateViewType {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        bundle: LinTemplate4View.bundle,
+        bundle: LinTemplate5Step2View.bundle,
         value: value,
         comment: ""
     )
@@ -116,7 +107,7 @@ private func localize(_ key: String, value: String) -> String {
 @available(watchOS, unavailable)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-struct LinTemplate4View_Previews: PreviewProvider {
+struct LinTemplate5Step2View_Previews: PreviewProvider {
 
     static var previews: some View {
         ForEach(PaywallViewMode.allCases, id: \.self) { mode in
@@ -124,7 +115,7 @@ struct LinTemplate4View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplate4View($0)
+                LinTemplate5Step2View($0)
             }
         }
     }

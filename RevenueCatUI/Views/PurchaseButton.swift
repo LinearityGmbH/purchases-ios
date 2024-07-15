@@ -22,6 +22,7 @@ struct PurchaseButton: View {
     let colors: PaywallData.Configuration.Colors
     let fonts: PaywallFontProvider
     let mode: PaywallViewMode
+    let actionOverride: (() -> ())?
 
     @EnvironmentObject
     private var introEligibilityViewModel: IntroEligibilityViewModel
@@ -33,14 +34,16 @@ struct PurchaseButton: View {
     init(
         packages: TemplateViewConfiguration.PackageConfiguration,
         selectedPackage: TemplateViewConfiguration.Package,
-        configuration: TemplateViewConfiguration
+        configuration: TemplateViewConfiguration,
+        actionOverride: (() -> ())? = nil
     ) {
         self.init(
             packages: packages,
             selectedPackage: selectedPackage,
             colors: configuration.colors,
             fonts: configuration.fonts,
-            mode: configuration.mode
+            mode: configuration.mode,
+            actionOverride: actionOverride
         )
     }
 
@@ -49,13 +52,15 @@ struct PurchaseButton: View {
         selectedPackage: TemplateViewConfiguration.Package,
         colors: PaywallData.Configuration.Colors,
         fonts: PaywallFontProvider,
-        mode: PaywallViewMode
+        mode: PaywallViewMode,
+        actionOverride: (() -> ())? = nil
     ) {
         self.packages = packages
         self.selectedPackage = selectedPackage
         self.colors = colors
         self.fonts = fonts
         self.mode = mode
+        self.actionOverride = actionOverride
     }
 
     var body: some View {
@@ -64,13 +69,17 @@ struct PurchaseButton: View {
 
     private var button: some View {
         AsyncButton {
-            guard !self.purchaseHandler.actionInProgress else { return }
-            guard !self.selectedPackage.currentlySubscribed else {
-                Logger.warning(Strings.product_already_subscribed)
-                return
+            if let actionOverride {
+                actionOverride()
+            } else {
+                guard !self.purchaseHandler.actionInProgress else { return }
+                guard !self.selectedPackage.currentlySubscribed else {
+                    Logger.warning(Strings.product_already_subscribed)
+                    return
+                }
+                
+                _ = try await self.purchaseHandler.purchase(package: self.selectedPackage.content)
             }
-
-            _ = try await self.purchaseHandler.purchase(package: self.selectedPackage.content)
         } label: {
             ConsistentPackageContentView(
                 packages: self.packages.all,
