@@ -10,7 +10,7 @@ import SwiftUI
 import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplateNavigation: TemplateViewType, IntroEligibilityProvider {
+struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
     
@@ -68,7 +68,7 @@ struct LinTemplateNavigation_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplateNavigation($0)
+                LinTemplateNavigationView($0)
             }
         }
     }
