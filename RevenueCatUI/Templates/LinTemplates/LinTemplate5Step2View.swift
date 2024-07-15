@@ -10,9 +10,9 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5Step2View: TemplateViewType {
-    static var bundle = Foundation.Bundle.module
+struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
     let configuration: TemplateViewConfiguration
+    let showBackButton: Bool
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
     @Environment(\.verticalSizeClass)
@@ -20,24 +20,25 @@ struct LinTemplate5Step2View: TemplateViewType {
     @Environment(\.horizontalSizeClass)
     var horizontalSizeClass
     @EnvironmentObject
-    private var introEligibilityViewModel: IntroEligibilityViewModel
+    var introEligibilityViewModel: IntroEligibilityViewModel
     @State
-    private var selectedPackage: TemplateViewConfiguration.Package
+    var selectedPackage: TemplateViewConfiguration.Package
     
-    var isEligibleToFreeTrial: Bool {
-        introEligibilityViewModel.allEligibility[selectedPackage.content] == .eligible
+    init(_ configuration: TemplateViewConfiguration) {
+        self.init(configuration, showBackButton: false)
     }
 
-    init(_ configuration: TemplateViewConfiguration) {
+    init(_ configuration: TemplateViewConfiguration, showBackButton: Bool) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
+        self.showBackButton = showBackButton
     }
 
     var body: some View {
         SideBySideView {
-            paywallContent(displayTimeline: horizontalSizeClass != .regular && isEligibleToFreeTrial)
+            paywallContent(displayTimeline: horizontalSizeClass != .regular && isEligibleToIntro)
         } rightView: {
-            auxiliaryDetailsView(isEligibleToFreeTrial: isEligibleToFreeTrial)
+            auxiliaryDetailsView(isEligibleToIntro: isEligibleToIntro)
         }
     }
     
@@ -48,10 +49,14 @@ struct LinTemplate5Step2View: TemplateViewType {
             selectedPackage: $selectedPackage,
             displayImage: false,
             titleTypeProvider: { [introEligibilityViewModel] package in
-                let isEligibleToFreeTrial = introEligibilityViewModel.allEligibility[package.content] == .eligible
-                return .dynamic(isEligibleToFreeTrial: isEligibleToFreeTrial, bundle: Self.bundle)
+                let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
+                return .dynamic(
+                    isEligibleToIntro: isEligibleToIntro,
+                    bundle: LinTemplatesResources.linTemplate5Step2Bundle
+                )
             },
-            horizontalPaddingModifier: NoPaddingModifier()
+            horizontalPaddingModifier: NoPaddingModifier(),
+            showBackButton: showBackButton
         ) {
             if displayTimeline {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .horizontal)
@@ -67,11 +72,11 @@ struct LinTemplate5Step2View: TemplateViewType {
     }
     
     @ViewBuilder
-    private func auxiliaryDetailsView(isEligibleToFreeTrial: Bool) -> some View {
+    private func auxiliaryDetailsView(isEligibleToIntro: Bool) -> some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 Spacer()
-                if isEligibleToFreeTrial {
+                if isEligibleToIntro {
                     TimelineView(stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .vertical)
                     Spacer().frame(height: 60)
                 }
@@ -95,7 +100,7 @@ struct LinTemplate5Step2View: TemplateViewType {
 private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
-        bundle: LinTemplate5Step2View.bundle,
+        bundle: LinTemplatesResources.linTemplate5Step2Bundle,
         value: value,
         comment: ""
     )

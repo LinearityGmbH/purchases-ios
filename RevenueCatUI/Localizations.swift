@@ -17,9 +17,9 @@ public func setupPaywall(
     timelineBundle: Bundle,
     testimonialsBundle: Bundle
 ) {
-    LinTemplate5Step1View.paywallFirstStepImageBackgroundColor = Color(uiColor: paywallFirstStepImageBackgroundColor)
-    LinTemplate5Step1View.bundle = paywallFirstStepBundle
-    LinTemplate5Step2View.bundle = paywallSecondStepBundle
+    LinTemplatesResources.paywallFirstStepImageBackgroundColor = Color(uiColor: paywallFirstStepImageBackgroundColor)
+    LinTemplatesResources.linTemplate5Step1Bundle = paywallFirstStepBundle
+    LinTemplatesResources.linTemplate5Step2Bundle = paywallSecondStepBundle
     CTAFooterMessageProvider.bundle = paywallSecondStepBundle
     TimelineView.bundle = timelineBundle
     TestimonialsView.bundle = testimonialsBundle
