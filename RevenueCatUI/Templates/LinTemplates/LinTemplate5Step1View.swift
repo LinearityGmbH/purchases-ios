@@ -132,7 +132,7 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
                 .aspectRatio(contentMode: .fit)
             Spacer()
         }
-        .background(LinTemplatesResources.paywallFirstStepImageBackgroundColor)
+        .background(Color("paywall-first-step-imageBackgroundColor", bundle: LinTemplatesResources.linTemplate5Step1Bundle))
     }
 }
 

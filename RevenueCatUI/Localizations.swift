@@ -11,13 +11,11 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public func setupPaywall(
-    paywallFirstStepImageBackgroundColor: UIColor,
     paywallFirstStepBundle: Bundle,
     paywallSecondStepBundle: Bundle,
     timelineBundle: Bundle,
     testimonialsBundle: Bundle
 ) {
-    LinTemplatesResources.paywallFirstStepImageBackgroundColor = Color(uiColor: paywallFirstStepImageBackgroundColor)
     LinTemplatesResources.linTemplate5Step1Bundle = paywallFirstStepBundle
     LinTemplatesResources.linTemplate5Step2Bundle = paywallSecondStepBundle
     CTAFooterMessageProvider.bundle = paywallSecondStepBundle
