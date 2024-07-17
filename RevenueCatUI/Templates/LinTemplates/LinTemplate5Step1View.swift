@@ -74,7 +74,7 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     private var subtitle: some View {
         let text: String
-        if let introductoryOfferDaysDuration = configuration.packages.introductoryOfferDaysDuration {
+        if let introductoryOfferDaysDuration = configuration.packages.introductoryOfferDaysDuration, isEligibleToIntro {
             let translation = localize(
                 "Step1.SubtitleWithOffer",
                 value: "Get unlimited access to all Linearity features for free for %d days. We will remind you before cancellation date."
@@ -126,6 +126,7 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
             // wrap around LocalizedStringKey to have Markdown support
             Text(LocalizedStringKey(localize("Step1.AuxiliaryDetailsView.Title", value: "Boost your productivity **with AI-powered tools**")))
                 .font(.system(size: 20))
+                .foregroundStyle(.black)
                 .padding([.leading, .trailing, .bottom], 20)
             Image(imageResource)
                 .resizable()
