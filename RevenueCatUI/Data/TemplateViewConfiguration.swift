@@ -75,9 +75,16 @@ extension TemplateViewConfiguration {
         var introductoryOfferDaysDuration: Int? {
             switch self {
             case .single(let package):
-                package.content.introductoryOfferDaysDuration
-            case .multiple(_, _, let all):
-                all.first(where: { $0.content.introductoryOfferDaysDuration != nil })?.content.introductoryOfferDaysDuration
+                return package.content.introductoryOfferDaysDuration
+            case .multiple(let mutliPackage):
+                return mutliPackage.all.first(where: { $0.content.introductoryOfferDaysDuration != nil })?.content.introductoryOfferDaysDuration
+            case let .multiTier(_, allMap, _):
+                for (_, multiPackage) in allMap {
+                    if let value = PackageConfiguration.multiple(multiPackage).introductoryOfferDaysDuration {
+                        return value
+                    }
+                }
+                return nil
             }
         }
     }
