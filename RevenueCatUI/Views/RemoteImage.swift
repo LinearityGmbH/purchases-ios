@@ -74,6 +74,7 @@ struct RemoteImage: View {
             return AnyView(
                 image
                     .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .accessibilityHidden(true)
             )
         }
