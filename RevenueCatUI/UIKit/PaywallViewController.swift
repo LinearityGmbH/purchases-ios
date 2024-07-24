@@ -63,6 +63,23 @@ public class PaywallViewController: UIViewController {
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
+    
+    public convenience init(
+        placementIdentifier: String,
+        displayCloseButton: Bool = false,
+        refreshSubscriptions: @escaping () async throws -> Void,
+        shouldBlockTouchEvents: Bool = false,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
+    ) {
+        self.init(
+            content: .offeringPlacementIdentifier(placementIdentifier),
+            fonts: DefaultPaywallFontProvider(),
+            displayCloseButton: displayCloseButton,
+            refreshSubscriptions: refreshSubscriptions,
+            shouldBlockTouchEvents: shouldBlockTouchEvents,
+            dismissRequestedHandler: dismissRequestedHandler
+        )
+    }
 
     /// Initialize a `PaywallViewController` with an optional `Offering` and ``PaywallFontProvider``.
     /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
