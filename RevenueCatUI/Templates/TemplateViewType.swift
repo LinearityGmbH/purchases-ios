@@ -165,7 +165,11 @@ extension PaywallData {
             case .canvaStyleOneStep:
                 LinTemplate5Step2View(configuration)
             case .canvaStyleTwoSteps:
-                LinTemplateNavigationView(configuration)
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+                    LinTemplateNavigationView(configuration)
+                } else {
+                    LinTemplate5Step2View(configuration)
+                }
             }
         }
         #endif

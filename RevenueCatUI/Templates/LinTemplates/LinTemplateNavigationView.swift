@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import RevenueCat
 
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
@@ -31,7 +31,7 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             LinTemplate5Step1View(configuration) {
                 LinNavigationLink(
                     configuration: configuration,
@@ -41,7 +41,6 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
                 )
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
     }
     
     @ViewBuilder
@@ -56,7 +55,7 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
 
 #if DEBUG
 
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 @available(watchOS, unavailable)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
