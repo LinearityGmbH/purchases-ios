@@ -25,6 +25,7 @@ class BaseHTTPClientTests<ETag: ETagManager>: TestCase {
     var signing: MockSigning!
     var client: HTTPClient!
     var eTagManager: ETag!
+    var diagnosticsTracker: DiagnosticsTrackerType?
     var operationDispatcher: OperationDispatcher!
 
     fileprivate let apiKey = "MockAPIKey"
@@ -39,6 +40,11 @@ class BaseHTTPClientTests<ETag: ETagManager>: TestCase {
 
         self.systemInfo = MockSystemInfo(finishTransactions: true)
         self.signing = MockSigning()
+        if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) {
+            self.diagnosticsTracker = MockDiagnosticsTracker()
+        } else {
+            self.diagnosticsTracker = nil
+        }
         self.operationDispatcher = OperationDispatcher()
         MockDNSChecker.resetData()
 
@@ -61,6 +67,7 @@ class BaseHTTPClientTests<ETag: ETagManager>: TestCase {
                           systemInfo: systemInfo,
                           eTagManager: self.eTagManager,
                           signing: self.signing,
+                          diagnosticsTracker: self.diagnosticsTracker,
                           dnsChecker: MockDNSChecker.self,
                           requestTimeout: defaultTimeout.seconds)
     }
@@ -788,10 +795,30 @@ final class HTTPClientTests: BaseHTTPClientTests<MockETagManager> {
 
         let headerPresent: Atomic<Bool> = false
 
-        let enabled = self.systemInfo.storeKit2Setting.isEnabledAndAvailable.description
+        let enabled = self.systemInfo.storeKitVersion.isStoreKit2EnabledAndAvailable.description
 
         stub(condition: hasHeaderNamed("X-StoreKit2-Enabled",
                                        value: enabled)) { _ in
+            headerPresent.value = true
+            return .emptySuccessResponse()
+        }
+
+        waitUntil { completion in
+            self.client.perform(request) { (_: DataResponse) in completion() }
+        }
+
+        expect(headerPresent.value) == true
+    }
+
+    func testPassesStoreKitVersionHeader() {
+        let request = HTTPRequest(method: .post([:]), path: .mockPath)
+
+        let headerPresent: Atomic<Bool> = false
+
+        let version = self.systemInfo.storeKitVersion.effectiveVersion.debugDescription
+
+        stub(condition: hasHeaderNamed("X-StoreKit-Version",
+                                       value: version)) { _ in
             headerPresent.value = true
             return .emptySuccessResponse()
         }
@@ -1575,7 +1602,88 @@ final class HTTPClientTests: BaseHTTPClientTests<MockETagManager> {
         )
     }
 
+    // - MARK: Diagnostics http request performed tracking
+
+    @available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
+    func testDiagnosticsHttpRequestPerformedTrackedOnSuccess() throws {
+        try AvailabilityChecks.iOS15APIAvailableOrSkipTest()
+
+        let request = HTTPRequest(method: .get, path: .mockPath)
+
+        stub(condition: isPath(request.path)) { _ in
+            return .emptySuccessResponse()
+        }
+
+        waitUntil { completion in
+            self.client.perform(request) { (_: EmptyResponse) in completion() }
+        }
+
+        // swiftlint:disable:next force_cast
+        let mockDiagnosticsTracker = self.diagnosticsTracker as! MockDiagnosticsTracker
+        expect(mockDiagnosticsTracker.trackedHttpRequestPerformedParams.count).toEventually(equal(1))
+        guard let trackedParams = mockDiagnosticsTracker.trackedHttpRequestPerformedParams.first else {
+            fail("Should have at least one call to tracked diagnostics")
+            return
+        }
+        expect(trackedParams).to(matchTrackParams((
+            "log_in",
+            -1, // Any
+            true,
+            200,
+            .backend,
+            .notRequested
+        )))
+    }
+
+    @available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
+    func testDiagnosticsHttpRequestPerformedTrackedOnError() throws {
+        try AvailabilityChecks.iOS15APIAvailableOrSkipTest()
+
+        let request = HTTPRequest(method: .get, path: .mockPath)
+
+        waitUntil { completion in
+            self.client.perform(request) { (_: EmptyResponse) in completion() }
+        }
+
+        // swiftlint:disable:next force_cast
+        let mockDiagnosticsTracker = self.diagnosticsTracker as! MockDiagnosticsTracker
+        expect(mockDiagnosticsTracker.trackedHttpRequestPerformedParams.count).toEventually(equal(1))
+        guard let trackedParams = mockDiagnosticsTracker.trackedHttpRequestPerformedParams.first else {
+            fail("Should have at least one call to tracked diagnostics")
+            return
+        }
+        expect(trackedParams).to(matchTrackParams((
+            "log_in",
+            -1, // Any
+            false,
+            401,
+            nil,
+            .notRequested
+        )))
+    }
+
 }
+
+// swiftlint:disable large_tuple
+
+private func matchTrackParams(
+    _ data: (String, TimeInterval, Bool, Int, HTTPResponseOrigin?, VerificationResult)
+) -> Nimble.Predicate<(String, TimeInterval, Bool, Int, HTTPResponseOrigin?, VerificationResult)> {
+    return .init {
+        let other = try $0.evaluate()
+        let timeInterval = other?.1 ?? -1
+        let matches = (other?.0 == data.0 &&
+                       timeInterval > 0 && timeInterval.isLess(than: 1) &&
+                       other?.2 == data.2 &&
+                       other?.3 == data.3 &&
+                       other?.4 == data.4 &&
+                       other?.5 == data.5)
+
+        return .init(bool: matches, message: .fail("Diagnostics tracked params do not match"))
+    }
+}
+
+// swiftlint:enable large_tuple
 
 func isPath(_ path: HTTPRequestPath) -> HTTPStubsTestBlock {
     return isPath(path.relativePath)
@@ -1640,7 +1748,7 @@ extension BaseHTTPClientTests {
         var key1: String
         var key2: String
 
-        var contentForSignature: [(key: String, value: String)] {
+        var contentForSignature: [(key: String, value: String?)] {
             return [
                 ("key1", self.key1),
                 ("key2", self.key2)
@@ -1687,6 +1795,6 @@ private struct AnyEncodableRequestBody: HTTPRequestBody, Decodable {
         self.body = .init(body)
     }
 
-    var contentForSignature: [(key: String, value: String)] { [] }
+    var contentForSignature: [(key: String, value: String?)] { [] }
 
 }

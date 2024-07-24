@@ -261,6 +261,9 @@ private extension SubscriptionPeriod.Unit {
         case .week: return .weekOfMonth
         case .month: return .month
         case .year: return .year
+        @unknown default:
+            Logger.warning("Unknown SubscriptionPeriod.Unit")
+            return .year
         }
     }
 
@@ -279,6 +282,7 @@ private extension SubscriptionPeriod {
         case .year:
             return DateComponents(year: self.value)
         @unknown default:
+            Logger.warning("Unknown SubscriptionPeriod")
             return .init()
         }
     }
@@ -298,6 +302,9 @@ private extension PackageType {
         case .lifetime: return "Lifetime"
 
         case .unknown, .custom:
+            return nil
+        @unknown default:
+            Logger.warning("Unknown localizationKey")
             return nil
         }
     }

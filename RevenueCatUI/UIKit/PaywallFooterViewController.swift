@@ -32,35 +32,45 @@ public final class PaywallFooterViewController: PaywallViewController {
     /// `Offerings.current` will be used by default.
     public init(
         offering: Offering? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
+        refreshSubscriptions: @escaping () async throws -> Void,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         super.init(content: .optionalOffering(offering),
                    fonts: DefaultPaywallFontProvider(),
                    displayCloseButton: false,
-                   refreshSubscriptions: refreshSubscriptions)
+                   refreshSubscriptions: refreshSubscriptions,
+                   shouldBlockTouchEvents: false,
+                   dismissRequestedHandler: dismissRequestedHandler)
     }
 
     /// Initialize a `PaywallFooterViewController` with an `Offering` identifier.
     public init(
         offeringIdentifier: String,
-        refreshSubscriptions: @escaping () async throws -> Void
+        refreshSubscriptions: @escaping () async throws -> Void,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         super.init(content: .offeringIdentifier(offeringIdentifier),
                    fonts: DefaultPaywallFontProvider(),
                    displayCloseButton: false,
-                   refreshSubscriptions: refreshSubscriptions)
+                   refreshSubscriptions: refreshSubscriptions,
+                   shouldBlockTouchEvents: false,
+                   dismissRequestedHandler: dismissRequestedHandler)
     }
 
     /// Initialize a `PaywallFooterViewController` with an `offeringIdentifier` and custom `fontName`.
     /// - Parameter fontName: a custom font name for this paywall. See ``CustomPaywallFontProvider``.
     public init(
-        offeringIdentifier: String, fontName: String,
-        refreshSubscriptions: @escaping () async throws -> Void
+        offeringIdentifier: String,
+        fontName: String,
+        refreshSubscriptions: @escaping () async throws -> Void,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         super.init(content: .offeringIdentifier(offeringIdentifier),
                    fonts: CustomPaywallFontProvider(fontName: fontName),
                    displayCloseButton: false,
-                   refreshSubscriptions: refreshSubscriptions)
+                   refreshSubscriptions: refreshSubscriptions,
+                   shouldBlockTouchEvents: false,
+                   dismissRequestedHandler: dismissRequestedHandler)
     }
 
     @available(*, unavailable)
@@ -68,12 +78,16 @@ public final class PaywallFooterViewController: PaywallViewController {
         content: PaywallViewConfiguration.Content,
         fonts: PaywallFontProvider,
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void
+        refreshSubscriptions: @escaping () async throws -> Void,
+        shouldBlockTouchEvents: Bool = false,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         super.init(content: content,
                    fonts: fonts,
                    displayCloseButton: false,
-                   refreshSubscriptions: refreshSubscriptions)
+                   refreshSubscriptions: refreshSubscriptions,
+                   shouldBlockTouchEvents: false,
+                   dismissRequestedHandler: dismissRequestedHandler)
     }
 
     // swiftlint:disable:next missing_docs

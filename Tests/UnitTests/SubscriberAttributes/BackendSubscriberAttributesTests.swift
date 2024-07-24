@@ -30,6 +30,7 @@ class BackendSubscriberAttributesTests: TestCase {
 
     private var dateProvider: MockDateProvider!
     private var mockETagManager: MockETagManager!
+    private var mockDiagnosticsTracker: DiagnosticsTrackerType?
 
     private static let apiKey = "the api key"
 
@@ -49,7 +50,8 @@ class BackendSubscriberAttributesTests: TestCase {
     private let systemInfo = SystemInfo(
         platformInfo: .init(flavor: "Unity", version: "2.3.3"),
         finishTransactions: true,
-        storefrontProvider: MockStorefrontProvider()
+        storefrontProvider: MockStorefrontProvider(),
+        storeKitVersion: .versionForTests
     )
 
     override func setUpWithError() throws {
@@ -61,6 +63,7 @@ class BackendSubscriberAttributesTests: TestCase {
         let config = BackendConfiguration(httpClient: self.mockHTTPClient,
                                           operationDispatcher: MockOperationDispatcher(),
                                           operationQueue: MockBackend.QueueProvider.createBackendQueue(),
+                                          diagnosticsQueue: MockBackend.QueueProvider.createDiagnosticsQueue(),
                                           systemInfo: self.systemInfo,
                                           offlineCustomerInfoCreator: MockOfflineCustomerInfoCreator(),
                                           dateProvider: self.dateProvider)
@@ -410,11 +413,27 @@ class BackendSubscriberAttributesTests: TestCase {
 
     final func createClient(_ file: StaticString) -> MockHTTPClient {
         self.mockETagManager = MockETagManager()
+        if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) {
+            self.mockDiagnosticsTracker = MockDiagnosticsTracker()
+        }
 
         return MockHTTPClient(apiKey: Self.apiKey,
                               systemInfo: self.systemInfo,
                               eTagManager: self.mockETagManager,
+                              diagnosticsTracker: self.mockDiagnosticsTracker,
                               sourceTestFile: file)
     }
+
+}
+
+private extension StoreKitVersion {
+
+    // Need to force StoreKit 1 because we use iOS 13 snapshots
+    // for watchOS tests which contain StoreKit 1 headers
+    #if os(watchOS)
+    static let versionForTests = StoreKitVersion.storeKit1
+    #else
+    static let versionForTests = StoreKitVersion.default
+    #endif
 
 }

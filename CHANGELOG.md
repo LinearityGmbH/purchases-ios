@@ -1,3 +1,133 @@
+## 5.0.0
+
+The RevenueCat iOS SDK v5 is here!! Version 5.0 of the RevenueCat SDK enables full StoreKit 2 flow on the SDK and the RevenueCat backend by default.
+
+See our [RevenueCat v5 Migration Guide](Sources/DocCDocumentation/DocCDocumentation.docc/V5_API_Migration_guide.md) for all the details.
+
+## 4.43.2
+### Bugfixes
+* Remove AdClient framework related code (#3993) via Cesar de la Vega (@vegaro)
+
+## 4.43.1
+### Dependency Updates
+* Bump fastlane from 2.220.0 to 2.221.0 (#3971) via dependabot[bot] (@dependabot[bot])
+* Bump rexml from 3.2.6 to 3.2.8 (#3907) via dependabot[bot] (@dependabot[bot])
+* Bump fastlane-plugin-revenuecat_internal from `8ec0072` to `5f55466` (#3938) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Fix cocoapods installation tests (#3981) via Toni Rico (@tonidero)
+* Remove carthage from CI and update release jobs to use xcode 15 and M1 (#3927) via Cesar de la Vega (@vegaro)
+* Bring back offline integration tests on M1 (#3976) via Toni Rico (@tonidero)
+* Fix Carthage (#3978) via James Borthwick (@jamesrb1)
+* Revert "Run offline backend integration tests on M1 machines (#3961)" (#3974) via Toni Rico (@tonidero)
+* Run offline backend integration tests on M1 machines (#3961) via Toni Rico (@tonidero)
+* Xcode project with RevenueCatUI + Tests (#3960) via James Borthwick (@jamesrb1)
+* Clone to spm using fastlane (#3926) via James Borthwick (@jamesrb1)
+* finishTransactions/ObserverMode -> PurchasesAreCompletedBy (#3947) via James Borthwick (@jamesrb1)
+* Switch tests for iOS 12 and 13 to M1 (#3958) via Toni Rico (@tonidero)
+* Fix prepare next version job (#3939) via Toni Rico (@tonidero)
+
+## 4.43.0
+### New Features
+* Diagnostics (#3931) via Toni Rico (@tonidero)
+### Other Changes
+* Revert docs-deploy to xcode 14 (#3935) via Cesar de la Vega (@vegaro)
+* Diagnostics: Add logic to retry on server errors (#3930) via Toni Rico (@tonidero)
+
+## 4.42.0
+### New Features
+* RemoteImage Low Res Image support (#3906) via James Borthwick (@jamesrb1)
+### Bugfixes
+* [EXTERNAL]  Hide decorative Paywall images from accessibility (#3886) via @shiftingsand (#3892) via Toni Rico (@tonidero)
+### Dependency Updates
+* Bump rexml from 3.2.6 to 3.2.8 in /Tests/InstallationTests/CocoapodsInstallation (#3908) via dependabot[bot] (@dependabot[bot])
+* Bump fastlane-plugin-revenuecat_internal from `dd5e21f` to `8ec0072` (#3873) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Revert to use xcode 14 to fix deploys (#3929) via Cesar de la Vega (@vegaro)
+* SPMInstallation tests deployment version increase (#3922) via Cesar de la Vega (@vegaro)
+* Only install `swiftlint` on Xcode 15 jobs (#3913) via Josh Holtz (@joshdholtz)
+* Add `http_request_performed` diagnostics event (#3897) via Toni Rico (@tonidero)
+* Paywalls Tester: App Store Prep (#3889) via James Borthwick (@jamesrb1)
+* Paywalls Tester: Enable Example Paywalls in Release Mode (#3885) via James Borthwick (@jamesrb1)
+* Use Ruby 3.2 on CircleCI (#3896) via Josh Holtz (@joshdholtz)
+* PaywallsTester: Remove unused code (#3884) via James Borthwick (@jamesrb1)
+* Improved Error Handling (#3883) via James Borthwick (@jamesrb1)
+* Clear diagnostics file if we detect it's too big during event tracking (#3824) via Toni Rico (@tonidero)
+* Preprocessor to make select constructs public (#3880) via James Borthwick (@jamesrb1)
+* Paywalls Tester: Use key defined in CI (#3869) via James Borthwick (@jamesrb1)
+* Cleanup: Remove test storekit configuration files when importing through SPM (#3878) via Andy Boedo (@aboedo)
+* Update fastlane plugin and fix docs index path (#3872) via Toni Rico (@tonidero)
+* Update to use xcode 15.3 in CI (#3870) via Cesar de la Vega (@vegaro)
+* Paywalls Tester 0.1 (#3868) via James Borthwick (@jamesrb1)
+* Update config.yml for SPM repo copy (#3861) via James Borthwick (@jamesrb1)
+* Change deploy-purchase-tester to use xcode 15 (#3858) via Cesar de la Vega (@vegaro)
+
+## 4.41.2
+### Bugfixes
+* `Paywalls`: Update Norwegian "restore" localization (#3844) via Josh Holtz (@joshdholtz)
+### Dependency Updates
+* Bump fastlane-plugin-revenuecat_internal from `f88dcd4` to `dd5e21f` (#3839) via dependabot[bot] (@dependabot[bot])
+* Update Package.resolved (#3822) via Cesar de la Vega (@vegaro)
+* Bump fastlane-plugin-revenuecat_internal from `1e62420` to `f88dcd4` (#3831) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Add diagnostics event for Customer Info verification (#3823) via Cesar de la Vega (@vegaro)
+* Fix backend integration test (#3847) via Josh Holtz (@joshdholtz)
+* Push to SPM after release has been made (#3834) via James Borthwick (@jamesrb1)
+* Add note to readme about new spm repo (#3828) via James Borthwick (@jamesrb1)
+
+## 4.41.1
+### Dependency Updates
+* Bump fastlane-plugin-revenuecat_internal from `8d4d9b1` to `1e62420` (#3818) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Sync repo in an SPM-friendly way (#3827) via James Borthwick (@jamesrb1)
+* Syncs diagnostics on initialization (#3821) via Cesar de la Vega (@vegaro)
+* Only update docs index on latest stable releases (#3815) via Toni Rico (@tonidero)
+
+## 4.41.0
+### New Features
+* Paywalls: Allow closed button color to be configured (#3805) via Josh Holtz (@joshdholtz)
+### Other Changes
+* Create `DiagnosticsTracker` (#3784) via Cesar de la Vega (@vegaro)
+* Add DiagnosticsSynchronizer (#3787) via Cesar de la Vega (@vegaro)
+* Update Package.resolved (#3796) via Cesar de la Vega (@vegaro)
+
+## 4.40.1
+### Bugfixes
+* Prevent Template 4 from wrapping Lifetime (#3789) via Josh Holtz (@joshdholtz)
+* Add enum entry for external purchases store (#3779) via Mark Villacampa (@MarkVillacampa)
+### Dependency Updates
+* Bump fastlane from 2.219.0 to 2.220.0 (#3783) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Add option to intercept touch events in `PaywallViewController` (#3801) via Toni Rico (@tonidero)
+* Create DiagnosticsPostOperation (#3795) via Cesar de la Vega (@vegaro)
+* Add diagnosticsQueue to BackendConfiguration (#3794) via Cesar de la Vega (@vegaro)
+* Add origin to HTTPResponseType (#3793) via Cesar de la Vega (@vegaro)
+* Add name property to HTTPRequestPath (#3790) via Cesar de la Vega (@vegaro)
+* Add name to VerificationResult (#3792) via Cesar de la Vega (@vegaro)
+* Add HTTPRequest.DiagnosticsPath (#3791) via Cesar de la Vega (@vegaro)
+* Add async `syncAttributesAndOfferingsIfNeeded()` (#3785) via Josh Holtz (@joshdholtz)
+* iOS append events to JSONL file and get diagnostics events (#3781) via Cesar de la Vega (@vegaro)
+* Fix offerings integration test (#3782) via Josh Holtz (@joshdholtz)
+
+## 4.40.0
+### New Features
+* [EXTERNAL] Cocoapods support for privacy manifest (#3772) via @sdurban (#3775) via Andy Boedo (@aboedo)
+
+## 4.39.1
+### Dependency Updates
+* Bump fastlane-plugin-revenuecat_internal from `d23de33` to `8d4d9b1` (#3769) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Add `RC_BILLING` store (#3773) via Toni Rico (@tonidero)
+* Add lane to trigger bumps (#3766) via Cesar de la Vega (@vegaro)
+
+## 4.39.0
+### RevenueCatUI
+* Add `PaywallView.onRequestedDismissal` modifier and option to pass `dismissRequestedHandler` to `PaywallViewController` (#3738) via Cesar de la Vega (@vegaro)
+### Bugfixes
+* [EXTERNAL] Fix Typos in ReceiptStrings.swift (#3756) via @nickkohrn (#3760) via Cesar de la Vega (@vegaro)
+### Other Changes
+* Pin xcbeautify version for xcode 14 tests (#3759) via Cesar de la Vega (@vegaro)
+* PaywallsTester: fix compilation (#3753) via Andy Boedo (@aboedo)
+
 ## 4.38.1
 ### Bugfixes
 * Fix for passing `TargetingContext` when using `currentOffering(forPlacement:)` (#3751) via Josh Holtz (@joshdholtz)

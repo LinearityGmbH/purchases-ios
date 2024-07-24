@@ -16,7 +16,6 @@ import Foundation
 @testable import RevenueCat
 
 /// A `FileHandlerType` that stores its contents in memory
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
 actor MockFileHandler: FileHandlerType {
 
     private var file: String = ""
@@ -40,6 +39,10 @@ actor MockFileHandler: FileHandlerType {
 
     func emptyFile() throws {
         self.file.removeAll(keepingCapacity: false)
+    }
+
+    func fileSizeInKB() async throws -> Double {
+        return Double(self.file.count)
     }
 
     private var removeFirstLineError: Error?

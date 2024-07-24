@@ -14,9 +14,10 @@
 import Foundation
 import RevenueCat
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
+// @PublicForExternalTesting
 final class TrialOrIntroEligibilityChecker: ObservableObject {
 
+    // @PublicForExternalTesting
     typealias Checker = @Sendable ([Package]) async -> [Package: IntroEligibilityStatus]
 
     /// `false` if this `TrialOrIntroEligibilityChecker` is not backend by a configured `Purchases`instance.
@@ -32,11 +33,13 @@ final class TrialOrIntroEligibilityChecker: ObservableObject {
     }
 
     /// Creates an instance with a custom checker, useful for testing or previews.
+    // @PublicForExternalTesting
     init(isConfigured: Bool = true, checker: @escaping Checker) {
         self.isConfigured = isConfigured
         self.checker = checker
     }
 
+    // @PublicForExternalTesting
     static func `default`() -> Self {
         return Purchases.isConfigured ? .init() : .notConfigured()
     }
@@ -49,7 +52,6 @@ final class TrialOrIntroEligibilityChecker: ObservableObject {
 
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 extension TrialOrIntroEligibilityChecker {
 
     func eligibility(for package: Package) async -> IntroEligibilityStatus {
@@ -63,9 +65,9 @@ extension TrialOrIntroEligibilityChecker {
 
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 extension StoreProduct {
 
+    // @PublicForExternalTesting
     var hasIntroDiscount: Bool {
         // Fix-me: this needs to handle other types of intro discounts
         return self.introductoryDiscount != nil

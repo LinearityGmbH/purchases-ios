@@ -26,6 +26,8 @@ class CustomerInfoManager {
     private let transactionFetcher: StoreKit2TransactionFetcherType
     private let transactionPoster: TransactionPosterType
 
+    private var diagnosticsTracker: DiagnosticsTrackerType?
+
     /// Underlying synchronized data.
     private let data: Atomic<Data>
 
@@ -45,6 +47,26 @@ class CustomerInfoManager {
         self.systemInfo = systemInfo
 
         self.data = .init(.init(deviceCache: deviceCache))
+    }
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    convenience init(offlineEntitlementsManager: OfflineEntitlementsManager,
+                     operationDispatcher: OperationDispatcher,
+                     deviceCache: DeviceCache,
+                     backend: Backend,
+                     transactionFetcher: StoreKit2TransactionFetcherType,
+                     transactionPoster: TransactionPosterType,
+                     systemInfo: SystemInfo,
+                     diagnosticsTracker: DiagnosticsTrackerType?
+    ) {
+        self.init(offlineEntitlementsManager: offlineEntitlementsManager,
+                  operationDispatcher: operationDispatcher,
+                  deviceCache: deviceCache,
+                  backend: backend,
+                  transactionFetcher: transactionFetcher,
+                  transactionPoster: transactionPoster,
+                  systemInfo: systemInfo)
+        self.diagnosticsTracker = diagnosticsTracker
     }
 
     func fetchAndCacheCustomerInfo(appUserID: String,
@@ -214,7 +236,6 @@ class CustomerInfoManager {
         }
     }
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
     var customerInfoStream: AsyncStream<CustomerInfo> {
         return AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             if let lastSentCustomerInfo = self.lastSentCustomerInfo {
@@ -261,6 +282,14 @@ class CustomerInfoManager {
         return self.modifyData {
             let lastSentCustomerInfo = $0.lastSentCustomerInfo
 
+            if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) {
+                if let tracker = self.diagnosticsTracker, lastSentCustomerInfo != customerInfo {
+                    Task(priority: .background) {
+                        await tracker.trackCustomerInfoVerificationResultIfNeeded(customerInfo)
+                    }
+                }
+            }
+
             guard !$0.customerInfoObserversByIdentifier.isEmpty, lastSentCustomerInfo != customerInfo else {
                 return
             }
@@ -287,7 +316,6 @@ class CustomerInfoManager {
 
 // MARK: - async extensions
 
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
 extension CustomerInfoManager {
 
     func fetchAndCacheCustomerInfo(appUserID: String, isAppBackgrounded: Bool) async throws -> CustomerInfo {
@@ -444,10 +472,6 @@ private extension CustomerInfoManager {
 private extension CustomerInfo {
 
     var shouldCache: Bool {
-        guard #available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *) else {
-            return true
-        }
-
         return self.entitlements.verification.shouldCache
     }
 

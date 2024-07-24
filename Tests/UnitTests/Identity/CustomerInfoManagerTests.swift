@@ -402,9 +402,6 @@ class CustomerInfoManagerTests: BaseCustomerInfoManagerTests {
     }
 
     func testDoesNotCacheCustomerInfoWithLocalEntitlements() throws {
-        // Entitlement verification not available prior
-        try AvailabilityChecks.iOS13APIAvailableOrSkipTest()
-
         let appUserID = "myUser"
         let info = self.mockCustomerInfo.copy(with: .verifiedOnDevice)
 
@@ -480,16 +477,12 @@ class CustomerInfoManagerTests: BaseCustomerInfoManagerTests {
 
 }
 
-// iOS 13.0+ only because these tests are async
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
 class CustomerInfoManagerGetCustomerInfoTests: BaseCustomerInfoManagerTests {
 
     private var mockRefreshedCustomerInfo: CustomerInfo!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-
-        try AvailabilityChecks.iOS13APIAvailableOrSkipTest()
 
         self.mockRefreshedCustomerInfo = try CustomerInfo(data: [
             "request_date": "2019-12-21T02:40:36Z",
@@ -506,8 +499,6 @@ class CustomerInfoManagerGetCustomerInfoTests: BaseCustomerInfoManagerTests {
     // MARK: - CacheFetchPolicy.fromCacheOnly
 
     func testCustomerInfoFromCacheOnlyReturnsFromCacheWhenAvailable() async throws {
-        try AvailabilityChecks.iOS13APIAvailableOrSkipTest()
-
         self.customerInfoManager.cache(customerInfo: self.mockCustomerInfo, appUserID: Self.appUserID)
 
         let result = try await self.customerInfoManager.customerInfo(appUserID: Self.appUserID,
@@ -699,6 +690,46 @@ class CustomerInfoManagerGetCustomerInfoTests: BaseCustomerInfoManagerTests {
 
         self.customerInfoManager.cache(customerInfo: .emptyInfo, appUserID: Self.appUserID)
         self.wait(for: [expectation], timeout: 1)
+    }
+
+}
+
+@available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
+class CustomerInfoVerificationTrackingTests: BaseCustomerInfoManagerTests {
+
+    private var mockDiagnosticsTracker: MockDiagnosticsTracker!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        try AvailabilityChecks.iOS15APIAvailableOrSkipTest()
+
+        self.mockDiagnosticsTracker = MockDiagnosticsTracker()
+
+        self.customerInfoManager = CustomerInfoManager(
+            offlineEntitlementsManager: self.mockOfflineEntitlementsManager,
+            operationDispatcher: self.mockOperationDispatcher,
+            deviceCache: self.mockDeviceCache,
+            backend: self.mockBackend,
+            transactionFetcher: self.mockTransationFetcher,
+            transactionPoster: self.mockTransactionPoster,
+            systemInfo: self.mockSystemInfo,
+            diagnosticsTracker: self.mockDiagnosticsTracker
+        )
+    }
+
+    func testTracksCustomerInfoVerificationResultIfNeeded() {
+        self.customerInfoManager.cache(customerInfo: self.mockCustomerInfo, appUserID: "myUser")
+
+        expect(self.mockDiagnosticsTracker.trackedCustomerInfo.count).toEventually(equal(1))
+    }
+
+    func testDoesNotTrackCustomerInfoResultIfCustomerInfoDoesNotChange() {
+        self.customerInfoManager.setLastSentCustomerInfo(self.mockCustomerInfo)
+        expect(self.customerInfoManager.lastSentCustomerInfo) === self.mockCustomerInfo
+
+        self.customerInfoManager.cache(customerInfo: self.mockCustomerInfo, appUserID: "myUser")
+        expect(self.mockDiagnosticsTracker.trackedCustomerInfo.count).toEventually(equal(0))
     }
 
 }

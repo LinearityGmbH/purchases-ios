@@ -234,6 +234,14 @@ Release to CocoaPods
 
 Tag current branch with current version number
 
+### ios trigger_bump
+
+```sh
+[bundle exec] fastlane ios trigger_bump
+```
+
+Trigger bump
+
 ### ios generate_snapshots_RC
 
 ```sh
@@ -290,6 +298,14 @@ Export XCFramework
 
 Run BackendIntegrationTests
 
+### ios retry_failed_tests
+
+```sh
+[bundle exec] fastlane ios retry_failed_tests
+```
+
+
+
 ### ios v3_loadshedder_integration_tests
 
 ```sh
@@ -345,6 +361,14 @@ Clones or updates snapshots repo
 ```
 
 Updates purchases-ios-snapshots-commit to point to latest commit on main
+
+### ios deploy_to_spm
+
+```sh
+[bundle exec] fastlane ios deploy_to_spm
+```
+
+
 
 ### ios sandbox_testers
 

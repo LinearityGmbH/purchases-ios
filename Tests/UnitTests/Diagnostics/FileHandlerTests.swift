@@ -16,15 +16,12 @@ import Nimble
 @testable import RevenueCat
 import XCTest
 
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
 class BaseFileHandlerTests: TestCase {
 
     fileprivate var handler: FileHandler!
 
     override func setUp() async throws {
         try await super.setUp()
-
-        try AvailabilityChecks.iOS13APIAvailableOrSkipTest()
 
         self.handler = try Self.createWithTemporaryFile()
     }
@@ -37,7 +34,6 @@ class BaseFileHandlerTests: TestCase {
 
 }
 
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
 class FileHandlerTests: BaseFileHandlerTests {
 
     // MARK: - readFile
@@ -181,10 +177,26 @@ class FileHandlerTests: BaseFileHandlerTests {
         expect(data).to(beEmpty())
     }
 
+    // MARK: - fileSizeInKB
+
+    func testFileSizeInKBForEmptyFile() async throws {
+        let result = try await self.handler.fileSizeInKB()
+        expect(result) == 0
+    }
+
+    func testFileSizeInKBForFileWithSomeData() async throws {
+        let content = Self.sampleLine()
+
+        await self.handler.append(line: content)
+
+        let result = try await self.handler.fileSizeInKB()
+        expect(result) > 0
+    }
+
 }
 
 @available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
-class ModernFileHandlerTests: BaseFileHandlerTests {
+class IOS15FileHandlerTests: BaseFileHandlerTests {
 
     override func setUp() async throws {
         try await super.setUp()
@@ -231,7 +243,6 @@ class ModernFileHandlerTests: BaseFileHandlerTests {
 
 // MARK: - Private
 
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
 private extension BaseFileHandlerTests {
 
     func reCreateHandler() async throws {

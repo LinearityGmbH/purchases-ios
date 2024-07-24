@@ -24,6 +24,9 @@ enum PaywallsStrings {
     case caching_presented_paywall
     case clearing_presented_paywall
 
+    // MARK: - Localization
+
+    case empty_localization
     case looking_up_localization(preferred: [Locale], search: [Locale])
     case found_localization(Locale)
     case fallback_localization(localeIdentifier: String)
@@ -37,7 +40,7 @@ enum PaywallsStrings {
     case event_flush_already_in_progress
     case event_flush_with_empty_store
     case event_flush_starting(count: Int)
-    case event_flush_failed(Error)
+    case event_sync_failed(Error)
 
 }
 
@@ -59,6 +62,9 @@ extension PaywallsStrings: LogMessage {
 
         case .clearing_presented_paywall:
             return "PurchasesOrchestrator: clearing presented paywall"
+
+        case .empty_localization:
+            return "Looking up localization but found no strings"
 
         case let .looking_up_localization(preferred, search):
             return "Looking up localized configuration for \(preferred.map(\.identifier)), " +
@@ -91,7 +97,7 @@ extension PaywallsStrings: LogMessage {
         case let .event_flush_starting(count):
             return "Paywall event flush: posting \(count) events."
 
-        case let .event_flush_failed(error):
+        case let .event_sync_failed(error):
             return "Paywall event flushing failed, will retry. Error: \((error as NSError).localizedDescription)"
         }
     }

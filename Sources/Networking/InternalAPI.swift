@@ -52,6 +52,20 @@ class InternalAPI {
         self.backendConfig.operationQueue.addOperation(operation)
     }
 
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    func postDiagnosticsEvents(events: [DiagnosticsEvent], completion: @escaping ResponseHandler) {
+        guard !events.isEmpty else {
+            completion(nil)
+            return
+        }
+
+        let operation = DiagnosticsPostOperation(configuration: .init(httpClient: self.backendConfig.httpClient),
+                                                 request: .init(events: events),
+                                                 responseHandler: completion)
+
+        self.backendConfig.addDiagnosticsOperation(operation, delay: .long)
+    }
+
 }
 
 extension InternalAPI {
@@ -61,6 +75,15 @@ extension InternalAPI {
     func postPaywallEvents(events: [PaywallStoredEvent]) async throws {
         let error = await Async.call { completion in
             self.postPaywallEvents(events: events, completion: completion)
+        }
+
+        if let error { throw error }
+    }
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    func postDiagnosticsEvents(events: [DiagnosticsEvent]) async throws {
+        let error = await Async.call { completion in
+            self.postDiagnosticsEvents(events: events, completion: completion)
         }
 
         if let error { throw error }

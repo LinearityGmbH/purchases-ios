@@ -22,14 +22,6 @@ class BasePurchasesTests: TestCase {
     private static let userDefaultsSuiteName = "TestDefaults"
 
     override func setUpWithError() throws {
-        #if swift(>=5.10)
-        // Apple replaced `XCTestCase.addTeardownBlock` with a Swift implementation
-        // which is no longer available on iOS 11/12.
-        guard #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *) else {
-            throw XCTSkip("addTeardownBlock is not available")
-        }
-        #endif
-
         try super.setUpWithError()
 
         // Some tests rely on the level being at least `.debug`
@@ -45,7 +37,7 @@ class BasePurchasesTests: TestCase {
         self.userDefaults = UserDefaults(suiteName: Self.userDefaultsSuiteName)
         self.clock = TestClock()
         self.systemInfo = MockSystemInfo(finishTransactions: true,
-                                         storeKit2Setting: self.storeKit2Setting,
+                                         storeKitVersion: self.storeKitVersion,
                                          clock: self.clock)
         self.storeKit1Wrapper = MockStoreKit1Wrapper(observerMode: self.systemInfo.observerMode)
         self.deviceCache = MockDeviceCache(sandboxEnvironmentDetector: self.systemInfo,
@@ -73,12 +65,21 @@ class BasePurchasesTests: TestCase {
         self.mockProductEntitlementMappingFetcher = MockProductEntitlementMappingFetcher()
         self.mockPurchasedProductsFetcher = MockPurchasedProductsFetcher()
         self.mockTransactionFetcher = MockStoreKit2TransactionFetcher()
+        if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) {
+            self.diagnosticsTracker = MockDiagnosticsTracker()
+        } else {
+            self.diagnosticsTracker = nil
+        }
 
         let apiKey = "mockAPIKey"
-        let httpClient = MockHTTPClient(apiKey: apiKey, systemInfo: self.systemInfo, eTagManager: MockETagManager())
+        let httpClient = MockHTTPClient(apiKey: apiKey,
+                                        systemInfo: self.systemInfo,
+                                        eTagManager: MockETagManager(),
+                                        diagnosticsTracker: self.diagnosticsTracker)
         let config = BackendConfiguration(httpClient: httpClient,
                                           operationDispatcher: self.mockOperationDispatcher,
                                           operationQueue: MockBackend.QueueProvider.createBackendQueue(),
+                                          diagnosticsQueue: MockBackend.QueueProvider.createDiagnosticsQueue(),
                                           systemInfo: self.systemInfo,
                                           offlineCustomerInfoCreator: MockOfflineCustomerInfoCreator(),
                                           dateProvider: MockDateProvider(stubbedNow: MockBackend.referenceDate))
@@ -183,6 +184,7 @@ class BasePurchasesTests: TestCase {
     var mockManageSubsHelper: MockManageSubscriptionsHelper!
     var mockBeginRefundRequestHelper: MockBeginRefundRequestHelper!
     var mockStoreMessagesHelper: MockStoreMessagesHelper!
+    var diagnosticsTracker: DiagnosticsTrackerType?
 
     // swiftlint:disable:next weak_delegate
     var purchasesDelegate: MockPurchasesDelegate!
@@ -191,7 +193,7 @@ class BasePurchasesTests: TestCase {
 
     private var paymentQueueWrapper: EitherPaymentQueueWrapper {
         // Note: this logic must match `Purchases`.
-        return self.systemInfo.storeKit2Setting.shouldOnlyUseStoreKit2
+        return self.systemInfo.storeKitVersion.isStoreKit2EnabledAndAvailable
             ? .right(self.mockPaymentQueueWrapper)
             : .left(self.storeKit1Wrapper)
     }
@@ -216,7 +218,6 @@ class BasePurchasesTests: TestCase {
     }
 
     func setupPurchases(automaticCollection: Bool = false, withDelegate: Bool = true) {
-        Purchases.deprecated.automaticAppleSearchAdsAttributionCollection = automaticCollection
         self.identityManager.mockIsAnonymous = false
 
         self.initializePurchasesInstance(
@@ -226,7 +227,6 @@ class BasePurchasesTests: TestCase {
     }
 
     func setupAnonPurchases() {
-        Purchases.deprecated.automaticAppleSearchAdsAttributionCollection = false
         self.identityManager.mockIsAnonymous = true
         self.initializePurchasesInstance(appUserId: nil)
     }
@@ -234,7 +234,7 @@ class BasePurchasesTests: TestCase {
     func setUpPurchasesObserverModeOn() {
         self.systemInfo = MockSystemInfo(platformInfo: nil,
                                          finishTransactions: false,
-                                         storeKit2Setting: self.storeKit2Setting,
+                                         storeKitVersion: self.storeKitVersion,
                                          clock: self.clock)
         self.storeKit1Wrapper = MockStoreKit1Wrapper(observerMode: true)
         self.initializePurchasesInstance(appUserId: nil)
@@ -320,10 +320,10 @@ class BasePurchasesTests: TestCase {
         self.storeKit1Wrapper.delegate?.storeKit1Wrapper(self.storeKit1Wrapper, updatedTransaction: transaction)
     }
 
-    var storeKit2Setting: StoreKit2Setting {
+    var storeKitVersion: StoreKitVersion {
         // Even though the new default is StoreKit 2, most of the tests from this parent class
         // were written for SK1. Therefore we want to default to it being disabled.
-        return .enabledOnlyForOptimizations
+        return .storeKit1
     }
 
 }
@@ -453,6 +453,7 @@ extension BasePurchasesTests {
                            productData: ProductRequestData?,
                            transactionData: PurchasedTransactionData,
                            observerMode: Bool,
+                           appTransaction: String? = nil,
                            completion: @escaping CustomerAPI.CustomerInfoResponseHandler) {
             self.postReceiptDataCalled = true
             self.postedReceiptData = receipt

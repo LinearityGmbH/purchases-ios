@@ -1,4 +1,5 @@
-### Bugfixes
-* Fix for passing `TargetingContext` when using `currentOffering(forPlacement:)` (#3751) via Josh Holtz (@joshdholtz)
-### Other Changes
-* Remove unneeded tests for StoreKit2 with JWS (#3747) via Josh Holtz (@joshdholtz)
+## 5.0.0
+
+The RevenueCat iOS SDK v5 is here!! Version 5.0 of the RevenueCat SDK enables full StoreKit 2 flow on the SDK and the RevenueCat backend by default.
+
+See our [RevenueCat v5 Migration Guide](Sources/DocCDocumentation/DocCDocumentation.docc/V5_API_Migration_guide.md) for all the details.

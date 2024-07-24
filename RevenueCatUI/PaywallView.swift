@@ -101,6 +101,7 @@ public struct PaywallView: View {
         )
     }
 
+    // @PublicForExternalTesting
     init(configuration: PaywallViewConfiguration) {
         self._introEligibility = .init(wrappedValue: configuration.introEligibility ?? .default())
         self._purchaseHandler = .init(wrappedValue: configuration.purchaseHandler ?? .default())
@@ -139,7 +140,8 @@ public struct PaywallView: View {
                                      purchaseHandler: self.purchaseHandler)
                     .transition(Self.transition)
                 } else {
-                    LoadingPaywallView(mode: self.mode, displayCloseButton: self.displayCloseButton)
+                    LoadingPaywallView(mode: self.mode,
+                                       displayCloseButton: self.displayCloseButton)
                         .transition(Self.transition)
                         .task {
                             do {
@@ -289,6 +291,9 @@ struct LoadedOfferingPaywallView: View {
     @Environment(\.locale)
     private var locale
 
+    @Environment(\.onRequestedDismissal)
+    private var onRequestedDismissal: (() -> Void)?
+
     @Environment(\.colorScheme)
     private var colorScheme
 
@@ -338,30 +343,46 @@ struct LoadedOfferingPaywallView: View {
 
     @ViewBuilder
     private var content: some View {
+        let configuration = self.paywall.configuration(
+            for: self.offering,
+            activelySubscribedProductIdentifiers: self.activelySubscribedProductIdentifiers,
+            template: self.template,
+            mode: self.mode,
+            fonts: self.fonts,
+            locale: self.locale
+        )
+
         let view = self.paywall
             .createView(for: self.offering,
-                        activelySubscribedProductIdentifiers: self.activelySubscribedProductIdentifiers,
                         template: self.template,
-                        mode: self.mode,
-                        fonts: self.fonts,
-                        introEligibility: self.introEligibility,
-                        locale: self.locale)
+                        configuration: configuration,
+                        introEligibility: self.introEligibility)
             .environmentObject(self.introEligibility)
             .environmentObject(self.purchaseHandler)
             .disabled(self.purchaseHandler.actionInProgress)
             .onAppear { self.purchaseHandler.trackPaywallImpression(self.createEventData()) }
             .onDisappear { self.purchaseHandler.trackPaywallClose() }
             .onChangeOf(self.purchaseHandler.purchased) { purchased in
-                if self.mode.isFullScreen, purchased {
-                    Logger.debug(Strings.dismissing_paywall)
-                    self.dismiss()
+                if purchased {
+                    guard let onRequestedDismissal = self.onRequestedDismissal else {
+                        if self.mode.isFullScreen {
+                            Logger.debug(Strings.dismissing_paywall)
+                            self.dismiss()
+                        }
+                        return
+                    }
+                    onRequestedDismissal()
                 }
             }
 
         if self.displayCloseButton {
             NavigationView {
                 view
-                    .toolbar { self.toolbar }
+                    .toolbar {
+                        self.makeToolbar(
+                            color: self.getCloseButtonColor(configuration: configuration)
+                        )
+                    }
             }
             .navigationViewStyle(.stack)
         } else {
@@ -380,12 +401,26 @@ struct LoadedOfferingPaywallView: View {
         )
     }
 
-    private var toolbar: some ToolbarContent {
+    private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
+        switch configuration {
+        case .success(let configuration):
+            return configuration.colors.closeButtonColor
+        case .failure:
+            return nil
+        }
+    }
+
+    private func makeToolbar(color: Color?) -> some ToolbarContent {
         ToolbarItem(placement: .destructiveAction) {
             Button {
-                self.dismiss()
+                guard let onRequestedDismissal = self.onRequestedDismissal else {
+                    self.dismiss()
+                    return
+                }
+                onRequestedDismissal()
             } label: {
                 Image(systemName: "xmark")
+                    .foregroundColor(color)
             }
             .disabled(self.purchaseHandler.actionInProgress)
             .opacity(

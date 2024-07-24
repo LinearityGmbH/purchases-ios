@@ -32,49 +32,77 @@ class ConfigurationTests: TestCase {
     }
 
     func testNoObserverModeWithStoreKit1() {
-        let configuration = Configuration.Builder(withAPIKey: "test").build()
+        let configuration = Configuration.Builder(withAPIKey: "test")
+            .with(storeKitVersion: .storeKit1)
+            .build()
 
         expect(configuration.observerMode) == false
-        expect(configuration.storeKit2Setting) == .enabledOnlyForOptimizations
-
-        self.logger.verifyMessageWasNotLogged(Strings.configure.observer_mode_with_storekit2)
+        expect(configuration.storeKitVersion) == .storeKit1
     }
 
-    @available(*, deprecated)
     func testNoObserverModeWithStoreKit2() {
         let configuration = Configuration.Builder(withAPIKey: "test")
-            .with(usesStoreKit2IfAvailable: true)
+            .with(storeKitVersion: .storeKit2)
             .build()
 
         expect(configuration.observerMode) == false
-        expect(configuration.storeKit2Setting) == .enabledForCompatibleDevices
-
-        self.logger.verifyMessageWasNotLogged(Strings.configure.observer_mode_with_storekit2)
+        expect(configuration.storeKitVersion) == .storeKit2
     }
 
-    func testObserverModeWithStoreKit1() {
+    func testPurchasesAreCompletedByMyAppWithStoreKit1() {
         let configuration = Configuration.Builder(withAPIKey: "test")
-            .with(observerMode: true)
+            .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit1)
             .build()
 
         expect(configuration.observerMode) == true
-        expect(configuration.storeKit2Setting) == .enabledOnlyForOptimizations
-
-        self.logger.verifyMessageWasNotLogged(Strings.configure.observer_mode_with_storekit2)
+        expect(configuration.storeKitVersion) == .storeKit1
     }
 
     @available(*, deprecated)
-    func testObserverModeWithStoreKit2() {
+    func testPurchasesAreCompletedByMyAppWithStoreKit2() {
         let configuration = Configuration.Builder(withAPIKey: "test")
-            .with(observerMode: true)
-            .with(usesStoreKit2IfAvailable: true)
+            .with(purchasesAreCompletedBy: .myApp, storeKitVersion: .storeKit2)
             .build()
 
         expect(configuration.observerMode) == true
-        expect(configuration.storeKit2Setting) == .enabledForCompatibleDevices
+        expect(configuration.storeKitVersion) == .storeKit2
+    }
 
-        self.logger.verifyMessageWasLogged(Strings.configure.observer_mode_with_storekit2,
-                                           level: .warn)
+    func testDiagnosticsEnabled() throws {
+        guard #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) else {
+            throw XCTSkip("Required API is unavailable for this test")
+        }
+
+        let configuration = Configuration.Builder(withAPIKey: "test")
+            .with(diagnosticsEnabled: true)
+            .build()
+
+        expect(configuration.diagnosticsEnabled) == true
+    }
+
+    func testStoreKitVersionUsesStoreKit1ByDefault() {
+        let configuration = Configuration.Builder(withAPIKey: "test")
+            .build()
+
+        expect(configuration.storeKitVersion) == .default
+    }
+
+    @available(*, deprecated)
+    func testLegacyFlagSetsStoreKitVersionWhenStoreKit2Enabled() {
+        let configuration = Configuration.Builder(withAPIKey: "test")
+            .with(usesStoreKit2IfAvailable: true)
+            .build()
+
+        expect(configuration.storeKitVersion) == .storeKit2
+    }
+
+    @available(*, deprecated)
+    func testLegacyFlagSetsStoreKitVersionWhenStoreKit1Enabled() {
+        let configuration = Configuration.Builder(withAPIKey: "test")
+            .with(usesStoreKit2IfAvailable: false)
+            .build()
+
+        expect(configuration.storeKitVersion) == .default
     }
 
 }
