@@ -77,14 +77,9 @@ extension TemplateViewConfiguration {
             case .single(let package):
                 return package.content.introductoryOfferDaysDuration
             case .multiple(let mutliPackage):
-                return mutliPackage.all.first(where: { $0.content.introductoryOfferDaysDuration != nil })?.content.introductoryOfferDaysDuration
+                return mutliPackage.introductoryOfferDaysDuration
             case let .multiTier(_, allMap, _):
-                for (_, multiPackage) in allMap {
-                    if let value = PackageConfiguration.multiple(multiPackage).introductoryOfferDaysDuration {
-                        return value
-                    }
-                }
-                return nil
+                return allMap.values.first(where: { $0.introductoryOfferDaysDuration != nil })?.introductoryOfferDaysDuration
             }
         }
     }
@@ -92,6 +87,13 @@ extension TemplateViewConfiguration {
 }
 
 // MARK: - Properties
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension TemplateViewConfiguration.PackageConfiguration.MultiPackage {
+    var introductoryOfferDaysDuration: Int? {
+        all.first(where: { $0.content.introductoryOfferDaysDuration != nil })?.content.introductoryOfferDaysDuration
+    }
+}
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension TemplateViewConfiguration.PackageConfiguration {
