@@ -48,9 +48,8 @@ public enum VerificationResult: Int {
 
     /// No verification was done.
     ///
-    /// This can happen for multiple reasons:
-    ///  1. Verification is not enabled in ``Configuration``
-    ///  2. Verification can't be performed prior to iOS 13.0
+    /// This can happen due to:
+    /// - Verification is not enabled in ``Configuration``
     case notRequested = 0
 
     /// Entitlements were verified with our server.
@@ -99,6 +98,23 @@ extension VerificationResult: CustomDebugStringConvertible {
         case .verified: return "\(prefix).verified"
         case .verifiedOnDevice: return "\(prefix).verifiedOnDevice"
         case .failed: return "\(prefix).failed"
+        }
+    }
+
+}
+
+extension VerificationResult {
+
+    var name: String {
+        switch self {
+        case .notRequested:
+            return "NOT_REQUESTED"
+        case .verified:
+            return "VERIFIED"
+        case .verifiedOnDevice:
+            return "VERIFIED_ON_DEVICE"
+        case .failed:
+            return "FAILED"
         }
     }
 

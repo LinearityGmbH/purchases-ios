@@ -31,13 +31,17 @@ class HTTPClient {
     private let eTagManager: ETagManager
     private let dnsChecker: DNSCheckerType.Type
     private let signing: SigningType
+    private let diagnosticsTracker: DiagnosticsTrackerType?
+    private let dateProvider: DateProvider
 
     init(apiKey: String,
          systemInfo: SystemInfo,
          eTagManager: ETagManager,
          signing: SigningType,
+         diagnosticsTracker: DiagnosticsTrackerType?,
          dnsChecker: DNSCheckerType.Type = DNSChecker.self,
-         requestTimeout: TimeInterval = Configuration.networkTimeoutDefault) {
+         requestTimeout: TimeInterval = Configuration.networkTimeoutDefault,
+         dateProvider: DateProvider = DateProvider()) {
         let config = URLSessionConfiguration.ephemeral
         config.httpMaximumConnectionsPerHost = 1
         config.timeoutIntervalForRequest = requestTimeout
@@ -49,10 +53,12 @@ class HTTPClient {
         self.systemInfo = systemInfo
         self.eTagManager = eTagManager
         self.signing = signing
+        self.diagnosticsTracker = diagnosticsTracker
         self.dnsChecker = dnsChecker
         self.timeout = requestTimeout
         self.apiKey = apiKey
         self.authHeaders = HTTPClient.authorizationHeader(withAPIKey: apiKey)
+        self.dateProvider = dateProvider
     }
 
     /// - Parameter verificationMode: if `nil`, this will default to `SystemInfo.responseVerificationMode`
@@ -96,6 +102,9 @@ class HTTPClient {
 
     // Visible for tests
     var defaultHeaders: RequestHeaders {
+        let preferredLanguages = self.systemInfo.preferredLanguages.prefix(3).map {
+            $0.replacingOccurrences(of: "-", with: "_")
+        }.joined(separator: ",")
         var headers: RequestHeaders = [
             "content-type": "application/json",
             "X-Version": SystemInfo.frameworkVersion,
@@ -105,7 +114,9 @@ class HTTPClient {
             "X-Client-Version": SystemInfo.appVersion,
             "X-Client-Build-Version": SystemInfo.buildVersion,
             "X-Client-Bundle-ID": SystemInfo.bundleIdentifier,
-            "X-StoreKit2-Enabled": "\(self.systemInfo.storeKit2Setting.isEnabledAndAvailable)",
+            "X-Preferred-Locales": preferredLanguages,
+            "X-StoreKit2-Enabled": "\(self.systemInfo.storeKitVersion.isStoreKit2EnabledAndAvailable)",
+            "X-StoreKit-Version": "\(self.systemInfo.storeKitVersion.effectiveVersion)",
             "X-Observer-Mode-Enabled": "\(self.systemInfo.observerMode)",
             RequestHeader.sandbox.rawValue: "\(self.systemInfo.isSandbox)"
         ]
@@ -290,11 +301,13 @@ private extension HTTPClient {
     }
 
     /// - Returns: `nil` if the request must be retried
+    // swiftlint:disable:next function_parameter_count
     func parse(urlResponse: URLResponse?,
                request: Request,
                urlRequest: URLRequest,
                data: Data?,
-               error networkError: Error?) -> VerifiedHTTPResponse<Data>.Result? {
+               error networkError: Error?,
+               requestStartTime: Date) -> VerifiedHTTPResponse<Data>.Result? {
         if let networkError = networkError {
             return .failure(NetworkError(networkError, dnsChecker: self.dnsChecker))
         }
@@ -313,7 +326,8 @@ private extension HTTPClient {
         return self.createVerifiedResponse(request: request,
                                            urlRequest: urlRequest,
                                            data: dataIfAvailable,
-                                           response: httpURLResponse)
+                                           response: httpURLResponse,
+                                           requestStartTime: requestStartTime)
     }
 
     /// - Returns `Result<VerifiedHTTPResponse<Data>, NetworkError>?`
@@ -321,7 +335,8 @@ private extension HTTPClient {
         request: Request,
         urlRequest: URLRequest,
         data: Data?,
-        response httpURLResponse: HTTPURLResponse
+        response httpURLResponse: HTTPURLResponse,
+        requestStartTime: Date
     ) -> VerifiedHTTPResponse<Data>.Result? {
         #if DEBUG
         let requestHeaders: HTTPClient.RequestHeaders
@@ -338,7 +353,7 @@ private extension HTTPClient {
         let requestHeaders = request.headers
         #endif
 
-        return Result
+        let result = Result
             .success(data)
             .mapToResponse(response: httpURLResponse, request: request.httpRequest)
             // Verify response
@@ -375,13 +390,21 @@ private extension HTTPClient {
             }
             .asOptionalResult?
             .convertUnsuccessfulResponseToError()
+
+        self.trackHttpRequestPerformedIfNeeded(request: request,
+                                               requestStartTime: requestStartTime,
+                                               result: result)
+
+        return result
     }
 
+    // swiftlint:disable:next function_parameter_count
     func handle(urlResponse: URLResponse?,
                 request: Request,
                 urlRequest: URLRequest,
                 data: Data?,
-                error networkError: Error?) {
+                error networkError: Error?,
+                requestStartTime: Date) {
         RCTestAssertNotMainThread()
 
         let response = self.parse(
@@ -389,7 +412,8 @@ private extension HTTPClient {
             request: request,
             urlRequest: urlRequest,
             data: data,
-            error: networkError
+            error: networkError,
+            requestStartTime: requestStartTime
         )
 
         if let response = response {
@@ -466,12 +490,16 @@ private extension HTTPClient {
 
         Logger.debug(Strings.network.api_request_started(request.httpRequest))
 
+        let requestStartTime = self.dateProvider.now()
+
+        // swiftlint:disable:next redundant_void_return
         let task = self.session.dataTask(with: urlRequest) { (data, urlResponse, error) -> Void in
             self.handle(urlResponse: urlResponse,
                         request: request,
                         urlRequest: urlRequest,
                         data: data,
-                        error: error)
+                        error: error,
+                        requestStartTime: requestStartTime)
         }
         task.resume()
     }
@@ -518,6 +546,40 @@ private extension HTTPClient {
         return self.signing
     }
 
+    private func trackHttpRequestPerformedIfNeeded(request: Request,
+                                                   requestStartTime: Date,
+                                                   result: Result<VerifiedHTTPResponse<Data>, NetworkError>?) {
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+            guard let diagnosticsTracker = self.diagnosticsTracker, let result else { return }
+            let responseTime = self.dateProvider.now().timeIntervalSince(requestStartTime)
+            let requestPathName = request.httpRequest.path.name
+            Task(priority: .background) {
+                switch result {
+                case let .success(response):
+                    let httpStatusCode = response.httpStatusCode.rawValue
+                    let verificationResult = response.verificationResult
+                    await diagnosticsTracker.trackHttpRequestPerformed(endpointName: requestPathName,
+                                                                       responseTime: responseTime,
+                                                                       wasSuccessful: true,
+                                                                       responseCode: httpStatusCode,
+                                                                       resultOrigin: response.origin,
+                                                                       verificationResult: verificationResult)
+                case let .failure(error):
+                    var responseCode = -1
+                    if case let .errorResponse(_, code, _) = error {
+                        responseCode = code.rawValue
+                    }
+                    await diagnosticsTracker.trackHttpRequestPerformed(endpointName: requestPathName,
+                                                                       responseTime: responseTime,
+                                                                       wasSuccessful: false,
+                                                                       responseCode: responseCode,
+                                                                       resultOrigin: nil,
+                                                                       verificationResult: .notRequested)
+                }
+            }
+        }
+    }
+
 }
 
 // MARK: - Extensions
@@ -541,8 +603,7 @@ extension HTTPRequest {
 
         if result.nonce == nil,
            result.path.needsNonceForSigning,
-           verificationMode.isEnabled,
-           #available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *) {
+           verificationMode.isEnabled {
             result.addRandomNonce()
         }
 
@@ -565,8 +626,7 @@ extension HTTPRequest {
             result += HTTPClient.nonceHeader(with: nonce)
         }
 
-        if #available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *),
-           verificationMode.isEnabled,
+        if verificationMode.isEnabled,
            self.path.supportsSignatureVerification {
             let headerParametersSignature = HTTPClient.headerParametersForSignatureHeader(
                 with: defaultHeaders,
@@ -590,7 +650,6 @@ extension HTTPRequest {
     }
 
     /// Add a nonce to the request
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
     private mutating func addRandomNonce() {
         self.nonce = Data.randomNonce()
     }

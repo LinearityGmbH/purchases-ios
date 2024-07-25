@@ -40,6 +40,12 @@ import Foundation
     /// For entitlements granted via the Amazon Store.
     @objc(RCAmazon) case amazon = 6
 
+    /// For entitlements granted via RC Billing
+    @objc(RCBilling) case rcBilling = 7
+
+    /// For entitlements granted via RevenueCat's External Purchases API.
+    @objc(RCExternal) case external = 8
+
 }
 
 extension Store: CaseIterable {}
@@ -173,7 +179,6 @@ extension PeriodType: DefaultValueProvider {
     ///
     /// ### Related Symbols
     /// - ``VerificationResult``
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
     @objc public var verification: VerificationResult { self.contents.verification }
 
     // Docs inherited from protocol

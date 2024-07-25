@@ -31,16 +31,19 @@ class Backend {
         operationDispatcher: OperationDispatcher,
         attributionFetcher: AttributionFetcher,
         offlineCustomerInfoCreator: OfflineCustomerInfoCreator?,
+        diagnosticsTracker: DiagnosticsTrackerType?,
         dateProvider: DateProvider = DateProvider()
     ) {
         let httpClient = HTTPClient(apiKey: apiKey,
                                     systemInfo: systemInfo,
                                     eTagManager: eTagManager,
                                     signing: Signing(apiKey: apiKey, clock: systemInfo.clock),
+                                    diagnosticsTracker: diagnosticsTracker,
                                     requestTimeout: httpClientTimeout)
         let config = BackendConfiguration(httpClient: httpClient,
                                           operationDispatcher: operationDispatcher,
                                           operationQueue: QueueProvider.createBackendQueue(),
+                                          diagnosticsQueue: QueueProvider.createDiagnosticsQueue(),
                                           systemInfo: systemInfo,
                                           offlineCustomerInfoCreator: offlineCustomerInfoCreator,
                                           dateProvider: dateProvider)
@@ -113,11 +116,13 @@ class Backend {
               productData: ProductRequestData?,
               transactionData: PurchasedTransactionData,
               observerMode: Bool,
+              appTransaction: String? = nil,
               completion: @escaping CustomerAPI.CustomerInfoResponseHandler) {
         self.customer.post(receipt: receipt,
                            productData: productData,
                            transactionData: transactionData,
                            observerMode: observerMode,
+                           appTransaction: appTransaction,
                            completion: completion)
     }
 
@@ -132,7 +137,6 @@ class Backend {
 extension Backend {
 
     /// - Throws: `NetworkError`
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.2, *)
     func healthRequest(signatureVerification: Bool) async throws {
         try await Async.call { completion in
             self.internalAPI.healthRequest(signatureVerification: signatureVerification) { error in
@@ -169,8 +173,16 @@ extension Backend {
 
         static func createBackendQueue() -> OperationQueue {
             let operationQueue = OperationQueue()
-            operationQueue.name = "Backend Queue"
+            operationQueue.name = "RC Backend Queue"
             operationQueue.maxConcurrentOperationCount = 1
+            return operationQueue
+        }
+
+        static func createDiagnosticsQueue() -> OperationQueue {
+            let operationQueue = OperationQueue()
+            operationQueue.name = "RC Diagnostics Queue"
+            operationQueue.maxConcurrentOperationCount = 1
+            operationQueue.qualityOfService = .background
             return operationQueue
         }
 

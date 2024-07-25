@@ -16,7 +16,6 @@
 import Foundation
 import SwiftUI
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 extension View {
 
     @ViewBuilder
@@ -36,7 +35,7 @@ extension View {
     /// Wraps the 2 `onChange(of:)` implementations in iOS 17+ and below depending on what's available
     @inlinable
     @ViewBuilder
-    public func onChangeOf<V>(
+    func onChangeOf<V>(
         _ value: V,
         perform action: @escaping (_ newValue: V) -> Void
     ) -> some View where V: Equatable {
@@ -86,6 +85,7 @@ extension View {
     }
 
     @ViewBuilder
+    // @PublicForExternalTesting
     func scrollableIfNecessary(_ axis: Axis = .vertical, enabled: Bool = true) -> some View {
         if enabled {
             if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
@@ -236,7 +236,6 @@ private struct ScrollableIfNecessaryModifier: ViewModifier {
 
 // MARK: - Size changes
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 extension View {
 
     /// Invokes the given closure whethever the view size changes.
@@ -294,7 +293,6 @@ extension View {
 
 #if canImport(UIKit)
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 extension View {
 
     @ViewBuilder
@@ -329,7 +327,6 @@ extension View {
 
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 private struct RoundedCorner: Shape {
 
     var radius: CGFloat
@@ -348,10 +345,8 @@ private struct RoundedCorner: Shape {
 
 // MARK: - Preference Keys
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 private protocol ViewDimensionPreferenceKey: PreferenceKey where Value == CGFloat {}
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 extension ViewDimensionPreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -392,7 +387,6 @@ private struct ViewSizePreferenceKey: PreferenceKey {
 
 // MARK: -
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 private extension Axis {
 
     var scrollViewAxis: Axis.Set {
