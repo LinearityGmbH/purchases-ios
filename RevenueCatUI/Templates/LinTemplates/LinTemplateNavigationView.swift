@@ -25,18 +25,25 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     var selectedPackage: TemplateViewConfiguration.Package {
         configuration.packages.default
     }
+    var showAllPackages: Bool
     
     init(_ configuration: TemplateViewConfiguration) {
         self.configuration = configuration
+        self.showAllPackages = true
     }
     
+    init(_ configuration: TemplateViewConfiguration, showAllPackages: Bool) {
+        self.configuration = configuration
+        self.showAllPackages = showAllPackages
+    }
+
     var body: some View {
         NavigationStack {
             LinTemplate5Step1View(configuration) {
                 LinNavigationLink(
                     configuration: configuration,
                     label: buttonTitle,
-                    destination: LinTemplate5Step2View(configuration, showBackButton: true, showAllPackages: true)
+                    destination: LinTemplate5Step2View(configuration, showBackButton: true, showAllPackages: showAllPackages)
                         .navigationBarHidden(true)
                 )
             }
@@ -67,7 +74,7 @@ struct LinTemplateNavigation_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplateNavigationView($0)
+                LinTemplateNavigationView($0, showAllPackages: false)
             }
         }
     }

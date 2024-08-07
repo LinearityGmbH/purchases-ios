@@ -154,7 +154,11 @@ extension PaywallData {
             case .canvaStyleOneStepMonthlyHidden:
                 LinTemplate5Step2View(configuration, showBackButton: false, showAllPackages: false)
             case .canvaStyleTwoStepsMonthlyHidden:
-                preconditionFailure()
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+                    LinTemplateNavigationView(configuration, showAllPackages: false)
+                } else {
+                    LinTemplate5Step2View(configuration, showBackButton: false, showAllPackages: false)
+                }
             }
         case .template7:
             Template7View(configuration)

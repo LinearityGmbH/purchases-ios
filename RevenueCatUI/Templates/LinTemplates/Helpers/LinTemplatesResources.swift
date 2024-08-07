@@ -13,4 +13,5 @@ struct LinTemplatesResources {
     
     static var linTemplate5Step1Bundle = Foundation.Bundle.module
     static var linTemplate5Step2Bundle = Foundation.Bundle.module
+    static var linTemplate5Bundle = Foundation.Bundle.module
 }

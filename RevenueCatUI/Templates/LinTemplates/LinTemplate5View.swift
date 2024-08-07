@@ -224,7 +224,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                             showAllPackages = true
                         }
                     } label: {
-                        Text("All subscriptions", bundle: .module)
+                        Text(localize("Template5.see_all_plans", value: "See All Plans"))
                             .foregroundStyle(
                                 Color(
                                     uiColor:                                UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
@@ -483,6 +483,19 @@ private extension View {
         modifier(IgnoreSafeAreaConditionally(edges: edges, ignoreSafeArea: apply))
     }
 }
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+private func localize(_ key: String, value: String) -> String {
+    NSLocalizedString(
+        key,
+        bundle: LinTemplatesResources.linTemplate5Bundle,
+        value: value,
+        comment: ""
+    )
+}
+
 // MARK: -
 
 #if DEBUG
