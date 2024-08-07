@@ -227,7 +227,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                         Text(localize("Template5.see_all_plans", value: "See All Plans"))
                             .foregroundStyle(
                                 Color(
-                                    uiColor:                                UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
+                                    uiColor: UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
                                 )
                             )
                             .font(self.font(for: .callout).weight(.medium))
