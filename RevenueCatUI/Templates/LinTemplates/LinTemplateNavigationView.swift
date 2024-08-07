@@ -36,7 +36,7 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
                 LinNavigationLink(
                     configuration: configuration,
                     label: buttonTitle,
-                    destination: LinTemplate5Step2View(configuration, showBackButton: true)
+                    destination: LinTemplate5Step2View(configuration, showBackButton: true, showAllPackages: true)
                         .navigationBarHidden(true)
                 )
             }

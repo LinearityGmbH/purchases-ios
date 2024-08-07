@@ -116,6 +116,8 @@ extension PaywallData {
         case defaultRC
         case canvaStyleOneStep
         case canvaStyleTwoSteps
+        case canvaStyleOneStepMonthlyHidden
+        case canvaStyleTwoStepsMonthlyHidden
     }
 
     @ViewBuilder
@@ -149,6 +151,10 @@ extension PaywallData {
                 } else {
                     LinTemplate5Step2View(configuration)
                 }
+            case .canvaStyleOneStepMonthlyHidden:
+                LinTemplate5Step2View(configuration, showBackButton: false, showAllPackages: false)
+            case .canvaStyleTwoStepsMonthlyHidden:
+                preconditionFailure()
             }
         case .template7:
             Template7View(configuration)
