@@ -380,10 +380,11 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
+            let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
             ZStack {
                 view
                 VStack {
-                    Spacer().frame(height: 12)
+                    Spacer().frame(height: isIPhone ? 0 : 12)
                     HStack {
                         Spacer()
                         closeButton
@@ -391,7 +392,7 @@ struct LoadedOfferingPaywallView: View {
                     }
                     Spacer()
                 }
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: isIPhone ? [] : .all)
             }
         } else {
             view
