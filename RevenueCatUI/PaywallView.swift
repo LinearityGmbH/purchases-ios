@@ -383,12 +383,15 @@ struct LoadedOfferingPaywallView: View {
             ZStack {
                 view
                 VStack {
+                    Spacer().frame(height: 12)
                     HStack {
                         Spacer()
                         closeButton
+                        Spacer().frame(width: 12)
                     }
                     Spacer()
                 }
+                .ignoresSafeArea()
             }
         } else {
             view
@@ -430,10 +433,9 @@ struct LoadedOfferingPaywallView: View {
                             )
                         )
                         .frame(width: 30)
-                        .padding()
                         .shadow(color: .black.opacity(0.2), radius: 5)
                     Image(systemName: "xmark")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(
                             Color(
                                 light: .black,
