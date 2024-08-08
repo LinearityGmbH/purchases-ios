@@ -232,7 +232,9 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                             )
                             .font(self.font(for: .callout).weight(.medium))
                     }
-                    .buttonStyle(.borderless)
+                    #if targetEnvironment(macCatalyst)
+                    .buttonStyle(.plain)
+                    #endif
                 }
                 
                 if self.configuration.mode.shouldDisplayInlineOfferDetails(displayingAllPlans: self.displayingAllPlans) {

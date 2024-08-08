@@ -448,7 +448,9 @@ struct LoadedOfferingPaywallView: View {
                 }
             }
         )
-        .buttonStyle(.borderless)
+        #if targetEnvironment(macCatalyst)
+        .buttonStyle(.plain)
+        #endif
         .disabled(self.purchaseHandler.actionInProgress)
         .hidden(if: self.hideCloseButton)
         .opacity(
