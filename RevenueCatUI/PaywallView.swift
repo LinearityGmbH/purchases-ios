@@ -299,6 +299,9 @@ struct LoadedOfferingPaywallView: View {
 
     @Environment(\.dismiss)
     private var dismiss
+    
+    @State
+    fileprivate(set) var hideCloseButton: Bool = false
 
     init(
         offering: Offering,
@@ -356,7 +359,8 @@ struct LoadedOfferingPaywallView: View {
             .createView(for: self.offering,
                         template: self.template,
                         configuration: configuration,
-                        introEligibility: self.introEligibility)
+                        introEligibility: self.introEligibility,
+                        hideCloseButton: $hideCloseButton)
             .environmentObject(self.introEligibility)
             .environmentObject(self.purchaseHandler)
             .disabled(self.purchaseHandler.actionInProgress)
@@ -453,6 +457,7 @@ struct LoadedOfferingPaywallView: View {
             }
         )
         .disabled(self.purchaseHandler.actionInProgress)
+        .hidden(if: self.hideCloseButton)
         .opacity(
             self.purchaseHandler.actionInProgress
             ? Constants.purchaseInProgressButtonOpacity
