@@ -380,20 +380,12 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-            let y: CGFloat = switch UIDevice.current.userInterfaceIdiom {
-            case .pad, .mac:
-                12
-            default:
-                0
-            }
             ZStack {
                 view
                 VStack {
-                    Spacer().frame(height: y).border(.red)
                     HStack {
                         Spacer()
                         closeButton
-                        Spacer().frame(width: 12)
                     }
                     Spacer()
                 }
@@ -456,6 +448,7 @@ struct LoadedOfferingPaywallView: View {
                 }
             }
         )
+        .buttonStyle(.borderless)
         .disabled(self.purchaseHandler.actionInProgress)
         .hidden(if: self.hideCloseButton)
         .opacity(
