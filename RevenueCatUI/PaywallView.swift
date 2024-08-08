@@ -376,15 +376,24 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-            NavigationView {
-                view
-                    .toolbar {
-                        self.makeToolbar(
-                            color: self.getCloseButtonColor(configuration: configuration)
-                        )
-                    }
+            let y: CGFloat = switch UIDevice.current.userInterfaceIdiom {
+            case .pad, .mac:
+                12
+            default:
+                0
             }
-            .navigationViewStyle(.stack)
+            ZStack {
+                view
+                VStack {
+                    Spacer().frame(height: y).border(.red)
+                    HStack {
+                        Spacer()
+                        closeButton
+                        Spacer().frame(width: 12)
+                    }
+                    Spacer()
+                }
+            }
         } else {
             view
         }
@@ -400,6 +409,56 @@ struct LoadedOfferingPaywallView: View {
             darkMode: self.colorScheme == .dark
         )
     }
+    
+    private var closeButton: some View {
+        Button(
+            action: {
+                guard let onRequestedDismissal = self.onRequestedDismissal else {
+                    self.dismiss()
+                    return
+                }
+                onRequestedDismissal()
+            },
+            label: {
+                ZStack {
+                    Circle()
+                        .fill(
+                            Color(
+                                light: .white,
+                                dark: Color(
+                                    red: 118.0 / 255.0,
+                                    green: 118 / 255.0,
+                                    blue: 128 / 255.0,
+                                    opacity: 0.24
+                                )
+                            )
+                        )
+                        .frame(width: 30)
+                        .padding()
+                        .shadow(color: .black.opacity(0.2), radius: 5)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(
+                            Color(
+                                light: .black,
+                                dark: Color(
+                                    red: 235.0 / 255.0,
+                                    green: 235.0 / 255.0,
+                                    blue: 245.0 / 255.0,
+                                    opacity: 0.6
+                                )
+                            )
+                        )
+                }
+            }
+        )
+        .disabled(self.purchaseHandler.actionInProgress)
+        .opacity(
+            self.purchaseHandler.actionInProgress
+            ? Constants.purchaseInProgressButtonOpacity
+            : 1
+        )
+    }
 
     private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
         switch configuration {
@@ -409,28 +468,6 @@ struct LoadedOfferingPaywallView: View {
             return nil
         }
     }
-
-    private func makeToolbar(color: Color?) -> some ToolbarContent {
-        ToolbarItem(placement: .destructiveAction) {
-            Button {
-                guard let onRequestedDismissal = self.onRequestedDismissal else {
-                    self.dismiss()
-                    return
-                }
-                onRequestedDismissal()
-            } label: {
-                Image(systemName: "xmark")
-                    .foregroundColor(color)
-            }
-            .disabled(self.purchaseHandler.actionInProgress)
-            .opacity(
-                self.purchaseHandler.actionInProgress
-                ? Constants.purchaseInProgressButtonOpacity
-                : 1
-            )
-        }
-    }
-
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -471,6 +508,7 @@ struct PaywallView_Previews: PreviewProvider {
                         offering: offering,
                         customerInfo: TestData.customerInfo,
                         mode: mode,
+                        displayCloseButton: true, 
                         introEligibility: PreviewHelpers.introEligibilityChecker,
                         purchaseHandler: PreviewHelpers.purchaseHandler
                     )
