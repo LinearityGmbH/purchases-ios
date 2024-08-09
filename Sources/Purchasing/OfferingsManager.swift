@@ -253,6 +253,7 @@ private extension OfferingsManager {
         fetchPolicy: FetchPolicy,
         completion: (@MainActor @Sendable (Result<Offerings, Error>) -> Void)?
     ) {
+        Logger.warn(Strings.offering.loaded_data_from_network(response: response))
         self.createOfferings(from: response, fetchPolicy: fetchPolicy) { result in
             switch result {
             case let .success(offerings):

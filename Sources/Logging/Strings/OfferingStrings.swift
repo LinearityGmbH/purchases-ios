@@ -23,6 +23,7 @@ enum OfferingStrings {
     case fetching_offerings_failed_server_down
     case found_existing_product_request(identifiers: Set<String>)
     case no_cached_offerings_fetching_from_network
+    case loaded_data_from_network(response: OfferingsResponse)
     case offerings_stale_updated_from_network
     case offerings_stale_updating_in_background
     case offerings_stale_updating_in_foreground
@@ -77,6 +78,25 @@ extension OfferingStrings: LogMessage {
 
         case .no_cached_offerings_fetching_from_network:
             return "No cached Offerings, fetching from network"
+            
+        case .loaded_data_from_network(let response):
+            var offerings = response.offerings
+            // Skip because it's too long
+            for i in 0..<offerings.count {
+                offerings[i].paywall = nil
+            }
+            return """
+            ⚠️--loaded_data_from_network--⚠️ START"
+            --currentOfferingId--"
+            \(response.currentOfferingId)
+            "--offerings--"
+            \(offerings)
+            "--placements--"
+            \(response.placements)
+            "--targeting--"
+            \(response.targeting)
+            ⚠️--loaded_data_from_network--⚠️ END
+            """
 
         case .offerings_stale_updated_from_network:
             return "Offerings updated from network."
