@@ -68,10 +68,11 @@ extension PaywallData {
     func createView(for offering: Offering,
                     template: PaywallTemplate,
                     configuration: Result<TemplateViewConfiguration, Error>,
-                    introEligibility: IntroEligibilityViewModel) -> some View {
+                    introEligibility: IntroEligibilityViewModel,
+                    hideCloseButton: Binding<Bool>) -> some View {
         switch configuration {
         case let .success(configuration):
-            Self.createView(offering: offering, template: template, configuration: configuration)
+            Self.createView(offering: offering, template: template, configuration: configuration, hideCloseButton: hideCloseButton)
                 .adaptTemplateView(with: configuration)
                 .task(id: offering) {
                     await introEligibility.computeEligibility(for: configuration.packages)
@@ -116,12 +117,18 @@ extension PaywallData {
         case defaultRC
         case canvaStyleOneStep
         case canvaStyleTwoSteps
+        case canvaStyleOneStepMonthlyHidden
+        case canvaStyleTwoStepsMonthlyHidden
+        case canvaStyleTwoStepsMonthlyHiddenCloseHiddenOnFirstStep
     }
 
     @ViewBuilder
-    private static func createView(offering: Offering,
-                                   template: PaywallTemplate,
-                                   configuration: TemplateViewConfiguration) -> some View {
+    private static func createView(
+        offering: Offering,
+        template: PaywallTemplate,
+        configuration: TemplateViewConfiguration,
+        hideCloseButton: Binding<Bool>
+    ) -> some View {
         #if os(watchOS)
         WatchTemplateView(configuration)
         #else
@@ -148,6 +155,20 @@ extension PaywallData {
                     LinTemplateNavigationView(configuration)
                 } else {
                     LinTemplate5Step2View(configuration)
+                }
+            case .canvaStyleOneStepMonthlyHidden:
+                LinTemplate5Step2View(configuration, showBackButton: false, showAllPackages: false)
+            case .canvaStyleTwoStepsMonthlyHidden:
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+                    LinTemplateNavigationView(configuration, showAllPackages: false, hideCloseButton: Binding.constant(true))
+                } else {
+                    LinTemplate5Step2View(configuration, showBackButton: false, showAllPackages: false)
+                }
+            case .canvaStyleTwoStepsMonthlyHiddenCloseHiddenOnFirstStep:
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+                    LinTemplateNavigationView(configuration, showAllPackages: false, hideCloseButton: hideCloseButton)
+                } else {
+                    LinTemplate5Step2View(configuration, showBackButton: false, showAllPackages: false)
                 }
             }
         case .template7:

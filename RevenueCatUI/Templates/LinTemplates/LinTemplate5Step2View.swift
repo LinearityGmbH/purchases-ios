@@ -23,15 +23,21 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
     var introEligibilityViewModel: IntroEligibilityViewModel
     @State
     var selectedPackage: TemplateViewConfiguration.Package
+    var showAllPackages: Bool
     
     init(_ configuration: TemplateViewConfiguration) {
-        self.init(configuration, showBackButton: false)
+        self.init(configuration, showBackButton: false, showAllPackages: true)
     }
 
-    init(_ configuration: TemplateViewConfiguration, showBackButton: Bool) {
+    init(
+        _ configuration: TemplateViewConfiguration,
+        showBackButton: Bool,
+        showAllPackages: Bool
+    ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
         self.showBackButton = showBackButton
+        self.showAllPackages = showAllPackages
     }
 
     var body: some View {
@@ -56,7 +62,8 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
                 )
             },
             horizontalPaddingModifier: NoPaddingModifier(),
-            showBackButton: showBackButton
+            showBackButton: showBackButton,
+            showAllPackages: showAllPackages
         ) {
             if displayTimeline {
                 TimelineView(stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .horizontal)
@@ -120,7 +127,7 @@ struct LinTemplate5Step2View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplate5Step2View($0)
+                LinTemplate5Step2View($0, showBackButton: false, showAllPackages: false)
             }
         }
     }

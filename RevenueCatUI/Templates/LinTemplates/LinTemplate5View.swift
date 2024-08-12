@@ -49,6 +49,7 @@ struct LinTemplate5View: TemplateViewType {
             titleTypeProvider: { package in .fixed(package.localization.title) },
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
             showBackButton: showBackButton,
+            showAllPackages: true,
             subtitleBuilder: { EmptyView() },
             buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
         )
@@ -97,6 +98,8 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     private let horizontalPaddingModifier: HorizontalPadding
     private let showBackButton: Bool
+    @State
+    private var showAllPackages: Bool
 
     init(
         _ configuration: TemplateViewConfiguration,
@@ -105,6 +108,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType,
         horizontalPaddingModifier: HorizontalPadding,
         showBackButton: Bool = false,
+        showAllPackages: Bool = true,
         @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
@@ -116,6 +120,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         self.titleTypeProvider = titleTypeProvider
         self.horizontalPaddingModifier = horizontalPaddingModifier
         self.showBackButton = showBackButton
+        self._showAllPackages = .init(initialValue: showAllPackages)
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
 
@@ -213,6 +218,25 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                                            hide: !self.displayingAllPlans)
                 }
                 
+                if !showAllPackages {
+                    Button {
+                        withAnimation(Constants.toggleAllPlansAnimation) {
+                            showAllPackages = true
+                        }
+                    } label: {
+                        Text(localize("Template5.see_all_plans", value: "See All Plans"))
+                            .foregroundStyle(
+                                Color(
+                                    uiColor: UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
+                                )
+                            )
+                            .font(self.font(for: .callout).weight(.medium))
+                    }
+                    #if targetEnvironment(macCatalyst)
+                    .buttonStyle(.plain)
+                    #endif
+                }
+                
                 if self.configuration.mode.shouldDisplayInlineOfferDetails(displayingAllPlans: self.displayingAllPlans) {
                     self.offerDetails(package: self.selectedPackage, selected: false)
                 }
@@ -258,8 +282,12 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
     @ViewBuilder
     private var packages: some View {
+        let packages = showAllPackages
+        ? self.configuration.packages.all
+        : Array(self.configuration.packages.all.prefix(upTo: 1))
+
         VStack(spacing: 16) {
-            ForEach(self.configuration.packages.all, id: \.content.id) { package in
+            ForEach(packages, id: \.content.id) { package in
                 let isSelected = self.selectedPackage.content === package.content
 
                 Button {
@@ -458,6 +486,19 @@ private extension View {
         modifier(IgnoreSafeAreaConditionally(edges: edges, ignoreSafeArea: apply))
     }
 }
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+private func localize(_ key: String, value: String) -> String {
+    NSLocalizedString(
+        key,
+        bundle: LinTemplatesResources.linTemplate5Bundle,
+        value: value,
+        comment: ""
+    )
+}
+
 // MARK: -
 
 #if DEBUG

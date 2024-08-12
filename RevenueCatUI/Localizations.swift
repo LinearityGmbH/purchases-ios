@@ -13,11 +13,13 @@ import SwiftUI
 public func setupPaywall(
     paywallFirstStepBundle: Bundle,
     paywallSecondStepBundle: Bundle,
+    linTemplate5Bundle: Bundle,
     timelineBundle: Bundle,
     testimonialsBundle: Bundle
 ) {
     LinTemplatesResources.linTemplate5Step1Bundle = paywallFirstStepBundle
     LinTemplatesResources.linTemplate5Step2Bundle = paywallSecondStepBundle
+    LinTemplatesResources.linTemplate5Bundle = linTemplate5Bundle
     CTAFooterMessageProvider.bundle = paywallSecondStepBundle
     TimelineView.bundle = timelineBundle
     TestimonialsView.bundle = testimonialsBundle

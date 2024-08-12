@@ -25,21 +25,45 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     var selectedPackage: TemplateViewConfiguration.Package {
         configuration.packages.default
     }
+    var showAllPackages: Bool
+    @Binding
+    var hideCloseButton: Bool
     
     init(_ configuration: TemplateViewConfiguration) {
         self.configuration = configuration
+        self.showAllPackages = true
+        _hideCloseButton = Binding.constant(true)
     }
     
+    init(
+        _ configuration: TemplateViewConfiguration,
+        showAllPackages: Bool,
+        hideCloseButton: Binding<Bool>
+    ) {
+        self.configuration = configuration
+        self.showAllPackages = showAllPackages
+        _hideCloseButton = hideCloseButton
+    }
+
     var body: some View {
         NavigationStack {
             LinTemplate5Step1View(configuration) {
                 LinNavigationLink(
                     configuration: configuration,
                     label: buttonTitle,
-                    destination: LinTemplate5Step2View(configuration, showBackButton: true)
+                    destination: LinTemplate5Step2View(
+                        configuration,
+                        showBackButton: true,
+                        showAllPackages: showAllPackages
+                    )
                         .navigationBarHidden(true)
+                        .onAppear(perform: {
+                            hideCloseButton = false
+                        })
                 )
-            }
+            }.onAppear(perform: {
+                hideCloseButton = true
+            })
         }
     }
     
@@ -67,7 +91,11 @@ struct LinTemplateNavigation_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplateNavigationView($0)
+                LinTemplateNavigationView(
+                    $0,
+                    showAllPackages: false,
+                    hideCloseButton: Binding.constant(true)
+                )
             }
         }
     }
