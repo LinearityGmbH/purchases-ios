@@ -25,6 +25,8 @@ import StoreKit
 /**
  Result for ``Purchases/purchase(product:)``.
  Counterpart of `PurchaseCompletedBlock` for `async` APIs.
+ Note that `transaction` will be `nil` when ``Purchases/purchasesAreCompletedBy``
+ is ``PurchasesAreCompletedBy/myApp``
  */
 public typealias PurchaseResultData = (transaction: StoreTransaction?,
                                        customerInfo: CustomerInfo,
@@ -1889,7 +1891,7 @@ private extension Purchases {
         guard #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *),
               let manager = self.paywallEventsManager else { return }
 
-        self.operationDispatcher.dispatchOnWorkerThread(delay: .long) {
+        self.operationDispatcher.dispatchOnWorkerThread(jitterableDelay: .long) {
             _ = try? await manager.flushEvents(count: PaywallEventsManager.defaultEventFlushCount)
         }
     }

@@ -28,6 +28,7 @@ enum Strings {
     case displaying_paywall
     case not_displaying_paywall
     case dismissing_paywall
+    case tier_has_no_available_products_for_paywall(String)
 
     case attempted_to_track_event_with_missing_data
 
@@ -40,6 +41,11 @@ enum Strings {
     case setting_restored_customer_info
 
     case error_load_paywall(NSError)
+
+    case executing_purchase_logic
+    case executing_external_purchase_logic
+    case executing_restore_logic
+    case executing_external_restore_logic
 }
 
 extension Strings: CustomStringConvertible {
@@ -72,6 +78,9 @@ extension Strings: CustomStringConvertible {
         case .dismissing_paywall:
             return "Dismissing PaywallView"
 
+        case let .tier_has_no_available_products_for_paywall(tierName):
+            return "Tier '\(tierName)' has no available products and will be removed from the paywall."
+
         case .attempted_to_track_event_with_missing_data:
             return "Attempted to track event with missing data"
 
@@ -100,6 +109,22 @@ extension Strings: CustomStringConvertible {
         
         case .error_load_paywall(let error):
             return "Error loading paywall: \(error)"
+
+        case .executing_external_purchase_logic:
+            return "Will execute custom StoreKit purchase logic provided by your app. " +
+            "No StoreKit purchasing logic will be performed by RevenueCat. " +
+            "You must have initialized your `PaywallView` appropriately."
+
+        case .executing_purchase_logic:
+            return "Will execute purchase logic provided by RevenueCat."
+
+        case .executing_restore_logic:
+            return "Will execute restore purchases logic provided by RevenueCat."
+
+        case .executing_external_restore_logic:
+            return "Will execute custom StoreKit restore purchases logic provided by your app. " +
+            "No StoreKit restore purchases logic will be performed by RevenueCat. " +
+            "You must have initialized your `PaywallView` appropriately."
         }
     }
 

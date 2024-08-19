@@ -1,3 +1,77 @@
+## 5.2.3
+### Bugfixes
+* Fix Paywalls crash on iOS 18 beta (#4154) via Andy Boedo (@aboedo)
+### Dependency Updates
+* Bump danger from 9.4.3 to 9.5.0 (#4143) via dependabot[bot] (@dependabot[bot])
+* Bump nokogiri from 1.16.6 to 1.16.7 (#4129) via dependabot[bot] (@dependabot[bot])
+* Bump fastlane from 2.221.1 to 2.222.0 (#4130) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Update deployment targets for tests (#4145) via Andy Boedo (@aboedo)
+* Deploy purchaserTester: clean up dry-run parameter (#4140) via Andy Boedo (@aboedo)
+* Clean up API Testers (#4141) via Andy Boedo (@aboedo)
+* More project structure cleanup (#4131) via Andy Boedo (@aboedo)
+* temporarily disables purchasetester deploy (#4133) via Andy Boedo (@aboedo)
+* Fix trigger all tests branch (#4135) via Andy Boedo (@aboedo)
+* Clean up XCWorkspace and testing apps (#4111) via Andy Boedo (@aboedo)
+* tests trigger: add target-branch parameter to trigger from the right branch (#4121) via Andy Boedo (@aboedo)
+* Re-added the RevenueCatUI tests job on every commit (#4113) via Andy Boedo (@aboedo)
+
+## 5.2.2
+### Dependency Updates
+
+- Bump nokogiri from 1.16.5 to 1.16.6 (#3980) via dependabot[bot] (@dependabot[bot])
+
+### Other Changes
+
+- Only Retry POST Receipt Paths for 429 (#4107) via Will Taylor (@fire-at-will)
+- Clarify Instructions to Run All Manual Tests (#4112) via Will Taylor (@fire-at-will)
+- Fixes trigger_all_tests.yml triggering on every issue comment (#4114) via JayShortway (@JayShortway)
+- Fixes a typo in the bug_report issue template (#3945) via JayShortway (@JayShortway)
+- [External] Add missing SwiftUI environment for previews (#4109) via @noahsmartin (#4110) via Andy Boedo (@aboedo)
+- Remove notify-on-non-patch-release-branches (#4106) via Cesar de la Vega (@vegaro)
+
+## 5.2.1
+### Bugfixes
+* Retry Requests with HTTP Status 429 (#4048) via Will Taylor (@fire-at-will)
+* Use newer Alert API for showing customer restored alert (#4078) via Mark Villacampa (@MarkVillacampa)
+### Dependency Updates
+* Bump fastlane-plugin-revenuecat_internal from `5f55466` to `d5f0742` (#4101) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* PaywallsTester: fix macOS build (#4093) via Andy Boedo (@aboedo)
+* Cleanup `trigger_all_tests` github workflow (#4088) via Toni Rico (@tonidero)
+* Fix PaywallsTester by changing TestData DEBUG checks (#4092) via Cesar de la Vega (@vegaro)
+* Add missing @PublicForExternalTesting that broke PaywallsTester (#4087) via Cesar de la Vega (@vegaro)
+* Fix workflow permission check logic (#4084) via Toni Rico (@tonidero)
+* Fix prepare next version job (#4085) via Toni Rico (@tonidero)
+* [CI]: fix CI test trigger parameters (#4076) via Andy Boedo (@aboedo)
+* Fix docs deploy and add manual trigger on CI (#4081) via Josh Holtz (@joshdholtz)
+## 5.2.0
+### New Features
+* Added new paywall template to support multiple tiered subscriptions (#4022) via Josh Holtz (@joshdholtz)
+### Bugfixes
+* Fix certain completion blocks not being dispatched on the main thread (#4058) via Mark Villacampa (@MarkVillacampa)
+* Only checks staged files for leftover API keys. (#4073) via JayShortway (@JayShortway)
+### Other Changes
+* [Ci] Fix trigger to run all tests from github actions  (#4075) via Andy Boedo (@aboedo)
+* added new workflow to trigger all tests (#4051) via Andy Boedo (@aboedo)
+* Reduce CI jobs (#4025) via Andy Boedo (@aboedo)
+
+## 5.1.0
+### New Features
+* Paywalls with custom purchase and restore logic handlers (#3973) via James Borthwick (@jamesrb1)
+### Bugfixes
+* Prevent paywall PurchaseHandler from being cleared on rerender (#4035) via Josh Holtz (@joshdholtz)
+* Update Purchase Tester for 5.0.0 (#4015) via Will Taylor (@fire-at-will)
+### Dependency Updates
+* Bump fastlane from 2.221.0 to 2.221.1 (#3977) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* Bring official `xcodes` back to CI (#4029) via Cesar de la Vega (@vegaro)
+* Paywalls tester with sandbox purchases (#4024) via James Borthwick (@jamesrb1)
+* Update v5 migration guide to contain current latest version (#4019) via Toni Rico (@tonidero)
+* CI Build Docs Improvements (#4014) via Will Taylor (@fire-at-will)
+* Use available resource class for backend-integration-tests-offline-job (#4013) via Will Taylor (@fire-at-will)
+* Add `X-Preferred-Locales` header (#4008) via Cesar de la Vega (@vegaro)
+
 ## 5.0.0
 
 The RevenueCat iOS SDK v5 is here!! Version 5.0 of the RevenueCat SDK enables full StoreKit 2 flow on the SDK and the RevenueCat backend by default.
