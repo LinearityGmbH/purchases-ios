@@ -140,12 +140,10 @@ public class PaywallViewController: UIViewController {
         shouldBlockTouchEvents: Bool,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)?
     ) {
-        let purchaseHandler = PurchaseHandler()
-        purchaseHandler.refreshSubscriptions = refreshSubscriptions
-
         self.shouldBlockTouchEvents = shouldBlockTouchEvents
         self.dismissRequestedHandler = dismissRequestedHandler
         let handler = PurchaseHandler.default()
+        handler.refreshSubscriptions = refreshSubscriptions
 
         self.configuration = .init(
             content: content,

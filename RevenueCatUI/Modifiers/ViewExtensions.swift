@@ -97,7 +97,7 @@ extension View {
     // @PublicForExternalTesting
     func scrollableIfNecessary(_ axis: Axis = .vertical, enabled: Bool = true) -> some View {
         if enabled {
-            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *), !Self.isIOSVersionWithCrash {
+            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *), !Self.isIOSVersionWithCrash {
                 ViewThatFits(in: axis.scrollViewAxis) {
                     self
 
@@ -118,7 +118,7 @@ extension View {
     @ViewBuilder
     func scrollableIfNecessaryWhenAvailable(_ axis: Axis = .vertical, enabled: Bool = true) -> some View {
         if enabled {
-            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *), !Self.isIOSVersionWithCrash {
+            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *), !Self.isIOSVersionWithCrash {
                 ViewThatFits(in: axis.scrollViewAxis) {
                     self
 
