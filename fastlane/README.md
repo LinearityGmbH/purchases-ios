@@ -154,37 +154,13 @@ archive
 
 archive all platforms
 
-### ios build_swift_api_tester
+### ios run_api_tests
 
 ```sh
-[bundle exec] fastlane ios build_swift_api_tester
+[bundle exec] fastlane ios run_api_tests
 ```
 
-build Swift API tester
-
-### ios build_objc_api_tester
-
-```sh
-[bundle exec] fastlane ios build_objc_api_tester
-```
-
-build ObjC API tester
-
-### ios build_custom_entitlement_computation_api_tester
-
-```sh
-[bundle exec] fastlane ios build_custom_entitlement_computation_api_tester
-```
-
-build CustomEntitlementComputation API tester
-
-### ios build_revenuecatui_api_tester
-
-```sh
-[bundle exec] fastlane ios build_revenuecatui_api_tester
-```
-
-build RevenueCatUI API tester
+run API Tests
 
 ### ios replace_api_key_integration_tests
 
@@ -274,13 +250,13 @@ Creates a new PR on purchases-ios-snapshots after new snapshot files were genera
 
 Creates RevenueCat-Swift.h for a new release
 
-### ios export_xcframework
+### ios export_xcframeworks
 
 ```sh
-[bundle exec] fastlane ios export_xcframework
+[bundle exec] fastlane ios export_xcframeworks
 ```
 
-Export XCFramework
+
 
 ### ios backend_integration_tests
 
@@ -289,14 +265,6 @@ Export XCFramework
 ```
 
 Run BackendIntegrationTests
-
-### ios retry_failed_tests
-
-```sh
-[bundle exec] fastlane ios retry_failed_tests
-```
-
-
 
 ### ios v3_loadshedder_integration_tests
 
@@ -377,6 +345,14 @@ Updates purchases-ios-snapshots-commit to point to latest commit on main
 ```
 
 Create or delete sandbox testers
+
+### ios enable_customer_center
+
+```sh
+[bundle exec] fastlane ios enable_customer_center
+```
+
+Enable customer center development by cherry-picking a specific commit
 
 ----
 

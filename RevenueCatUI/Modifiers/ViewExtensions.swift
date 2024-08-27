@@ -40,10 +40,13 @@ extension View {
         perform action: @escaping (_ newValue: V) -> Void
     ) -> some View where V: Equatable {
         #if swift(>=5.9)
+        // wrapping with AnyView to type erase is needed because when archiving an xcframework,
+        // the compiler gets confused between the types returned
+        // by the different implementations of self.onChange(of:value).
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-            self.onChange(of: value) { _, newValue in action(newValue) }
+            AnyView(self.onChange(of: value) { _, newValue in action(newValue) })
         } else {
-            self.onChange(of: value) { newValue in action(newValue) }
+            AnyView(self.onChange(of: value) { newValue in action(newValue) })
         }
         #else
         self.onChange(of: value) { newValue in action(newValue) }
@@ -84,20 +87,11 @@ extension View {
         #endif
     }
 
-    private static var isIOSVersionWithCrash: Bool {
-        // There is a bug in iOS 18 beta 5 (as of writing, future versions uncofirmed) that causes a crash.
-        // This has been reporte to Apple as FB14699941.
-        // Until this is fixed, we're rolling back to pre-iOS 16 behavior for this view.
-        // More information and discussion here: https://github.com/RevenueCat/purchases-ios/issues/4150
-        let iOSVersionWithCrash = OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0)
-        return ProcessInfo.processInfo.isOperatingSystemAtLeast(iOSVersionWithCrash)
-    }
-
     @ViewBuilder
     // @PublicForExternalTesting
     func scrollableIfNecessary(_ axis: Axis = .vertical, enabled: Bool = true) -> some View {
         if enabled {
-            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *), !Self.isIOSVersionWithCrash {
+            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 ViewThatFits(in: axis.scrollViewAxis) {
                     self
 
@@ -118,7 +112,7 @@ extension View {
     @ViewBuilder
     func scrollableIfNecessaryWhenAvailable(_ axis: Axis = .vertical, enabled: Bool = true) -> some View {
         if enabled {
-            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *), !Self.isIOSVersionWithCrash {
+            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 ViewThatFits(in: axis.scrollViewAxis) {
                     self
 

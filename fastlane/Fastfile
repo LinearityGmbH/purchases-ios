@@ -94,7 +94,7 @@ platform :ios do
       repo_name: repo_name,
       github_api_token: ENV["GITHUB_TOKEN"],
       changelog_latest_path: changelog_latest_path,
-      upload_assets: ['RevenueCat.xcframework.zip']
+      upload_assets: ['RevenueCat.xcframework.zip', 'RevenueCatUI.xcframework.zip']
     )
   end
 
@@ -150,7 +150,7 @@ platform :ios do
       test_plan = "CI-AllTests"
     end
 
-    scan(
+    scan_with_flaky_test_retries(
       step_name: "scan - iPhone",
       device: ENV['SCAN_DEVICE'] || "iPhone 12 (15.2)",
       ensure_devices_found: true,
@@ -161,25 +161,30 @@ platform :ios do
       testplan: test_plan,
       configuration: 'Debug',
       output_directory: "fastlane/test_output/xctest/ios",
-      number_of_retries: generate_snapshots ? 0 : 5,
-      fail_build: !generate_snapshots
+      number_of_retries: generate_snapshots ? 0 : 5, # Number of retries in an xcodebuild run
+      fail_build: !generate_snapshots,
+      xcargs: "OTHER_SWIFT_FLAGS='-DCUSTOMER_CENTER_ENABLED'", # todo: remove once Customer Center is released,
+
+      number_of_flaky_retries: generate_snapshots ? 0 : 5 # Number of retries in an xcodebuild run
     )
   end
 
   desc "Runs all the tvOS tests"
   lane :test_tvos do |options|
-    scan(
+    scan_with_flaky_test_retries(
       step_name: "scan - Apple TV",
       device: ENV['SCAN_DEVICE'] || "Apple TV",
       ensure_devices_found: true,
       scheme: "RevenueCat",
       prelaunch_simulator: true,
       output_types: 'junit',
-      number_of_retries: 5,
+      number_of_retries: 5, # Number of retries in an xcodebuild run
       result_bundle: true,
       testplan: "CI-AllTests",
       configuration: 'Debug',
-      output_directory: "fastlane/test_output/xctest/tvos"
+      output_directory: "fastlane/test_output/xctest/tvos",
+
+      number_of_flaky_retries: 5 # Number of xcodebuild runs to retry
     )
   end
 
@@ -192,21 +197,22 @@ platform :ios do
       test_plan = "CI-RevenueCat"
     end
 
-    scan(
+    scan_with_flaky_test_retries(
       step_name: "scan - watchOS",
       device: ENV['SCAN_DEVICE'] || "Apple Watch Series 8 (41mm)",
       ensure_devices_found: true,
       scheme: "RevenueCat",
       prelaunch_simulator: true,
       output_types: 'junit',
-      number_of_retries: 5,
       result_bundle: true,
       # Host app isn't available on watchOS
       testplan: test_plan,
       configuration: 'Debug',
       output_directory: "fastlane/test_output/xctest/watchos",
-      number_of_retries: generate_snapshots ? 0 : 5,
-      fail_build: !generate_snapshots
+      number_of_retries: generate_snapshots ? 0 : 5, # Number of retries in an xcodebuild run
+      fail_build: !generate_snapshots,
+
+      number_of_flaky_retries: generate_snapshots ? 0 : 5 # Number of retries in an xcodebuild run
     )
   end
 
@@ -231,7 +237,8 @@ platform :ios do
         report_formats: [:junit],
         report_path: 'fastlane/test_output/revenuecatui/tests.xml',
         test: true,
-        xcargs: generate_snapshots ? "-testPlan CI-Snapshots" : "-testPlan CI-RevenueCatUI"
+        # todo: remove CUSTOMER_CENTER_ENABLED once Customer Center is released
+        xcargs: "#{generate_snapshots ? '-testPlan CI-Snapshots' : '-testPlan CI-RevenueCatUI'} OTHER_SWIFT_FLAGS='-DCUSTOMER_CENTER_ENABLED'"
       )
     rescue => e
       # Equivalent to `fail_build: !generate_snapshots`
@@ -244,7 +251,7 @@ platform :ios do
     version_number = current_version_number
     check_no_git_tag_exists(version_number)
     check_pods
-    export_xcframework
+    export_xcframeworks
     check_no_github_release_exists(version_number)
   end
 
@@ -302,6 +309,7 @@ platform :ios do
       scheme: 'All API Tests',
       destination: 'generic/platform=iOS Simulator',
       configuration: 'release',
+      xcargs: "OTHER_SWIFT_FLAGS='-DCUSTOMER_CENTER_ENABLED'" # todo: remove once Customer Center is released
     )
   end
 
@@ -347,7 +355,7 @@ platform :ios do
   desc "Create XCFramework, and create GitHub release"
   lane :release do |options|
     version_number = current_version_number
-    export_xcframework
+    export_xcframeworks
     github_release(version: version_number)
   end
 
@@ -533,22 +541,39 @@ platform :ios do
     }
   end
 
-  desc "Export XCFramework"
-  lane :export_xcframework do |options|
-    output_directory = 'build/xcframeworks'
-    platforms = [
-        'iOS',
-        'macOS',
-        'maccatalyst',
-        'tvOS',
-        'watchOS',
-        'visionOS'
-      ]
+  lane :export_xcframeworks do |options|
+    create_and_sign_xcframework(
+      scheme: 'RevenueCat',
+      product_name: 'RevenueCat',
+      platforms: [
+      'iOS',
+      'macOS',
+      'maccatalyst',
+      'tvOS',
+      'watchOS',
+      'visionOS'
+    ])
+    create_and_sign_xcframework(
+      scheme: 'RevenueCatUIDev',
+      product_name: 'RevenueCatUI',
+      platforms: [
+      'iOS',
+      'maccatalyst',
+      'watchOS',
+    ])
+  end
+
+  private_lane :create_and_sign_xcframework do |options|
+    scheme = options[:scheme]
+    product_name = options[:product_name]
+    platforms = options[:platforms]
+
+    output_directory = "build/xcframeworks/#{product_name}"
 
     create_xcframework(
       destinations: platforms,
-      scheme: 'RevenueCat',
-      product_name: 'RevenueCat',
+      scheme: scheme,
+      product_name: product_name,
       xcframework_output_directory: output_directory,
       # Bitcode is no longer required since Xcode 14.
       enable_bitcode: false,
@@ -563,18 +588,14 @@ platform :ios do
 
     # Sign XCFramework for Xcode 15
     sign_xcframework(
-      file: "#{output_directory_for_sh}/RevenueCat.xcframework"
+      file: "#{output_directory_for_sh}/#{product_name}.xcframework"
     )
 
-    xcframeworks_zip_path_for_sh = "../RevenueCat.xcframework.zip"
+    xcframeworks_zip_path_for_sh = "../#{product_name}.xcframework.zip"
     sh("ditto", "-c", "-k", "--sequesterRsrc", "--keepParent",
       output_directory_for_sh,
       xcframeworks_zip_path_for_sh)
 
-  end
-
-  private_lane :test_artifact_path do
-    File.absolute_path('./test_output/xctest/ios')
   end
 
   desc "Run BackendIntegrationTests"
@@ -584,66 +605,19 @@ platform :ios do
     fetch_snapshots
     replace_api_key_integration_tests
 
-    begin
-      scan(
-        scheme: "BackendIntegrationTests",
-        ensure_devices_found: true,
-        derived_data_path: "scan_derived_data",
-        output_types: 'junit',
-        output_style: 'raw',
-        result_bundle: true,
-        testplan: options[:test_plan],
-        configuration: 'Debug',
-        output_directory: test_artifact_path,
+    scan_with_flaky_test_retries(
+      scheme: "BackendIntegrationTests",
+      ensure_devices_found: true,
+      derived_data_path: "scan_derived_data",
+      output_types: 'junit',
+      output_style: 'raw',
+      result_bundle: true,
+      testplan: options[:test_plan],
+      configuration: 'Debug',
+      output_directory: "fastlane/test_output/xctest/ios",
 
-        fail_build: !!fail_build
-      )
-    rescue => ex
-        UI.error("Tests failed: #{ex}")
-    end
-
-    retry_scan_save_failed_tests(
-      junit_report_path: File.join(test_artifact_path, 'report.junit'),
-      copy_path: File.join(test_artifact_path, 'report.junit.original')
+      number_of_flaky_retries: 5 # Number of retries in an xcodebuild run
     )
-  end
-
-  private_lane :failed_tests_path do
-    File.join(test_artifact_path, 'failed_tests.txt')
-  end
-
-  lane :retry_failed_tests do |options|
-    fail_build = options[:fail_build]
-    retry_attempt = options[:retry_attempt]
-    
-    failed_tests = File.read(failed_tests_path).split("\n")
-    
-    if failed_tests.empty?
-      UI.message('No failed tests to retry')
-    else
-      report_dir = "./test_output_retry_#{retry_attempt}/xctest/ios"
-      report_path = File.absolute_path(File.join(report_dir, "report.junit"))
-
-      scan(
-        scheme: "BackendIntegrationTests",
-        ensure_devices_found: true,
-        derived_data_path: "scan_derived_data",
-        output_types: 'junit',
-        output_style: 'raw',
-        result_bundle: true,
-        configuration: 'Debug',
-        output_directory: File.join('fastlane', report_dir),
-
-        only_testing: failed_tests,
-        fail_build: !!fail_build
-      )
-
-      retry_scan_save_failed_tests(
-        junit_report_path: report_path,
-        copy_path: File.join(test_artifact_path, "report.junit.retry.#{retry_attempt}"),
-        merge_path: File.join(test_artifact_path, "report.junit")
-      )
-    end
   end
 
   desc "Run LoadShedder tests"
@@ -975,6 +949,27 @@ platform :ios do
       sandbox_testers_create(email_pattern: email_pattern)
     elsif option == options[1]
       sandbox_testers_delete(email_pattern: email_pattern)
+    end
+  end
+
+  desc "Enable customer center development by cherry-picking a specific commit"
+  lane :enable_customer_center do |options|
+    commit_hash = options[:commit_hash] || "517ad0bf5"
+
+    UI.message("Applying changes from commit to enable customer center: #{commit_hash}")
+
+    begin
+      sh("git", "cherry-pick", "--no-commit", commit_hash)
+      UI.success("Successfully applied changes for customer center development from commit #{commit_hash}")
+      UI.important("Changes are now in your working directory. Review and stage/commit as needed.")
+    rescue => ex
+      UI.error("Failed to enable customer center. Error while applying changes from commit #{commit_hash}")
+      UI.error(ex.message)
+      
+      if UI.confirm("Do you want to abort the customer center enablement?")
+        sh("git", "cherry-pick", "--abort")
+        UI.message("Customer center enablement aborted")
+      end
     end
   end
 

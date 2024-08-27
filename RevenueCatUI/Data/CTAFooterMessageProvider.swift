@@ -7,6 +7,7 @@
 
 import Foundation
 
+@available(iOS 15.0, *)
 struct CTAFooterMessageProvider {
     let locale: Locale
     static var bundle = Foundation.Bundle.module
@@ -21,7 +22,7 @@ struct CTAFooterMessageProvider {
         String(
             format: introOfferText,
             variableDataProvider.introductoryOfferDuration(locale) ?? "",
-            variableDataProvider.localizedPricePerPeriod(locale),
+            variableDataProvider.localizedPricePerPeriod(locale, showZeroDecimalPlacePrices: true),
             variableDataProvider.subscriptionStartingDay(locale) ?? ""
         )
     }
@@ -33,6 +34,6 @@ struct CTAFooterMessageProvider {
         comment: ""
     )
     func makeTextWithNoIntroOffer(_ variableDataProvider: VariableDataProvider) -> String {
-        String(format: noIntroOfferText, variableDataProvider.localizedPricePerPeriodFull(locale))
+        String(format: noIntroOfferText, variableDataProvider.localizedPricePerPeriodFull(locale, showZeroDecimalPlacePrices: true))
     }
 }
