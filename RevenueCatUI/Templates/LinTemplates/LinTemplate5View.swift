@@ -148,6 +148,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
             )
             
             FooterView(configuration: self.configuration.configuration,
+                       locale: locale,
                        mode: configuration.mode,
                        fonts: configuration.fonts,
                        color: .secondary,
