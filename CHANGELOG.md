@@ -1,3 +1,52 @@
+## 5.3.0
+### New Features
+* Price rounding logic (#4132) via James Borthwick (@jamesrb1)
+### Bugfixes
+* [Customer Center] Migrate to List style (#4190) via Cody Kerns (@codykerns)
+* [Paywalls] Improve locale consistency (#4158) via Josh Holtz (@joshdholtz)
+* Set Paywalls Tester deployment target to iOS 15 (#4196) via James Borthwick (@jamesrb1)
+* [Customer Center] Hide Contact Support button if URL can't be created (#4192) via Cesar de la Vega (@vegaro)
+* Fix the setting for SKIP_INSTALL in Xcode project (#4195) via Andy Boedo (@aboedo)
+* [Customer Center] Improving customer center buttons (#4165) via Cody Kerns (@codykerns)
+* Revert workaround for iOS 18 beta 5 SwiftUI crash (#4173) via Mark Villacampa (@MarkVillacampa)
+* [Paywalls] Make iOS version calculation lazy (#4163) via Mark Villacampa (@MarkVillacampa)
+* Observe `PurchaseHandler` when owned externally (#4097) via James Borthwick (@jamesrb1)
+### Dependency Updates
+* Bump fastlane-plugin-revenuecat_internal from `d5f0742` to `4c4b8ce` (#4167) via dependabot[bot] (@dependabot[bot])
+* Bump rexml from 3.2.8 to 3.3.3 in /Tests/InstallationTests/CocoapodsInstallation (#4176) via dependabot[bot] (@dependabot[bot])
+* Bump rexml from 3.2.9 to 3.3.3 (#4175) via dependabot[bot] (@dependabot[bot])
+### Other Changes
+* [Customer Center] Clean up colors in WrongPlatformView and NoSubscriptionsView (#4204) via Cesar de la Vega (@vegaro)
+* Fix failing `all-tests` and retry more flaky tests (#4188) via Josh Holtz (@joshdholtz)
+* Compatibility content unavailable improvements (#4197) via James Borthwick (@jamesrb1)
+* Create lane to enable customer center (#4191) via Cesar de la Vega (@vegaro)
+* XCFramework artifacts in CircleCI (#4189) via Andy Boedo (@aboedo)
+* [Customer Center] CustomerCenterViewModel checks whether the app is the latest version (#4169) via JayShortway (@JayShortway)
+* export RevenueCatUI xcframework (#4172) via Andy Boedo (@aboedo)
+* Corrects references from ManageSubscriptionsButtonStyle to ButtonsStyle.  (#4186) via JayShortway (@JayShortway)
+* Speed up carthage installation tests (#4184) via Andy Boedo (@aboedo)
+* Customer center improvements (#4166) via James Borthwick (@jamesrb1)
+* replace `color(from colorInformation:)` global with extension (#4183) via Andy Boedo (@aboedo)
+* Generating new test snapshots for `main` - ios-13 (#4181) via RevenueCat Git Bot (@RCGitBot)
+* Generating new test snapshots for `main` - ios-16 (#4182) via RevenueCat Git Bot (@RCGitBot)
+* Generating new test snapshots for `main` - ios-14 (#4180) via RevenueCat Git Bot (@RCGitBot)
+* Generating new test snapshots for `main` - ios-15 (#4179) via RevenueCat Git Bot (@RCGitBot)
+* Fix tests in main (#4174) via Andy Boedo (@aboedo)
+* Enable customer center tests (#4171) via James Borthwick (@jamesrb1)
+* [Customer Center] Initial implementation (#3967) via Cesar de la Vega (@vegaro)
+
+## 5.2.2-customercenter.alpha.3
+
+- Fix for disabled promo offer button (#4142) 
+
+## 5.2.2-customercenter.alpha.2
+
+- Fix project.pbxproj (#4122)
+- Fix BackendGetCustomerCenterConfigTests (#4124)
+- Add contact support button (#4023) 
+- Fix checking eligibility (#4138)
+- Make colors nullable (#4134)
+
 ## 5.2.3
 ### Bugfixes
 * Fix Paywalls crash on iOS 18 beta (#4154) via Andy Boedo (@aboedo)
@@ -29,6 +78,10 @@
 - Fixes a typo in the bug_report issue template (#3945) via JayShortway (@JayShortway)
 - [External] Add missing SwiftUI environment for previews (#4109) via @noahsmartin (#4110) via Andy Boedo (@aboedo)
 - Remove notify-on-non-patch-release-branches (#4106) via Cesar de la Vega (@vegaro)
+
+## 5.2.1-customercenter.alpha.1
+
+- Initial Customer Center Alpha Release
 
 ## 5.2.1
 ### Bugfixes

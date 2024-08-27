@@ -110,6 +110,7 @@ struct Template4View: TemplateViewType {
                 .padding(.bottom, Self.verticalPadding / -2)
 
             FooterView(configuration: self.configuration,
+                       locale: self.selectedPackage.localization.locale,
                        bold: false,
                        purchaseHandler: self.purchaseHandler,
                        displayingAllPlans: self.$displayingAllPlans)
@@ -312,7 +313,8 @@ private struct PackageButton: View {
         VStack(spacing: Self.labelVerticalSeparation) {
             self.offerName
 
-            Text(self.package.content.localizedPrice)
+            Text(self.package.content
+                .localizedPrice(showZeroDecimalPlacePrices: configuration.showZeroDecimalPlacePrices))
                 .font(self.font(for: .title2).weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

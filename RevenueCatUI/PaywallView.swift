@@ -29,12 +29,19 @@ public struct PaywallView: View {
     private let mode: PaywallViewMode
     private let fonts: PaywallFontProvider
     private let displayCloseButton: Bool
+    private let paywallViewOwnsPurchaseHandler: Bool
 
-    @Environment(\.locale)
-    private var locale
+    private var locale: Locale
 
     @StateObject
-    private var purchaseHandler: PurchaseHandler
+    private var internalPurchaseHandler: PurchaseHandler
+
+    @ObservedObject
+    private var externalPurchaseHandler: PurchaseHandler
+
+    private var purchaseHandler: PurchaseHandler {
+        paywallViewOwnsPurchaseHandler ? internalPurchaseHandler : externalPurchaseHandler
+    }
 
     @StateObject
     private var introEligibility: TrialOrIntroEligibilityChecker
@@ -109,9 +116,17 @@ public struct PaywallView: View {
     }
 
     // @PublicForExternalTesting
-    init(configuration: PaywallViewConfiguration) {
-        let purchaseHandler = configuration.purchaseHandler ?? .default()
-        self._purchaseHandler = .init(wrappedValue: purchaseHandler)
+    init(configuration: PaywallViewConfiguration, paywallViewOwnsPurchaseHandler: Bool = true) {
+        self.paywallViewOwnsPurchaseHandler = paywallViewOwnsPurchaseHandler
+        if paywallViewOwnsPurchaseHandler {
+            self._internalPurchaseHandler = .init(wrappedValue: configuration.purchaseHandler)
+            self.externalPurchaseHandler = PurchaseHandler.default()
+        } else {
+            // this is unused and is only present to fulfill the need to have an object assigned
+            // to a @StateObject
+            self._internalPurchaseHandler = .init(wrappedValue: PurchaseHandler.default())
+            self.externalPurchaseHandler = configuration.purchaseHandler
+        }
 
         self._introEligibility = .init(wrappedValue: configuration.introEligibility ?? .default())
 
@@ -127,7 +142,9 @@ public struct PaywallView: View {
         self.fonts = configuration.fonts
         self.displayCloseButton = configuration.displayCloseButton
 
-        self.initializationError = Self.checkForConfigurationConsistency(purchaseHandler: purchaseHandler)
+        self.initializationError = Self.checkForConfigurationConsistency(purchaseHandler: configuration.purchaseHandler)
+
+        self.locale = configuration.locale
     }
 
     private static func checkForConfigurationConsistency(purchaseHandler: PurchaseHandler) -> NSError? {
@@ -219,7 +236,7 @@ public struct PaywallView: View {
         checker: TrialOrIntroEligibilityChecker,
         purchaseHandler: PurchaseHandler
     ) -> some View {
-        let (paywall, template, error) = offering.validatedPaywall(locale: self.locale)
+        let (paywall, displayedLocale, template, error) = offering.validatedPaywall(locale: self.locale)
 
         let paywallView = LoadedOfferingPaywallView(
             offering: offering,
@@ -230,7 +247,8 @@ public struct PaywallView: View {
             fonts: fonts,
             displayCloseButton: self.displayCloseButton,
             introEligibility: checker,
-            purchaseHandler: purchaseHandler
+            purchaseHandler: purchaseHandler,
+            locale: displayedLocale
         )
 
         if let error {
@@ -326,14 +344,14 @@ struct LoadedOfferingPaywallView: View {
     private let mode: PaywallViewMode
     private let fonts: PaywallFontProvider
     private let displayCloseButton: Bool
+    private let showZeroDecimalPlacePrices: Bool
 
     @StateObject
     private var introEligibility: IntroEligibilityViewModel
     @ObservedObject
     private var purchaseHandler: PurchaseHandler
 
-    @Environment(\.locale)
-    private var locale
+    private var locale: Locale
 
     @Environment(\.onRequestedDismissal)
     private var onRequestedDismissal: (() -> Void)?
@@ -356,7 +374,8 @@ struct LoadedOfferingPaywallView: View {
         fonts: PaywallFontProvider,
         displayCloseButton: Bool,
         introEligibility: TrialOrIntroEligibilityChecker,
-        purchaseHandler: PurchaseHandler
+        purchaseHandler: PurchaseHandler,
+        locale: Locale
     ) {
         self.offering = offering
         self.activelySubscribedProductIdentifiers = activelySubscribedProductIdentifiers
@@ -369,6 +388,12 @@ struct LoadedOfferingPaywallView: View {
             wrappedValue: .init(introEligibilityChecker: introEligibility)
         )
         self._purchaseHandler = .init(initialValue: purchaseHandler)
+        self.locale = locale
+        if Purchases.isConfigured, let currentCountry = Purchases.shared.storeFrontCountryCode {
+            self.showZeroDecimalPlacePrices = self.paywall.zeroDecimalPlaceCountries.contains(currentCountry)
+        } else {
+            self.showZeroDecimalPlacePrices = false
+        }
     }
 
     var body: some View {
@@ -396,7 +421,8 @@ struct LoadedOfferingPaywallView: View {
             template: self.template,
             mode: self.mode,
             fonts: self.fonts,
-            locale: self.locale
+            locale: self.locale,
+            showZeroDecimalPlacePrices: self.showZeroDecimalPlacePrices
         )
 
         let view = self.paywall

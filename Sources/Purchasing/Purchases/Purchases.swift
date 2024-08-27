@@ -235,6 +235,13 @@ public typealias StartPurchaseBlock = (@escaping PurchaseCompletedBlock) -> Void
         set { self.systemInfo.finishTransactions = newValue.finishTransactions }
     }
 
+    /// The three-letter code representing the country or region
+    /// associated with the App Store storefront.
+    /// - Note: This property uses the ISO 3166-1 Alpha-3 country code representation.
+    @objc public var storeFrontCountryCode: String? {
+        systemInfo.storefront?.countryCode
+    }
+
     private let attributionFetcher: AttributionFetcher
     private let attributionPoster: AttributionPoster
     private let backend: Backend
@@ -1188,6 +1195,22 @@ public extension Purchases {
         self.purchasesOrchestrator.track(paywallEvent: paywallEvent)
         await self.paywallEventsManager?.track(paywallEvent: paywallEvent)
     }
+
+    #if CUSTOMER_CENTER_ENABLED
+
+    /// Used by `RevenueCatUI` to download customer center data
+    func loadCustomerCenter() async throws -> CustomerCenterConfigData {
+        let response = try await Async.call { completion in
+            self.backend.customerCenterConfig.getCustomerCenterConfig(appUserID: self.appUserID,
+                                                                      isAppBackgrounded: false) { result in
+                completion(result.mapError(\.asPublicError))
+            }
+        }
+
+        return CustomerCenterConfigData(from: response)
+    }
+
+    #endif
 
     /// Used by `RevenueCatUI` to download and cache paywall images.
     @available(iOS 15.0, macOS 12.0, watchOS 8.0, tvOS 15.0, *)
