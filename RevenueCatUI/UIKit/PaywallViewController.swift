@@ -47,10 +47,10 @@ public class PaywallViewController: UIViewController {
     /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall
+    @objc
     public convenience init(
         offering: Offering? = nil,
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
@@ -58,24 +58,6 @@ public class PaywallViewController: UIViewController {
             offering: offering,
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
-            shouldBlockTouchEvents: shouldBlockTouchEvents,
-            dismissRequestedHandler: dismissRequestedHandler
-        )
-    }
-    
-    public convenience init(
-        placementIdentifier: String,
-        displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
-        shouldBlockTouchEvents: Bool = false,
-        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
-    ) {
-        self.init(
-            content: .offeringPlacementIdentifier(placementIdentifier),
-            fonts: DefaultPaywallFontProvider(),
-            displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
             dismissRequestedHandler: dismissRequestedHandler
         )
@@ -93,7 +75,6 @@ public class PaywallViewController: UIViewController {
         offering: Offering? = nil,
         fonts: PaywallFontProvider,
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
@@ -101,7 +82,6 @@ public class PaywallViewController: UIViewController {
             content: .optionalOffering(offering),
             fonts: fonts,
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
             dismissRequestedHandler: dismissRequestedHandler
         )
@@ -118,7 +98,6 @@ public class PaywallViewController: UIViewController {
         offeringIdentifier: String,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
@@ -126,7 +105,6 @@ public class PaywallViewController: UIViewController {
             content: .offeringIdentifier(offeringIdentifier),
             fonts: fonts,
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
             dismissRequestedHandler: dismissRequestedHandler
         )
@@ -136,14 +114,12 @@ public class PaywallViewController: UIViewController {
         content: PaywallViewConfiguration.Content,
         fonts: PaywallFontProvider,
         displayCloseButton: Bool,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)?
     ) {
         self.shouldBlockTouchEvents = shouldBlockTouchEvents
         self.dismissRequestedHandler = dismissRequestedHandler
         let handler = PurchaseHandler.default()
-        handler.refreshSubscriptions = refreshSubscriptions
 
         self.configuration = .init(
             content: content,
@@ -260,6 +236,7 @@ public class PaywallViewController: UIViewController {
             ])
         }
     }
+
 }
 
 // MARK: - PaywallViewControllerDelegate
