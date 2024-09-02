@@ -39,6 +39,8 @@ public final class PaywallFooterViewController: PaywallViewController {
                    fonts: DefaultPaywallFontProvider(),
                    displayCloseButton: false,
                    shouldBlockTouchEvents: false,
+                   performPurchase: nil,
+                   performRestore: nil,
                    dismissRequestedHandler: dismissRequestedHandler)
     }
 
@@ -52,6 +54,8 @@ public final class PaywallFooterViewController: PaywallViewController {
                    fonts: DefaultPaywallFontProvider(),
                    displayCloseButton: false,
                    shouldBlockTouchEvents: false,
+                   performPurchase: nil,
+                   performRestore: nil,
                    dismissRequestedHandler: dismissRequestedHandler)
     }
 
@@ -67,6 +71,8 @@ public final class PaywallFooterViewController: PaywallViewController {
                    fonts: CustomPaywallFontProvider(fontName: fontName),
                    displayCloseButton: false,
                    shouldBlockTouchEvents: false,
+                   performPurchase: nil,
+                   performRestore: nil,
                    dismissRequestedHandler: dismissRequestedHandler)
     }
 
@@ -74,14 +80,18 @@ public final class PaywallFooterViewController: PaywallViewController {
     override init(
         content: PaywallViewConfiguration.Content,
         fonts: PaywallFontProvider,
-        displayCloseButton: Bool = false,
-        shouldBlockTouchEvents: Bool = false,
-        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
+        displayCloseButton: Bool,
+        shouldBlockTouchEvents: Bool,
+        performPurchase: PerformPurchase?,
+        performRestore: PerformRestore?,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)?
     ) {
         super.init(content: content,
                    fonts: fonts,
                    displayCloseButton: false,
                    shouldBlockTouchEvents: false,
+                   performPurchase: performPurchase,
+                   performRestore: performRestore,
                    dismissRequestedHandler: dismissRequestedHandler)
     }
 

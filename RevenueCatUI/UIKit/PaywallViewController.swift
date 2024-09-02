@@ -47,11 +47,12 @@ public class PaywallViewController: UIViewController {
     /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall
-    @objc
     public convenience init(
         offering: Offering? = nil,
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -59,6 +60,27 @@ public class PaywallViewController: UIViewController {
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
+            dismissRequestedHandler: dismissRequestedHandler
+        )
+    }
+    
+    public convenience init(
+        placementIdentifier: String,
+        displayCloseButton: Bool = false,
+        shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
+    ) {
+        self.init(
+            content: .offeringPlacementIdentifier(placementIdentifier),
+            fonts: DefaultPaywallFontProvider(),
+            displayCloseButton: displayCloseButton,
+            shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -76,6 +98,8 @@ public class PaywallViewController: UIViewController {
         fonts: PaywallFontProvider,
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -83,6 +107,8 @@ public class PaywallViewController: UIViewController {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -99,6 +125,8 @@ public class PaywallViewController: UIViewController {
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -106,6 +134,8 @@ public class PaywallViewController: UIViewController {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -115,11 +145,13 @@ public class PaywallViewController: UIViewController {
         fonts: PaywallFontProvider,
         displayCloseButton: Bool,
         shouldBlockTouchEvents: Bool,
+        performPurchase: PerformPurchase?,
+        performRestore: PerformRestore?,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)?
     ) {
         self.shouldBlockTouchEvents = shouldBlockTouchEvents
         self.dismissRequestedHandler = dismissRequestedHandler
-        let handler = PurchaseHandler.default()
+        let handler = PurchaseHandler.default(performPurchase: performPurchase, performRestore: performRestore)
 
         self.configuration = .init(
             content: content,
