@@ -10,7 +10,7 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
+struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
     let configuration: TemplateViewConfiguration
     let showBackButton: Bool
     @Environment(\.userInterfaceIdiom)
@@ -127,7 +127,7 @@ struct LinTemplate5Step2View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplate5Step2View($0, showBackButton: false, showAllPackages: false)
+                LinTemplateStep2View($0, showBackButton: false, showAllPackages: false)
             }
         }
     }

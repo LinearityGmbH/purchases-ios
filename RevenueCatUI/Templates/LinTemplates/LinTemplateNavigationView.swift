@@ -47,11 +47,11 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
 
     var body: some View {
         NavigationStack {
-            LinTemplate5Step1View(configuration) {
+            LinTemplateStep1View(configuration) {
                 LinNavigationLink(
                     configuration: configuration,
                     label: buttonTitle,
-                    destination: LinTemplate5Step2View(
+                    destination: LinTemplateStep2View(
                         configuration,
                         showBackButton: true,
                         showAllPackages: showAllPackages

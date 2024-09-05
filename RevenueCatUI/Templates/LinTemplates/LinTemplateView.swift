@@ -15,7 +15,7 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5View: TemplateViewType {
+struct LinTemplateView: TemplateViewType {
     let configuration: TemplateViewConfiguration
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
@@ -516,7 +516,7 @@ struct LinTemplate5View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) {
-                LinTemplate5View($0)
+                LinTemplateView($0)
             }
         }
     }

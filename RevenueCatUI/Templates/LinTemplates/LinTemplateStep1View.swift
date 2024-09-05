@@ -10,7 +10,7 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
+struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
     
@@ -163,7 +163,7 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) { configuration in
-                LinTemplate5Step1View(configuration) {
+                LinTemplateStep1View(configuration) {
                     LinNavigationLink(
                         configuration: configuration,
                         label: Text("Continue"),
@@ -177,7 +177,7 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-extension LinTemplate5Step1View: TemplateViewType {
+extension LinTemplateStep1View: TemplateViewType {
     var userInterfaceIdiom: UserInterfaceIdiom {
         .unknown
     }
