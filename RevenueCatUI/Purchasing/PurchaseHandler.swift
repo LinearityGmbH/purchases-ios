@@ -19,7 +19,7 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 // @PublicForExternalTesting
-public final class PurchaseHandler: ObservableObject {
+final class PurchaseHandler: ObservableObject {
 
     private let purchases: PaywallPurchasesType
 
@@ -75,8 +75,6 @@ public final class PurchaseHandler: ObservableObject {
     fileprivate(set) var restoreError: Error?
 
     private var eventData: PaywallEvent.Data?
-    
-    public var refreshSubscriptions: () async throws -> Void = {}
 
     // @PublicForExternalTesting
     convenience init(purchases: Purchases = .shared,
@@ -169,7 +167,6 @@ extension PurchaseHandler {
         do {
             let result = try await self.purchases.purchase(package: package)
             self.purchaseResult = result
-            try await refreshSubscriptions()
 
             if result.userCancelled {
                 self.trackCancelledPurchase()
@@ -489,6 +486,7 @@ struct PurchaseErrorPreferenceKey: PreferenceKey {
     static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
         value = nextValue()
     }
+
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -499,6 +497,7 @@ struct RestoreErrorPreferenceKey: PreferenceKey {
     static func reduce(value: inout NSError?, nextValue: () -> NSError?) {
         value = nextValue()
     }
+
 }
 
 // MARK: Environment keys

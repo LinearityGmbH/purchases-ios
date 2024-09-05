@@ -50,16 +50,18 @@ public class PaywallViewController: UIViewController {
     public convenience init(
         offering: Offering? = nil,
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
             offering: offering,
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -67,16 +69,18 @@ public class PaywallViewController: UIViewController {
     public convenience init(
         placementIdentifier: String,
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
             content: .offeringPlacementIdentifier(placementIdentifier),
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -93,16 +97,18 @@ public class PaywallViewController: UIViewController {
         offering: Offering? = nil,
         fonts: PaywallFontProvider,
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
             content: .optionalOffering(offering),
             fonts: fonts,
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -118,16 +124,18 @@ public class PaywallViewController: UIViewController {
         offeringIdentifier: String,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
             content: .offeringIdentifier(offeringIdentifier),
             fonts: fonts,
             displayCloseButton: displayCloseButton,
-            refreshSubscriptions: refreshSubscriptions,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -136,14 +144,14 @@ public class PaywallViewController: UIViewController {
         content: PaywallViewConfiguration.Content,
         fonts: PaywallFontProvider,
         displayCloseButton: Bool,
-        refreshSubscriptions: @escaping () async throws -> Void,
         shouldBlockTouchEvents: Bool,
+        performPurchase: PerformPurchase?,
+        performRestore: PerformRestore?,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)?
     ) {
         self.shouldBlockTouchEvents = shouldBlockTouchEvents
         self.dismissRequestedHandler = dismissRequestedHandler
-        let handler = PurchaseHandler.default()
-        handler.refreshSubscriptions = refreshSubscriptions
+        let handler = PurchaseHandler.default(performPurchase: performPurchase, performRestore: performRestore)
 
         self.configuration = .init(
             content: content,
@@ -260,6 +268,7 @@ public class PaywallViewController: UIViewController {
             ])
         }
     }
+
 }
 
 // MARK: - PaywallViewControllerDelegate

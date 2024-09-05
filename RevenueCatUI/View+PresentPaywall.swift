@@ -105,8 +105,7 @@ extension View {
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
+        onDismiss: (() -> Void)? = nil
     ) -> some View {
         return self.presentPaywallIfNeeded(
             requiredEntitlementIdentifier: requiredEntitlementIdentifier,
@@ -122,8 +121,7 @@ extension View {
             restoreCompleted: restoreCompleted,
             purchaseFailure: purchaseFailure,
             restoreFailure: restoreFailure,
-            onDismiss: onDismiss,
-            refreshSubscriptions: refreshSubscriptions
+            onDismiss: onDismiss
         )
     }
 
@@ -161,8 +159,7 @@ extension View {
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
+        onDismiss: (() -> Void)? = nil
     ) -> some View {
         return self.presentPaywallIfNeeded(
             offering: offering,
@@ -181,8 +178,7 @@ extension View {
             restoreCompleted: restoreCompleted,
             purchaseFailure: purchaseFailure,
             restoreFailure: restoreFailure,
-            onDismiss: onDismiss,
-            refreshSubscriptions: refreshSubscriptions
+            onDismiss: onDismiss
         )
     }
 
@@ -241,15 +237,11 @@ extension View {
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
+        onDismiss: (() -> Void)? = nil
     ) -> some View {
-        let purchaseHandler = PurchaseHandler()
-        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         return self.presentPaywallIfNeeded(
             offering: offering,
             fonts: fonts,
-            purchaseHandler: purchaseHandler,
             presentationMode: presentationMode,
             myAppPurchaseLogic: myAppPurchaseLogic,
             shouldDisplay: shouldDisplay,
@@ -324,15 +316,11 @@ extension View {
         restoreCompleted: PurchaseOrRestoreCompletedHandler? = nil,
         purchaseFailure: PurchaseFailureHandler? = nil,
         restoreFailure: PurchaseFailureHandler? = nil,
-        onDismiss: (() -> Void)? = nil,
-        refreshSubscriptions: @escaping () async throws -> Void
+        onDismiss: (() -> Void)? = nil
     ) -> some View {
-        let purchaseHandler = PurchaseHandler()
-        purchaseHandler.refreshSubscriptions = refreshSubscriptions
         return self.presentPaywallIfNeeded(
             offering: offering,
             fonts: fonts,
-            purchaseHandler: purchaseHandler,
             presentationMode: presentationMode,
             myAppPurchaseLogic: myAppPurchaseLogic,
             shouldDisplay: shouldDisplay,
@@ -348,7 +336,7 @@ extension View {
                 guard Purchases.isConfigured else {
                     throw PaywallError.purchasesNotConfigured
                 }
-                
+
                 return try await Purchases.shared.customerInfo()
             }
         )
