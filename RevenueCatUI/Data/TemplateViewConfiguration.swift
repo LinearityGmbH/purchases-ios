@@ -148,6 +148,12 @@ extension TemplateViewConfiguration.PackageConfiguration {
         }
     }
 
+    var defaultTier: PaywallData.Tier? {
+        switch self {
+        case .single, .multiple: nil
+        case let .multiTier(firstTier, _, _): firstTier
+        }
+    }
 }
 
 // MARK: - Creation

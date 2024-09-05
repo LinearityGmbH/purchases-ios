@@ -100,6 +100,12 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     private let showBackButton: Bool
     @State
     private var showAllPackages: Bool
+    private var showTierSelector: Bool {
+        guard let (_, allTiers, _) = configuration.packages.multiTier else {
+            return false
+        }
+        return allTiers.count > 1
+    }
 
     init(
         _ configuration: TemplateViewConfiguration,
@@ -203,6 +209,14 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                     }
                     
                     self.subtitleBuilder()
+                    
+                    if showTierSelector {
+                        TierSelectorViewWrapper(
+                            selectedPackage: $selectedPackage,
+                            configuration: configuration,
+                            colors: configuration.colors.linColors
+                        )
+                    }
 
                     self.features
                         .padding([.bottom], 20)
@@ -441,13 +455,37 @@ enum Template5Constants {
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
 private extension PaywallData.Configuration.Colors {
-
+    
+    var linColors: LinColors {
+        LinColors(
+            featureIcon: self.featureIcon,
+            selectedOutline: self.selectedOutline,
+            unselectedOutline: self.unselectedOutline,
+            selectedDiscountText: self.selectedDiscountText,
+            unselectedDiscountText: self.unselectedDiscountText,
+            selectedTier: self.selectedTier,
+            callToAction: self.callToAction,
+            
+            tierControlBackground: tierControlBackground,
+            tierControlForeground: tierControlForeground,
+            tierControlSelectedBackground: tierControlSelectedBackground,
+            tierControlSelectedForeground: tierControlSelectedForeground
+        )
+    }
+    
     var featureIcon: Color { self.accent1Color }
     var selectedOutline: Color { self.accent2Color }
     var unselectedOutline: Color { self.accent3Color }
     var selectedDiscountText: Color { self.text2Color }
     var unselectedDiscountText: Color { self.text3Color }
-
+    var selectedTier: Color { self.accent1Color }
+    var callToAction: Color { self.selectedTier }
+    
+    var tierControlBackground: Color { self.tierControlBackgroundColor ?? self.accent1Color }
+    var tierControlForeground: Color { self.tierControlForegroundColor ?? self.text1Color }
+    var tierControlSelectedBackground: Color { self.tierControlSelectedBackgroundColor ?? self.unselectedDiscountText }
+    var tierControlSelectedForeground: Color { self.tierControlSelectedForegroundColor ?? self.text1Color }
+    
 }
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
