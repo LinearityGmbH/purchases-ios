@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  LinNavigationLink.swift
 //  
 //
 //  Created by Guillaume LAURES on 11/07/2024.
@@ -35,7 +35,15 @@ struct LinNavigationLink<Label: View, Destination: View>: View {
     @ViewBuilder
     private var backgroundView: some View {
         RoundedRectangle(cornerSize: CGSize(width: 10, height: 10), style: .continuous)
-            .foregroundStyle(configuration.colors.callToActionBackgroundColor)
+            .foregroundStyle(backgroundColor)
             .frame(height: 45)
+    }
+    
+    private var backgroundColor: Color {
+        if let (firstTier, _, _) = configuration.packages.multiTier {
+            configuration.colors(for: firstTier).callToActionBackgroundColor
+        } else {
+            configuration.colors.callToActionBackgroundColor
+        }
     }
 }
