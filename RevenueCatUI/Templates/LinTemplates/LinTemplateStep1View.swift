@@ -14,6 +14,7 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
     
+    private let accentColor: Color
     private let buttonView: () -> ButtonView
     
     @EnvironmentObject
@@ -34,10 +35,12 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     ]
     
     init(
-        _ configuration: TemplateViewConfiguration,
+        configuration: TemplateViewConfiguration,
+        accentColor: Color,
         buttonView: @escaping () -> ButtonView
     ) {
         self.configuration = configuration
+        self.accentColor = accentColor
         self.buttonView = buttonView
     }
     
@@ -100,7 +103,7 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     private func featureListItemView(title: String, subtitle: String) -> some View {
         HStack(alignment: .top) {
             Image(.icCheckmark)
-                .foregroundColor(configuration.colors.accent1Color)
+                .foregroundColor(accentColor)
                 .font(.system(size: 20))
             
             VStack(alignment: .leading, spacing: 5) {
@@ -163,9 +166,13 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) { configuration in
-                LinTemplateStep1View(configuration) {
+                LinTemplateStep1View(
+                    configuration: configuration,
+                    accentColor: configuration.colors.accent1Color
+                ) {
                     LinNavigationLink(
                         configuration: configuration,
+                        accentColor: configuration.colors.accent1Color,
                         label: Text("Continue"),
                         destination: EmptyView()
                     )

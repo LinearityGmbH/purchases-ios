@@ -47,9 +47,13 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
 
     var body: some View {
         NavigationStack {
-            LinTemplateStep1View(configuration) {
+            LinTemplateStep1View(
+                configuration: configuration,
+                accentColor: accentColor
+            ) {
                 LinNavigationLink(
                     configuration: configuration,
+                    accentColor: accentColor,
                     label: buttonTitle,
                     destination: LinTemplateStep2View(
                         configuration,
@@ -74,6 +78,14 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
             colors: configuration.colors,
             introEligibility: introEligibility
         )
+    }
+    
+    var accentColor: Color {
+        if let (firstTier, _, _) = configuration.packages.multiTier {
+            configuration.colors(for: firstTier).callToActionBackgroundColor
+        } else {
+            configuration.colors.callToActionBackgroundColor
+        }
     }
 }
 

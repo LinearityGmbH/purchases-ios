@@ -12,6 +12,7 @@ import SwiftUI
 struct LinNavigationLink<Label: View, Destination: View>: View {
     
     let configuration: TemplateViewConfiguration
+    let accentColor: Color
     var label: Label
     var destination: Destination
     
@@ -35,15 +36,7 @@ struct LinNavigationLink<Label: View, Destination: View>: View {
     @ViewBuilder
     private var backgroundView: some View {
         RoundedRectangle(cornerSize: CGSize(width: 10, height: 10), style: .continuous)
-            .foregroundStyle(backgroundColor)
+            .foregroundStyle(accentColor)
             .frame(height: 45)
-    }
-    
-    private var backgroundColor: Color {
-        if let (firstTier, _, _) = configuration.packages.multiTier {
-            configuration.colors(for: firstTier).callToActionBackgroundColor
-        } else {
-            configuration.colors.callToActionBackgroundColor
-        }
     }
 }
