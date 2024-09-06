@@ -144,7 +144,7 @@ extension PaywallData {
             Template3View(configuration)
         case .template4:
             Template4View(configuration)
-        case .template5:
+        case .template7, .template5:
             // In case the offering was not updated yet, keep reading the previous selection value.
             let oldSelectionFallback: LinPaywall = offering.getMetadataValue(for: "show_new_paywall", default: false) ? .canvaStyleOneStep : .defaultRC
             let paywallVersion = LinPaywall(rawValue: offering.getMetadataValue(for: "paywall_version", default: oldSelectionFallback.rawValue)) ?? oldSelectionFallback
@@ -174,8 +174,6 @@ extension PaywallData {
                     LinTemplateStep2View(configuration, showBackButton: false, showAllPackages: false)
                 }
             }
-        case .template7:
-            Template7View(configuration)
         }
         #endif
     }

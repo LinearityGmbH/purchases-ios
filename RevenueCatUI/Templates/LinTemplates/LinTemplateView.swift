@@ -27,6 +27,8 @@ struct LinTemplateView: TemplateViewType {
     private let showBackButton: Bool
     @State
     private var selectedPackage: TemplateViewConfiguration.Package
+    @State
+    private var selectedTier: PaywallData.Tier?
 
     init(_ configuration: TemplateViewConfiguration) {
         self.init(configuration, showBackButton: false)
@@ -38,13 +40,19 @@ struct LinTemplateView: TemplateViewType {
     ) {
         self.showBackButton = showBackButton
         self._selectedPackage = .init(initialValue: configuration.packages.default)
+        if let (firstTier, _, _) = configuration.packages.multiTier {
+            self.selectedTier = firstTier
+        } else {
+            self.selectedTier = nil
+        }
         self.configuration = configuration
     }
     
     var body: some View {
-        LinConfigurableTemplate5View(
+        LinConfigurableTemplateView(
             configuration, 
             selectedPackage: $selectedPackage,
+            selectedTier: $selectedTier,
             displayImage: true,
             titleTypeProvider: { package in .fixed(package.localization.title) },
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
@@ -57,7 +65,7 @@ struct LinTemplateView: TemplateViewType {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View, HorizontalPadding: ViewModifier>: View {
+struct LinConfigurableTemplateView<SubtitleView: View, ButtonSubtitleView: View, HorizontalPadding: ViewModifier>: View {
     typealias SubtitleBuilder = () -> SubtitleView
     typealias ButtonSubtitleBuilder = (
             _ selectedPackage: Package,
@@ -69,6 +77,8 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 
     @Binding
     private var selectedPackage: TemplateViewConfiguration.Package
+    @Binding
+    private var selectedTier: PaywallData.Tier?
 
     @State
     private var displayingAllPlans: Bool
@@ -94,22 +104,26 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     
     private let displayImage: Bool
     private let buttonSubtitleBuilder: ButtonSubtitleBuilder
-    private let subtitleBuilder: SubtitleBuilder
+    private let subtitle: SubtitleBuilder
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     private let horizontalPaddingModifier: HorizontalPadding
     private let showBackButton: Bool
     @State
     private var showAllPackages: Bool
+    
     private var showTierSelector: Bool {
         guard let (_, allTiers, _) = configuration.packages.multiTier else {
             return false
         }
         return allTiers.count > 1
     }
+    
+    private let currentColors: LinColorsProvider
 
     init(
         _ configuration: TemplateViewConfiguration,
         selectedPackage: Binding<TemplateViewConfiguration.Package>,
+        selectedTier: Binding<PaywallData.Tier?>,
         displayImage: Bool,
         titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType,
         horizontalPaddingModifier: HorizontalPadding,
@@ -119,15 +133,20 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = selectedPackage
+        self._selectedTier = selectedTier
         self.configuration = configuration
         self.displayImage = displayImage
-        self.subtitleBuilder = subtitleBuilder
+        self.subtitle = subtitleBuilder
         self.buttonSubtitleBuilder = buttonSubtitleBuilder
         self.titleTypeProvider = titleTypeProvider
         self.horizontalPaddingModifier = horizontalPaddingModifier
         self.showBackButton = showBackButton
         self._showAllPackages = .init(initialValue: showAllPackages)
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
+        self.currentColors = LinColorsProvider(
+            configuration: configuration,
+            tier: selectedTier
+        )
     }
 
     var body: some View {
@@ -161,7 +180,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                        purchaseHandler: self.purchaseHandler,
                        displayingAllPlans: self.$displayingAllPlans)
         }
-        .foregroundColor(self.configuration.colors.text1Color)
+        .foregroundColor(currentColors.text1Color)
         .edgesIgnoringSafeArea(.top, apply: self.displayImage)
         .frame(maxHeight: .infinity)
     }
@@ -169,101 +188,95 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     @ViewBuilder
     private var scrollableContent: some View {
         VStack(spacing: 16) {
-            if self.configuration.mode.isFullScreen {
-                if let header = self.configuration.headerImageURL, self.displayImage {
-                    Spacer()
-                        .frame(
-                            maxWidth: .infinity,
-                            minHeight: verticalSizeClass == .regular ? 200 : nil,
-                            maxHeight: .infinity
-                        )
-                        .background {
-                            if verticalSizeClass == .regular {
-                                RemoteImage(url: header)
-                            }
+            if let header = self.configuration.headerImageURL, self.displayImage {
+                Spacer()
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: verticalSizeClass == .regular ? 200 : nil,
+                        maxHeight: .infinity
+                    )
+                    .background {
+                        if verticalSizeClass == .regular {
+                            RemoteImage(url: header)
                         }
-                        .clipped()
-                }
+                    }
+                    .clipped()
             }
 
             Group {
-                if self.configuration.mode.isFullScreen {
-                    HStack {
-                        if showBackButton {
-                            Button(action: {
-                                dismiss()
-                            }, label: {
-                                Image(systemName: "chevron.backward")
-                                    .font(.title2)
-                                    .foregroundColor(.secondary)
-                                    #if targetEnvironment(macCatalyst)
-                                    .padding([.trailing], 4)
-                                    .contentShape(Rectangle())
-                                    #endif
-                            })
-                            #if targetEnvironment(macCatalyst)
-                            .buttonStyle(.plain)
-                            #endif
+                
+                title
+                subtitle()
+                
+                if showTierSelector {
+                    TierPaywallWrapperView(
+                        selectedTier: $selectedTier,
+                        selectedPackage: $selectedPackage,
+                        configuration: configuration,
+                        currentColors: currentColors,
+                        features: { selectedPackage in
+                            features(package: selectedPackage)
+                                .padding([.bottom], 20)
+                        },
+                        packages: { packages in
+                            VStack {
+                                self.packages(packages: packages)
+                                if horizontalSizeClass == .regular && !self.displayImage {
+                                    Spacer(minLength: 20)
+                                }
+                            }
                         }
-                        TitleView(type: titleTypeProvider(selectedPackage))
-                    }
-                    
-                    self.subtitleBuilder()
-                    
-                    if showTierSelector {
-                        TierSelectorViewWrapper(
-                            selectedPackage: $selectedPackage,
-                            configuration: configuration,
-                            colors: configuration.colors.linColors
-                        )
-                    }
-
-                    self.features
+                    )
+                } else {
+                    features(package: selectedPackage)
                         .padding([.bottom], 20)
                     if horizontalSizeClass == .compact {
                         Spacer()
                     }
-                    self.packages
+                    packages(packages: configuration.packages.all)
                     if horizontalSizeClass == .regular && !self.displayImage {
                         Spacer(minLength: 20)
                     }
-                } else {
-                    self.packages
-                        .hideFooterContent(self.configuration,
-                                           hide: !self.displayingAllPlans)
                 }
                 
-                if !showAllPackages {
-                    Button {
-                        withAnimation(Constants.toggleAllPlansAnimation) {
-                            showAllPackages = true
-                        }
-                    } label: {
-                        Text(localize("Template5.see_all_plans", value: "See All Plans"))
-                            .foregroundStyle(
-                                Color(
-                                    uiColor: UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
-                                )
-                            )
-                            .font(self.font(for: .callout).weight(.medium))
-                    }
-                    #if targetEnvironment(macCatalyst)
-                    .buttonStyle(.plain)
-                    #endif
-                }
-                
-                if self.configuration.mode.shouldDisplayInlineOfferDetails(displayingAllPlans: self.displayingAllPlans) {
-                    self.offerDetails(package: self.selectedPackage, selected: false)
-                }
+                showAllPackagesButton
             }
             .frame(maxWidth: Constants.defaultContentWidth)
             .modifier(horizontalPaddingModifier)
         }
         .frame(maxHeight: .infinity)
     }
+    
+    @ViewBuilder
+    var title: some View {
+        HStack {
+            backButton
+            TitleView(type: titleTypeProvider(selectedPackage))
+        }
+    }
+    
+    @ViewBuilder
+    var backButton: some View {
+        if showBackButton {
+            Button(action: {
+                dismiss()
+            }, label: {
+                Image(systemName: "chevron.backward")
+                    .font(.title2)
+                    .foregroundColor(.secondary)
+                    #if targetEnvironment(macCatalyst)
+                    .padding([.trailing], 4)
+                    .contentShape(Rectangle())
+                    #endif
+            })
+            #if targetEnvironment(macCatalyst)
+            .buttonStyle(.plain)
+            #endif
+        }
+    }
 
     @ViewBuilder
-    private var features: some View {
+    private func features(package: TemplateViewConfiguration.Package) -> some View {
         #if targetEnvironment(macCatalyst)
         let spacing: CGFloat = 6
         #else
@@ -271,15 +284,15 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         #endif
 
         VStack(spacing: spacing) {
-            ForEach(self.selectedLocalization.features, id: \.title) { feature in
+            ForEach(package.localization.features, id: \.title) { feature in
                 HStack(alignment: .firstTextBaseline) {
                     if let icon = feature.icon {
                         if icon == .tick {
                             Image(.icCheckmark)
-                                .foregroundColor(self.configuration.colors.featureIcon)
+                                .foregroundColor(currentColors.featureIcon)
                                 .font(.system(size: 15))
                         } else {
-                            IconView(icon: icon, tint: self.configuration.colors.featureIcon)
+                            IconView(icon: icon, tint: currentColors.featureIcon)
                                 .frame(width: self.iconSize, height: self.iconSize)
                         }
                     }
@@ -296,10 +309,10 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     }
 
     @ViewBuilder
-    private var packages: some View {
+    private func packages(packages: [TemplateViewConfiguration.Package]) -> some View {
         let packages = showAllPackages
-        ? self.configuration.packages.all
-        : Array(self.configuration.packages.all.prefix(upTo: 1))
+        ? packages
+        : Array(packages.prefix(upTo: 1))
 
         VStack(spacing: 16) {
             ForEach(packages, id: \.content.id) { package in
@@ -318,18 +331,24 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
     }
 
     @ViewBuilder
-    private func packageButton(_ package: TemplateViewConfiguration.Package, selected: Bool) -> some View {
+    private func packageButton(
+        _ package: TemplateViewConfiguration.Package,
+        selected: Bool
+    ) -> some View {
         packageButtonTitle(package, selected: selected)
             .font(self.font(for: .body).weight(.medium))
             .defaultPadding()
             .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: Template5Constants.packageButtonAlignment)
+            .frame(
+                maxWidth: .infinity,
+                alignment: LinTemplateConstants.packageButtonAlignment
+            )
             .background {
                 self.roundedRectangle(cornerRadius: 12)
                     .stroke(
                         selected
-                        ? self.configuration.colors.selectedOutline
-                        : self.configuration.colors.unselectedOutline,
+                        ? currentColors.selectedOutline
+                        : currentColors.unselectedOutline,
                         lineWidth: Constants.defaultPackageBorderWidth
                     ).background {
                         self.roundedRectangle(cornerRadius: 12).fill(
@@ -356,7 +375,7 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
         selected: Bool
     ) -> some View {
         if let discount = package.discountRelativeToMostExpensivePerMonth {
-            let colors = self.configuration.colors
+            let colors = currentColors
 
             Text(Localization.localized(discount: discount, locale: self.locale))
                 .textCase(.uppercase)
@@ -391,14 +410,16 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
                 ? "checkmark.circle.fill"
                 : "circle"
             let color = selected
-                ? self.configuration.colors.selectedOutline
-                : self.configuration.colors.unselectedOutline
+                ? currentColors.selectedOutline
+            : currentColors.unselectedOutline
             Image(systemName: image)
                 .resizable()
                 .frame(width: 24, height: 24)
                 .foregroundColor(color)
 
-            VStack(alignment: Template5Constants.packageButtonAlignment.horizontal, spacing: 5) {
+            VStack(
+                alignment: LinTemplateConstants.packageButtonAlignment.horizontal, spacing: 5
+            ) {
                 Text(package.localization.offerName ?? package.content.productName)
                     .font(.system(size: 17, weight: .semibold))
                 self.offerDetails(package: package, selected: selected)
@@ -414,19 +435,51 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
             display: .offerDetails,
             localization: package.localization,
             introEligibility: self.introEligibility[package.content],
-            foregroundColor: self.configuration.colors.text1Color,
-            alignment: Template5Constants.packageButtonAlignment
+            foregroundColor: currentColors.text1Color,
+            alignment: LinTemplateConstants.packageButtonAlignment
         )
         .fixedSize(horizontal: false, vertical: true)
         .font(self.font(for: .body))
     }
 
     private var subscribeButton: some View {
-        PurchaseButton(
-            packages: self.configuration.packages,
-            selectedPackage: self.selectedPackage,
-            configuration: self.configuration
-        )
+        if let selectedTier {
+            PurchaseButton(
+                packages: configuration.packages,
+                selectedPackage: selectedPackage,
+                configuration: configuration,
+                selectedTier: selectedTier
+            )
+        } else {
+            PurchaseButton(
+                packages: configuration.packages,
+                selectedPackage: selectedPackage,
+                configuration: configuration
+            )
+        }
+        
+    }
+    
+    @ViewBuilder
+    private var showAllPackagesButton: some View {
+        if !showAllPackages {
+            Button {
+                withAnimation(Constants.toggleAllPlansAnimation) {
+                    showAllPackages = true
+                }
+            } label: {
+                Text(localize("Template5.see_all_plans", value: "See All Plans"))
+                    .foregroundStyle(
+                        Color(
+                            uiColor: UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
+                        )
+                    )
+                    .font(self.font(for: .callout).weight(.medium))
+            }
+            #if targetEnvironment(macCatalyst)
+            .buttonStyle(.plain)
+            #endif
+        }
     }
 
     // MARK: -
@@ -448,44 +501,9 @@ struct LinConfigurableTemplate5View<SubtitleView: View, ButtonSubtitleView: View
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-enum Template5Constants {
+enum LinTemplateConstants {
     static let packageButtonAlignment: Alignment = .leading
     static let cornerRadius: CGFloat = Constants.defaultPackageCornerRadius
-}
-
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
-private extension PaywallData.Configuration.Colors {
-    
-    var linColors: LinColors {
-        LinColors(
-            featureIcon: self.featureIcon,
-            selectedOutline: self.selectedOutline,
-            unselectedOutline: self.unselectedOutline,
-            selectedDiscountText: self.selectedDiscountText,
-            unselectedDiscountText: self.unselectedDiscountText,
-            selectedTier: self.selectedTier,
-            callToAction: self.callToAction,
-            
-            tierControlBackground: tierControlBackground,
-            tierControlForeground: tierControlForeground,
-            tierControlSelectedBackground: tierControlSelectedBackground,
-            tierControlSelectedForeground: tierControlSelectedForeground
-        )
-    }
-    
-    var featureIcon: Color { self.accent1Color }
-    var selectedOutline: Color { self.accent2Color }
-    var unselectedOutline: Color { self.accent3Color }
-    var selectedDiscountText: Color { self.text2Color }
-    var unselectedDiscountText: Color { self.text3Color }
-    var selectedTier: Color { self.accent1Color }
-    var callToAction: Color { self.selectedTier }
-    
-    var tierControlBackground: Color { self.tierControlBackgroundColor ?? self.accent1Color }
-    var tierControlForeground: Color { self.tierControlForegroundColor ?? self.text1Color }
-    var tierControlSelectedBackground: Color { self.tierControlSelectedBackgroundColor ?? self.unselectedDiscountText }
-    var tierControlSelectedForeground: Color { self.tierControlSelectedForegroundColor ?? self.text1Color }
-    
 }
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
@@ -508,11 +526,7 @@ struct IgnoreSafeAreaConditionally: ViewModifier {
 // MARK: - Extensions
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private extension LinConfigurableTemplate5View {
-
-    var selectedLocalization: ProcessedLocalizedConfiguration {
-        return self.selectedPackage.localization
-    }
+private extension LinConfigurableTemplateView {
     
     func font(for textStyle: Font.TextStyle) -> Font {
         return self.configuration.fonts.font(for: textStyle)
@@ -546,19 +560,23 @@ private func localize(_ key: String, value: String) -> String {
 @available(watchOS, unavailable)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-struct LinTemplate5View_Previews: PreviewProvider {
+struct LinTemplateView_Previews: PreviewProvider {
+    
+    static let previewsData: [(id: Int, data: Offering, mode: PaywallViewMode)] = [
+        (id: 1, data: TestData.offeringWithLinTemplate5Paywall, mode: .fullScreen),
+        (id: 2, data: TestData.offeringWithLinTemplate7Paywall, mode: .fullScreen)
+    ]
 
     static var previews: some View {
-        ForEach(PaywallViewMode.allCases, id: \.self) { mode in
+        ForEach(previewsData, id:\.id) { (_, data, mode) in
             PreviewableTemplate(
-                offering: TestData.offeringWithLinTemplate5Paywall,
+                offering: data,
                 mode: mode
             ) {
                 LinTemplateView($0)
             }
         }
     }
-
 }
 
 #endif

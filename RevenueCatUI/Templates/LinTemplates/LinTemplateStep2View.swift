@@ -23,6 +23,8 @@ struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
     var introEligibilityViewModel: IntroEligibilityViewModel
     @State
     var selectedPackage: TemplateViewConfiguration.Package
+    @State
+    var selectedTier: PaywallData.Tier?
     var showAllPackages: Bool
     
     init(_ configuration: TemplateViewConfiguration) {
@@ -35,6 +37,11 @@ struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
         showAllPackages: Bool
     ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
+        if let (firstTier, _, _) = configuration.packages.multiTier {
+            self.selectedTier = firstTier
+        } else {
+            self.selectedTier = nil
+        }
         self.configuration = configuration
         self.showBackButton = showBackButton
         self.showAllPackages = showAllPackages
@@ -50,9 +57,10 @@ struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
     
     @ViewBuilder
     private func paywallContent(displayTimeline: Bool) -> some View {
-        LinConfigurableTemplate5View(
+        LinConfigurableTemplateView(
             configuration, 
             selectedPackage: $selectedPackage,
+            selectedTier: $selectedTier,
             displayImage: false,
             titleTypeProvider: { [introEligibilityViewModel] package in
                 let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
@@ -119,19 +127,23 @@ private func localize(_ key: String, value: String) -> String {
 @available(watchOS, unavailable)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-struct LinTemplate5Step2View_Previews: PreviewProvider {
-
+struct LinTemplateStep2View_Previews: PreviewProvider {
+    
+    static let previewsData: [(id: Int, data: Offering, mode: PaywallViewMode)] = [
+        (id: 1, data: TestData.offeringWithLinTemplate5Paywall, mode: .fullScreen),
+        (id: 2, data: TestData.offeringWithLinTemplate7Paywall, mode: .fullScreen)
+    ]
+    
     static var previews: some View {
-        ForEach(PaywallViewMode.allCases, id: \.self) { mode in
+        ForEach(previewsData, id:\.id) { (_, data, mode) in
             PreviewableTemplate(
-                offering: TestData.offeringWithLinTemplate5Paywall,
+                offering: data,
                 mode: mode
             ) {
                 LinTemplateStep2View($0, showBackButton: false, showAllPackages: false)
             }
         }
     }
-
 }
 
 #endif
