@@ -15,31 +15,16 @@ struct LinTitleView: View {
     let showBackButton: Bool
     @Binding
     var selectedPackage: TemplateViewConfiguration.Package
-    @Binding
-    var selectedTier: PaywallData.Tier?
     let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     
     @Environment(\.dismiss)
     private var dismiss
     
     var body: some View {
-        if selectedTier != nil {
-            ConsistentPackageContentView(
-                packages: configuration.packages.all,
-                selected: selectedPackage
-            ) { package in
-                title(package: package)
-            }
-        } else {
-            title(package: selectedPackage)
-        }
-    }
-    
-    @ViewBuilder
-    private func title(package: TemplateViewConfiguration.Package) -> some View {
-        HStack {
+        Label {
+            TitleView(type: titleTypeProvider(selectedPackage))
+        } icon: {
             backButton
-            TitleView(type: titleTypeProvider(package))
         }
     }
     

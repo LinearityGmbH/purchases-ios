@@ -209,7 +209,6 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
                     configuration: configuration,
                     showBackButton: showBackButton,
                     selectedPackage: $selectedPackage,
-                    selectedTier: $selectedTier,
                     titleTypeProvider: titleTypeProvider
                 )
                 
