@@ -9,12 +9,18 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinPaywallView: View {
+struct LinPaywallView<SubtitleView: View>: View {
     
     let configuration: TemplateViewConfiguration
     let currentColors: LinColorsProvider
     let displayImage: Bool
     let showAllPackages: Bool
+    
+    @Binding
+    var selectedPackage: TemplateViewConfiguration.Package
+    @Binding
+    var selectedTier: PaywallData.Tier?
+    var subtitle: () -> SubtitleView
     
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
@@ -22,10 +28,6 @@ struct LinPaywallView: View {
     private var locale
     @EnvironmentObject
     private var introEligibilityViewModel: IntroEligibilityViewModel
-    @Binding
-    var selectedPackage: TemplateViewConfiguration.Package
-    @Binding
-    var selectedTier: PaywallData.Tier?
     
     private var showTierSelector: Bool {
         guard let (_, allTiers, _) = configuration.packages.multiTier else {
@@ -43,6 +45,7 @@ struct LinPaywallView: View {
                 selectedPackage: $selectedPackage,
                 configuration: configuration,
                 currentColors: currentColors,
+                subtitle: subtitle,
                 features: { selectedPackage in
                     features(package: selectedPackage)
                 },
@@ -51,6 +54,7 @@ struct LinPaywallView: View {
                 }
             )
         } else {
+            subtitle()
             features(package: selectedPackage)
             if horizontalSizeClass == .compact {
                 Spacer()

@@ -9,7 +9,7 @@ import SwiftUI
 import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View>: View {
+struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View, SubtitleView: View>: View {
     
     let configuration: TemplateViewConfiguration
     let currentColors: LinColorsProvider
@@ -17,6 +17,7 @@ struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View>: View {
     @Binding
     var selectedPackage: TemplateViewConfiguration.Package
     
+    let subtitle: () -> SubtitleView
     @ViewBuilder
     let features: (_ package: TemplateViewConfiguration.Package) -> FeaturesView
     @ViewBuilder
@@ -39,6 +40,7 @@ struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View>: View {
         selectedPackage: Binding<TemplateViewConfiguration.Package>,
         configuration: TemplateViewConfiguration,
         currentColors: LinColorsProvider,
+        subtitle: @escaping () -> SubtitleView,
         features: @escaping (_ package: TemplateViewConfiguration.Package) -> FeaturesView,
         packages: @escaping (_ packages: [TemplateViewConfiguration.Package]) -> PackagesView
     ) {
@@ -55,6 +57,7 @@ struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View>: View {
         self._selectedPackage = selectedPackage
         self.configuration = configuration
         self.currentColors = currentColors
+        self.subtitle = subtitle
         self.features = features
         self.packages = packages
     }
@@ -69,6 +72,7 @@ struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View>: View {
                 selectedPackage: $selectedPackage,
                 selectedTier: $selectedTier
             )
+            subtitle()
             TierFeatureAndPackageView(
                 tiers: tiers,
                 allPackages: configuration.packages.all,

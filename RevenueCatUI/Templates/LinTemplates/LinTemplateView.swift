@@ -58,20 +58,20 @@ struct LinTemplateView: TemplateViewType {
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
             showBackButton: showBackButton,
             showAllPackages: true,
-            subtitleBuilder: { EmptyView() },
-            buttonSubtitleBuilder: { (_, _ , _) in EmptyView() }
+            subtitle: { EmptyView() },
+            subscribeButtonSubtitle: { (_, _ , _) in EmptyView() }
         )
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplateView<SubtitleView: View, ButtonSubtitleView: View, HorizontalPadding: ViewModifier>: View {
+struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleView: View, HorizontalPadding: ViewModifier>: View {
     typealias SubtitleBuilder = () -> SubtitleView
     typealias ButtonSubtitleBuilder = (
             _ selectedPackage: Package,
             _ eligibility: IntroEligibilityStatus?,
             _ locale: Locale
-        ) -> ButtonSubtitleView
+        ) -> SubscribeButtonSubtitleView
 
     let configuration: TemplateViewConfiguration
 
@@ -103,7 +103,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, ButtonSubtitleView: View,
     private var dismiss
     
     private let displayImage: Bool
-    private let buttonSubtitleBuilder: ButtonSubtitleBuilder
+    private let subscribeButtonSubtitle: ButtonSubtitleBuilder
     private let subtitle: SubtitleBuilder
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     private let horizontalPaddingModifier: HorizontalPadding
@@ -129,15 +129,15 @@ struct LinConfigurableTemplateView<SubtitleView: View, ButtonSubtitleView: View,
         horizontalPaddingModifier: HorizontalPadding,
         showBackButton: Bool = false,
         showAllPackages: Bool = true,
-        @ViewBuilder subtitleBuilder: @escaping SubtitleBuilder,
-        @ViewBuilder buttonSubtitleBuilder: @escaping ButtonSubtitleBuilder
+        @ViewBuilder subtitle: @escaping SubtitleBuilder,
+        @ViewBuilder subscribeButtonSubtitle: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = selectedPackage
         self._selectedTier = selectedTier
         self.configuration = configuration
         self.displayImage = displayImage
-        self.subtitle = subtitleBuilder
-        self.buttonSubtitleBuilder = buttonSubtitleBuilder
+        self.subtitle = subtitle
+        self.subscribeButtonSubtitle = subscribeButtonSubtitle
         self.titleTypeProvider = titleTypeProvider
         self.horizontalPaddingModifier = horizontalPaddingModifier
         self.showBackButton = showBackButton
@@ -157,16 +157,16 @@ struct LinConfigurableTemplateView<SubtitleView: View, ButtonSubtitleView: View,
     @ViewBuilder
     var content: some View {
         VStack(spacing: 8) {
-            self.scrollableContent
+            scrollableContent
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
                 .scrollableIfNecessaryWhenAvailable(enabled: self.configuration.mode.isFullScreen)
 
-            self.subscribeButton
+            subscribeButton
                 .frame(maxWidth: Constants.defaultContentWidth)
                 .modifier(horizontalPaddingModifier)
             
-            buttonSubtitleBuilder(
+            subscribeButtonSubtitle(
                 selectedPackage.content,
                 introEligibility[self.selectedPackage.content],
                 locale
@@ -213,15 +213,14 @@ struct LinConfigurableTemplateView<SubtitleView: View, ButtonSubtitleView: View,
                     titleTypeProvider: titleTypeProvider
                 )
                 
-                subtitle()
-                
                 LinPaywallView(
                     configuration: configuration,
                     currentColors: currentColors,
                     displayImage: displayImage,
                     showAllPackages: showAllPackages,
                     selectedPackage: $selectedPackage,
-                    selectedTier: $selectedTier
+                    selectedTier: $selectedTier,
+                    subtitle: subtitle
                 )
                 
                 showAllPackagesButton
