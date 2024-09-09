@@ -33,12 +33,7 @@ struct TierFeatureAndPackageView<FeaturesView: View, PackagesView: View>: View {
             selected: selectedTier
         ) { _, packagesConfiguration in
             VStack {
-                ConsistentPackageContentView(
-                    packages: allPackages,
-                    selected: selectedPackage
-                ) { package in
-                    features(package)
-                }
+                features(selectedPackage)
                 if horizontalSizeClass == .compact {
                     Spacer()
                 }
