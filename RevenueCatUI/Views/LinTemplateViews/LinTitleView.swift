@@ -23,10 +23,10 @@ struct LinTitleView: View {
     private var dismiss
     
     var body: some View {
-        if let selectedTier {
+        if selectedTier != nil {
             ConsistentPackageContentView(
-                packages: self.configuration.packages.all,
-                selected: self.selectedPackage
+                packages: configuration.packages.all,
+                selected: selectedPackage
             ) { package in
                 title(package: package)
             }

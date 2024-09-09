@@ -68,7 +68,11 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     @ViewBuilder
     private var contentView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TitleView(type: .dynamic(isEligibleToIntro: isEligibleToIntro, bundle: LinTemplatesResources.linTemplate5Step1Bundle))
+            TitleView(type: .dynamic(
+                isEligibleToIntro: isEligibleToIntro,
+                bundle: LinTemplatesResources.linTemplate5Step1Bundle,
+                ineligibleFallback: selectedPackage.localization.title
+            ))
             subtitle
                 .padding([.bottom], 10)
             featureList
