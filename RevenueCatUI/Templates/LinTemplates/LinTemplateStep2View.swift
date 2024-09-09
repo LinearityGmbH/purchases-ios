@@ -75,7 +75,10 @@ struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
             showAllPackages: showAllPackages,
             subtitle: {
                 if displayTimeline {
-                    TimelineView(stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .horizontal)
+                    TimelineView(
+                        stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: selectedPackage.content.introductoryOfferDaysDuration),
+                        axis: .horizontal
+                    )
                 }
             }, subscribeButtonSubtitle: { selectedPackage, eligibility, locale in
                 let msgProvider = CTAFooterMessageProvider(locale: locale)
@@ -93,7 +96,10 @@ struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
             VStack(alignment: .leading) {
                 Spacer()
                 if isEligibleToIntro {
-                    TimelineView(stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .vertical)
+                    TimelineView(
+                        stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: selectedPackage.content.introductoryOfferDaysDuration),
+                        axis: .vertical
+                    )
                     Spacer().frame(height: 60)
                 }
                 TestimonialsView()
