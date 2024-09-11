@@ -73,21 +73,23 @@ struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
             horizontalPaddingModifier: NoPaddingModifier(),
             showBackButton: showBackButton,
             showAllPackages: showAllPackages,
-            subtitle: {
+            subtitleView: {
                 if displayTimeline {
                     TimelineView(
                         stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: selectedPackage.content.introductoryOfferDaysDuration),
                         axis: .horizontal
                     )
                 }
-            }, subscribeButtonSubtitle: { selectedPackage, eligibility, locale in
+            },
+            subscribeButtonSubtitleView: { selectedPackage, eligibility, locale in
                 let msgProvider = CTAFooterMessageProvider(locale: locale)
                 IntroEligibilityStateView(
                     textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
                     textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
                     introEligibility: eligibility
                 )
-            }).font(.system(size: 13))
+            }
+        ).font(.system(size: 13))
     }
     
     @ViewBuilder

@@ -13,7 +13,6 @@ struct LinTitleView: View {
     
     let configuration: TemplateViewConfiguration
     let showBackButton: Bool
-    @Binding
     var selectedPackage: TemplateViewConfiguration.Package
     let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     

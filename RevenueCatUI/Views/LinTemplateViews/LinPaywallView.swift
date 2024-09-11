@@ -20,7 +20,7 @@ struct LinPaywallView<SubtitleView: View>: View {
     var selectedPackage: TemplateViewConfiguration.Package
     @Binding
     var selectedTier: PaywallData.Tier?
-    var subtitle: () -> SubtitleView
+    var subtitleView: () -> SubtitleView
     
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
@@ -45,16 +45,16 @@ struct LinPaywallView<SubtitleView: View>: View {
                 selectedPackage: $selectedPackage,
                 configuration: configuration,
                 currentColors: currentColors,
-                subtitle: subtitle,
-                features: { selectedPackage in
+                subtitleView: subtitleView,
+                featuresView: { selectedPackage in
                     features(package: selectedPackage)
                 },
-                packages: { packages in
+                packagesView: { packages in
                     self.packages(packages: packages)
                 }
             )
         } else {
-            subtitle()
+            subtitleView()
             features(package: selectedPackage)
             if horizontalSizeClass == .compact {
                 Spacer()

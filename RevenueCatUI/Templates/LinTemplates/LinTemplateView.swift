@@ -58,8 +58,8 @@ struct LinTemplateView: TemplateViewType {
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
             showBackButton: showBackButton,
             showAllPackages: true,
-            subtitle: { EmptyView() },
-            subscribeButtonSubtitle: { (_, _ , _) in EmptyView() }
+            subtitleView: { EmptyView() },
+            subscribeButtonSubtitleView: { (_, _ , _) in EmptyView() }
         )
     }
 }
@@ -103,20 +103,13 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
     private var dismiss
     
     private let displayImage: Bool
-    private let subscribeButtonSubtitle: ButtonSubtitleBuilder
-    private let subtitle: SubtitleBuilder
+    private let subscribeButtonSubtitleView: ButtonSubtitleBuilder
+    private let subtitleView: SubtitleBuilder
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     private let horizontalPaddingModifier: HorizontalPadding
     private let showBackButton: Bool
     @State
     private var showAllPackages: Bool
-    
-    private var showTierSelector: Bool {
-        guard let (_, allTiers, _) = configuration.packages.multiTier else {
-            return false
-        }
-        return allTiers.count > 1
-    }
     
     private let currentColors: LinColorsProvider
 
@@ -129,15 +122,15 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
         horizontalPaddingModifier: HorizontalPadding,
         showBackButton: Bool = false,
         showAllPackages: Bool = true,
-        @ViewBuilder subtitle: @escaping SubtitleBuilder,
-        @ViewBuilder subscribeButtonSubtitle: @escaping ButtonSubtitleBuilder
+        @ViewBuilder subtitleView: @escaping SubtitleBuilder,
+        @ViewBuilder subscribeButtonSubtitleView: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = selectedPackage
         self._selectedTier = selectedTier
         self.configuration = configuration
         self.displayImage = displayImage
-        self.subtitle = subtitle
-        self.subscribeButtonSubtitle = subscribeButtonSubtitle
+        self.subtitleView = subtitleView
+        self.subscribeButtonSubtitleView = subscribeButtonSubtitleView
         self.titleTypeProvider = titleTypeProvider
         self.horizontalPaddingModifier = horizontalPaddingModifier
         self.showBackButton = showBackButton
@@ -145,7 +138,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
         self.currentColors = LinColorsProvider(
             configuration: configuration,
-            tier: selectedTier
+            tier: selectedTier.wrappedValue
         )
     }
 
@@ -166,7 +159,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
                 .frame(maxWidth: Constants.defaultContentWidth)
                 .modifier(horizontalPaddingModifier)
             
-            subscribeButtonSubtitle(
+            subscribeButtonSubtitleView(
                 selectedPackage.content,
                 introEligibility[self.selectedPackage.content],
                 locale
@@ -208,7 +201,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
                 LinTitleView(
                     configuration: configuration,
                     showBackButton: showBackButton,
-                    selectedPackage: $selectedPackage,
+                    selectedPackage: selectedPackage,
                     titleTypeProvider: titleTypeProvider
                 )
                 
@@ -219,7 +212,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
                     showAllPackages: showAllPackages,
                     selectedPackage: $selectedPackage,
                     selectedTier: $selectedTier,
-                    subtitle: subtitle
+                    subtitleView: subtitleView
                 )
                 
                 showAllPackagesButton

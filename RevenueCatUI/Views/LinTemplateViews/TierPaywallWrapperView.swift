@@ -11,38 +11,29 @@ import RevenueCat
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View, SubtitleView: View>: View {
     
-    let configuration: TemplateViewConfiguration
-    let currentColors: LinColorsProvider
-    
-    @Binding
-    var selectedPackage: TemplateViewConfiguration.Package
-    
-    let subtitle: () -> SubtitleView
-    @ViewBuilder
-    let features: (_ package: TemplateViewConfiguration.Package) -> FeaturesView
-    @ViewBuilder
-    let packages: (_ packages: [TemplateViewConfiguration.Package]) -> PackagesView
+    private let configuration: TemplateViewConfiguration
+    private let currentColors: LinColorsProvider
+    private let subtitleView: () -> SubtitleView
+    private let featuresView: (_ package: TemplateViewConfiguration.Package) -> FeaturesView
+    private let packagesView: (_ packages: [TemplateViewConfiguration.Package]) -> PackagesView
+    private let tiers: [PaywallData.Tier: TemplateViewConfiguration.PackageConfiguration.MultiPackage]
+    private let tierNames: [PaywallData.Tier: String]
     
     @Binding
     private var selectedTier: PaywallData.Tier
-    private var displayableTiers: [PaywallData.Tier] {
-        // Filter out to display tiers only
-        // Tiers may not exist in self.tiers if there are no products available
-        return self.configuration.configuration.tiers.filter({ tier in
-            return self.tiers[tier] != nil
-        })
-    }
-    private let tiers: [PaywallData.Tier: TemplateViewConfiguration.PackageConfiguration.MultiPackage]
-    private let tierNames: [PaywallData.Tier: String]
+    @Binding
+    private var selectedPackage: TemplateViewConfiguration.Package
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
     
     init(
         selectedTier: Binding<PaywallData.Tier?>,
         selectedPackage: Binding<TemplateViewConfiguration.Package>,
         configuration: TemplateViewConfiguration,
         currentColors: LinColorsProvider,
-        subtitle: @escaping () -> SubtitleView,
-        features: @escaping (_ package: TemplateViewConfiguration.Package) -> FeaturesView,
-        packages: @escaping (_ packages: [TemplateViewConfiguration.Package]) -> PackagesView
+        subtitleView: @escaping () -> SubtitleView,
+        featuresView: @escaping (_ package: TemplateViewConfiguration.Package) -> FeaturesView,
+        packagesView: @escaping (_ packages: [TemplateViewConfiguration.Package]) -> PackagesView
     ) {
         guard let (_, allTiers, tierNames) = configuration.packages.multiTier else {
             fatalError("Attempted to display a multi-tier template with invalid data: \(configuration.packages)")
@@ -57,30 +48,46 @@ struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View, SubtitleVi
         self._selectedPackage = selectedPackage
         self.configuration = configuration
         self.currentColors = currentColors
-        self.subtitle = subtitle
-        self.features = features
-        self.packages = packages
+        self.subtitleView = subtitleView
+        self.featuresView = featuresView
+        self.packagesView = packagesView
     }
     
     var body: some View {
         VStack(spacing: 20) {
-            TierSelectorViewWrapper(
-                tiers: tiers,
+            TierSelectorView(
+                tiers: Array(tiers.keys),
                 tierNames: tierNames,
-                configuration: configuration,
-                currentColors: currentColors,
-                selectedPackage: $selectedPackage,
-                selectedTier: $selectedTier
-            )
-            subtitle()
-            TierFeatureAndPackageView(
-                tiers: tiers,
-                allPackages: configuration.packages.all,
-                selectedPackage: $selectedPackage,
                 selectedTier: $selectedTier,
-                features: features,
-                packages: packages
+                fonts: configuration.fonts,
+                backgroundColor: currentColors.tierControlBackground,
+                textColor: currentColors.tierControlForeground,
+                selectedBackgroundColor: currentColors.tierControlSelectedBackground,
+                selectedTextColor: currentColors.tierControlSelectedForeground
             )
+            .onChangeOf(selectedTier) { tier in
+                withAnimation(Constants.tierChangeAnimation) {
+                    selectedPackage = tiers[tier]!.default
+                }
+            }
+            subtitleView()
+            ConsistentTierContentView(
+                tiers: tiers,
+                selected: selectedTier
+            ) { _, packagesConfiguration in
+                VStack {
+                    featuresView(selectedPackage)
+                    if horizontalSizeClass == .compact {
+                        Spacer()
+                    }
+                    ConsistentTierContentView(
+                        tiers: tiers,
+                        selected: selectedTier
+                    ) { _, packages in
+                        packagesView(packages.all)
+                    }
+                }
+            }
         }
     }
 }

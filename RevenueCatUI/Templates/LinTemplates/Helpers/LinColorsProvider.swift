@@ -9,11 +9,7 @@ import SwiftUI
 import RevenueCat
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-final class LinColorsProvider {
-    
-    let configuration: TemplateViewConfiguration
-    @Binding
-    var tier: PaywallData.Tier?
+struct LinColorsProvider {
     
     var text1Color: Color { currentColors.text1Color }
     var featureIcon: Color { currentColors.featureIcon }
@@ -28,17 +24,14 @@ final class LinColorsProvider {
     var tierControlSelectedBackground: Color { currentColors.tierControlSelectedBackground }
     var tierControlSelectedForeground: Color { currentColors.tierControlSelectedForeground }
     
-    private var currentColors: PaywallData.Configuration.Colors {
-        if let tier {
-            configuration.colors(for: tier)
-        } else {
-            configuration.colors
-        }
-    }
+    private var currentColors: PaywallData.Configuration.Colors
     
-    init(configuration: TemplateViewConfiguration, tier: Binding<PaywallData.Tier?>) {
-        self.configuration = configuration
-        self._tier = tier
+    init(configuration: TemplateViewConfiguration, tier: PaywallData.Tier?) {
+        if let tier {
+            currentColors = configuration.colors(for: tier)
+        } else {
+            currentColors = configuration.colors
+        }
     }
 }
 
@@ -57,5 +50,4 @@ private extension PaywallData.Configuration.Colors {
     var tierControlForeground: Color { self.tierControlForegroundColor ?? self.text1Color }
     var tierControlSelectedBackground: Color { self.tierControlSelectedBackgroundColor ?? self.unselectedDiscountText }
     var tierControlSelectedForeground: Color { self.tierControlSelectedForegroundColor ?? self.text1Color }
-    
 }
