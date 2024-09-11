@@ -10,7 +10,7 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
+struct LinTemplateStep2View: TemplateViewType, IntroEligibilityProvider {
     let configuration: TemplateViewConfiguration
     let showBackButton: Bool
     @Environment(\.userInterfaceIdiom)
@@ -23,6 +23,8 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
     var introEligibilityViewModel: IntroEligibilityViewModel
     @State
     var selectedPackage: TemplateViewConfiguration.Package
+    @State
+    var selectedTier: PaywallData.Tier?
     var showAllPackages: Bool
     
     init(_ configuration: TemplateViewConfiguration) {
@@ -35,6 +37,11 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
         showAllPackages: Bool
     ) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
+        if let (firstTier, _, _) = configuration.packages.multiTier {
+            self.selectedTier = firstTier
+        } else {
+            self.selectedTier = nil
+        }
         self.configuration = configuration
         self.showBackButton = showBackButton
         self.showAllPackages = showAllPackages
@@ -50,32 +57,39 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
     
     @ViewBuilder
     private func paywallContent(displayTimeline: Bool) -> some View {
-        LinConfigurableTemplate5View(
-            configuration, 
+        LinConfigurableTemplateView(
+            configuration,
             selectedPackage: $selectedPackage,
+            selectedTier: $selectedTier,
             displayImage: false,
             titleTypeProvider: { [introEligibilityViewModel] package in
                 let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
                 return .dynamic(
                     isEligibleToIntro: isEligibleToIntro,
-                    bundle: LinTemplatesResources.linTemplate5Step2Bundle
+                    bundle: LinTemplatesResources.linTemplate5Step2Bundle,
+                    ineligibleFallback: selectedPackage.localization.title
                 )
             },
             horizontalPaddingModifier: NoPaddingModifier(),
             showBackButton: showBackButton,
-            showAllPackages: showAllPackages
-        ) {
-            if displayTimeline {
-                TimelineView(stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .horizontal)
+            showAllPackages: showAllPackages,
+            subtitleView: {
+                if displayTimeline {
+                    TimelineView(
+                        stepConfigurations: TimelineView.defaultIPhone(introductoryOfferDaysDuration: selectedPackage.content.introductoryOfferDaysDuration),
+                        axis: .horizontal
+                    )
+                }
+            },
+            subscribeButtonSubtitleView: { selectedPackage, eligibility, locale in
+                let msgProvider = CTAFooterMessageProvider(locale: locale)
+                IntroEligibilityStateView(
+                    textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
+                    textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
+                    introEligibility: eligibility
+                )
             }
-        } buttonSubtitleBuilder: { selectedPackage, eligibility, locale in
-            let msgProvider = CTAFooterMessageProvider(locale: locale)
-            IntroEligibilityStateView(
-                textWithNoIntroOffer: msgProvider.makeTextWithNoIntroOffer(selectedPackage),
-                textWithIntroOffer: msgProvider.makeTextWithIntroOffer(selectedPackage),
-                introEligibility: eligibility
-            )
-        }.font(.system(size: 13))
+        ).font(.system(size: 13))
     }
     
     @ViewBuilder
@@ -84,7 +98,10 @@ struct LinTemplate5Step2View: TemplateViewType, IntroEligibilityProvider {
             VStack(alignment: .leading) {
                 Spacer()
                 if isEligibleToIntro {
-                    TimelineView(stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: configuration.packages.introductoryOfferDaysDuration), axis: .vertical)
+                    TimelineView(
+                        stepConfigurations: TimelineView.defaultIPad(introductoryOfferDaysDuration: selectedPackage.content.introductoryOfferDaysDuration),
+                        axis: .vertical
+                    )
                     Spacer().frame(height: 60)
                 }
                 TestimonialsView()
@@ -119,19 +136,23 @@ private func localize(_ key: String, value: String) -> String {
 @available(watchOS, unavailable)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-struct LinTemplate5Step2View_Previews: PreviewProvider {
-
+struct LinTemplateStep2View_Previews: PreviewProvider {
+    
+    static let previewsData: [(id: Int, data: Offering, mode: PaywallViewMode)] = [
+        (id: 1, data: TestData.offeringWithLinTemplate5Paywall, mode: .fullScreen),
+        (id: 2, data: TestData.offeringWithLinTemplate7Paywall, mode: .fullScreen)
+    ]
+    
     static var previews: some View {
-        ForEach(PaywallViewMode.allCases, id: \.self) { mode in
+        ForEach(previewsData, id:\.id) { (_, data, mode) in
             PreviewableTemplate(
-                offering: TestData.offeringWithLinTemplate5Paywall,
+                offering: data,
                 mode: mode
             ) {
-                LinTemplate5Step2View($0, showBackButton: false, showAllPackages: false)
+                LinTemplateStep2View($0, showBackButton: false, showAllPackages: false)
             }
         }
     }
-
 }
 
 #endif

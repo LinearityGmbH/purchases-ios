@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  TitleView.swift
 //  
 //
 //  Created by Guillaume LAURES on 28/06/2024.
@@ -14,16 +14,16 @@ import SwiftUI
 struct TitleView: View {
     
     enum TitleType {
-        case dynamic(isEligibleToIntro: Bool, bundle: Bundle)
+        case dynamic(isEligibleToIntro: Bool, bundle: Bundle, ineligibleFallback: String)
         case fixed(String)
         
         var value: String {
             switch self {
-            case .dynamic(let isEligibleToIntro, let bundle):
+            case let .dynamic(isEligibleToIntro, bundle, ineligibleFallback):
                 if isEligibleToIntro {
                     localize("Title.EligibleOffering", value: "Try Linearity Pro for free", bundle: bundle)
                 } else {
-                    localize("Title.NonEligibleOffering", value: "Upgrade to Linearity Pro", bundle: bundle)
+                    ineligibleFallback
                 }
             case .fixed(let string):
                 string

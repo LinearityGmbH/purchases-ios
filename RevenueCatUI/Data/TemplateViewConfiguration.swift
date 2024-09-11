@@ -80,7 +80,7 @@ extension TemplateViewConfiguration {
             case .multiple(let mutliPackage):
                 return mutliPackage.introductoryOfferDaysDuration
             case let .multiTier(_, allMap, _):
-                return allMap.values.first(where: { $0.introductoryOfferDaysDuration != nil })?.introductoryOfferDaysDuration
+                return allMap.values.compactMap(\.introductoryOfferDaysDuration).sorted().last
             }
         }
     }
@@ -92,7 +92,7 @@ extension TemplateViewConfiguration {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension TemplateViewConfiguration.PackageConfiguration.MultiPackage {
     var introductoryOfferDaysDuration: Int? {
-        all.first(where: { $0.content.introductoryOfferDaysDuration != nil })?.content.introductoryOfferDaysDuration
+        all.compactMap(\.content.introductoryOfferDaysDuration).sorted().last
     }
 }
 
@@ -148,6 +148,12 @@ extension TemplateViewConfiguration.PackageConfiguration {
         }
     }
 
+    var defaultTier: PaywallData.Tier? {
+        switch self {
+        case .single, .multiple: nil
+        case let .multiTier(firstTier, _, _): firstTier
+        }
+    }
 }
 
 // MARK: - Creation

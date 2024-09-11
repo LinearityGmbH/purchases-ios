@@ -84,7 +84,6 @@ struct TierSelectorView: View {
                 self.background
                     .hidden(if: self.isSingleTier)
             }
-            .defaultHorizontalPadding()
             .fixedSize(horizontal: self.isSingleTier, vertical: true)
             .allowsHitTesting(!self.isSingleTier)
     }

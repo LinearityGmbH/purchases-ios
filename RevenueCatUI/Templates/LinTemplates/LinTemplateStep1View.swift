@@ -10,10 +10,11 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
+struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
     
+    private let accentColor: Color
     private let buttonView: () -> ButtonView
     
     @EnvironmentObject
@@ -34,10 +35,12 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
     ]
     
     init(
-        _ configuration: TemplateViewConfiguration,
+        configuration: TemplateViewConfiguration,
+        accentColor: Color,
         buttonView: @escaping () -> ButtonView
     ) {
         self.configuration = configuration
+        self.accentColor = accentColor
         self.buttonView = buttonView
     }
     
@@ -65,7 +68,11 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
     @ViewBuilder
     private var contentView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TitleView(type: .dynamic(isEligibleToIntro: isEligibleToIntro, bundle: LinTemplatesResources.linTemplate5Step1Bundle))
+            TitleView(type: .dynamic(
+                isEligibleToIntro: isEligibleToIntro,
+                bundle: LinTemplatesResources.linTemplate5Step1Bundle,
+                ineligibleFallback: selectedPackage.localization.title
+            ))
             subtitle
                 .padding([.bottom], 10)
             featureList
@@ -100,7 +107,7 @@ struct LinTemplate5Step1View<ButtonView: View>: View, IntroEligibilityProvider {
     private func featureListItemView(title: String, subtitle: String) -> some View {
         HStack(alignment: .top) {
             Image(.icCheckmark)
-                .foregroundColor(configuration.colors.accent1Color)
+                .foregroundColor(accentColor)
                 .font(.system(size: 20))
             
             VStack(alignment: .leading, spacing: 5) {
@@ -163,9 +170,13 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
                 offering: TestData.offeringWithLinTemplate5Paywall,
                 mode: mode
             ) { configuration in
-                LinTemplate5Step1View(configuration) {
+                LinTemplateStep1View(
+                    configuration: configuration,
+                    accentColor: configuration.colors.accent1Color
+                ) {
                     LinNavigationLink(
                         configuration: configuration,
+                        accentColor: configuration.colors.accent1Color,
                         label: Text("Continue"),
                         destination: EmptyView()
                     )
@@ -177,7 +188,7 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-extension LinTemplate5Step1View: TemplateViewType {
+extension LinTemplateStep1View: TemplateViewType {
     var userInterfaceIdiom: UserInterfaceIdiom {
         .unknown
     }

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  LinNavigationLink.swift
 //  
 //
 //  Created by Guillaume LAURES on 11/07/2024.
@@ -12,6 +12,7 @@ import SwiftUI
 struct LinNavigationLink<Label: View, Destination: View>: View {
     
     let configuration: TemplateViewConfiguration
+    let accentColor: Color
     var label: Label
     var destination: Destination
     
@@ -35,7 +36,7 @@ struct LinNavigationLink<Label: View, Destination: View>: View {
     @ViewBuilder
     private var backgroundView: some View {
         RoundedRectangle(cornerSize: CGSize(width: 10, height: 10), style: .continuous)
-            .foregroundStyle(configuration.colors.callToActionBackgroundColor)
+            .foregroundStyle(accentColor)
             .frame(height: 45)
     }
 }
