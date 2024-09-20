@@ -150,10 +150,13 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
     @ViewBuilder
     var content: some View {
         VStack(spacing: 8) {
-            scrollableContent
-                .padding(.bottom, 8)
-                .frame(maxWidth: .infinity)
-                .scrollableIfNecessaryWhenAvailable(enabled: self.configuration.mode.isFullScreen)
+            ScrollView {
+                scrollableContent
+                    .padding(.bottom, 8)
+                    .frame(maxWidth: .infinity)
+            }
+            .modifier(HideScrollIndicatorModifier())
+            
 
             subscribeButton
                 .frame(maxWidth: Constants.defaultContentWidth)
@@ -273,6 +276,18 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
         switch self.userInterfaceIdiom {
         case .pad: return 3
         default: return 2
+        }
+    }
+}
+
+struct HideScrollIndicatorModifier: ViewModifier {
+    
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+            content.scrollIndicators(.hidden)
+        } else {
+            content
         }
     }
 }
