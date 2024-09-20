@@ -149,7 +149,7 @@ struct LinTemplateStep2View_Previews: PreviewProvider {
                 offering: data,
                 mode: mode
             ) {
-                LinTemplateStep2View($0, showBackButton: false, showAllPackages: false)
+                LinTemplateStep2View($0, showBackButton: false, showAllPackages: true)
             }
         }
     }
