@@ -56,7 +56,7 @@ struct TierPaywallWrapperView<FeaturesView: View, PackagesView: View, SubtitleVi
     var body: some View {
         VStack(spacing: 20) {
             TierSelectorView(
-                tiers: Array(tiers.keys),
+                tiers: configuration.configuration.tiers,
                 tierNames: tierNames,
                 selectedTier: $selectedTier,
                 fonts: configuration.fonts,

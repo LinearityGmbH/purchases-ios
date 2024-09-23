@@ -150,10 +150,12 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
     @ViewBuilder
     var content: some View {
         VStack(spacing: 8) {
-            scrollableContent
-                .padding(.bottom, 8)
-                .frame(maxWidth: .infinity)
-                .scrollableIfNecessaryWhenAvailable(enabled: self.configuration.mode.isFullScreen)
+            ScrollView(showsIndicators: false) {
+                scrollableContent
+                    .padding([.leading, .trailing], 2)
+                    .padding(.bottom, 8)
+                    .frame(maxWidth: .infinity)
+            }
 
             subscribeButton
                 .frame(maxWidth: Constants.defaultContentWidth)

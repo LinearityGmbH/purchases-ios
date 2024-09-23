@@ -150,6 +150,17 @@ enum TestData {
         subscriptionPeriod: nil,
         locale: Self.locale
     )
+    static let fiveYearsProduct = TestStoreProduct(
+        localizedTitle: "5 Years",
+        price: 349.49,
+        localizedPriceString: "$349.49",
+        productIdentifier: "com.revenuecat.product_five_years",
+        productType: .nonRenewableSubscription,
+        localizedDescription: "5 years purchase",
+        subscriptionGroupIdentifier: "group",
+        subscriptionPeriod: nil,
+        locale: Self.locale
+    )
     // @PublicForExternalTesting
     static let weeklyPackage = Package(
         identifier: PackageType.weekly.identifier,
@@ -211,6 +222,13 @@ enum TestData {
         identifier: PackageType.lifetime.identifier,
         packageType: .lifetime,
         storeProduct: Self.lifetimeProduct.toStoreProduct(),
+        offeringIdentifier: Self.offeringIdentifier
+    )
+    // @PublicForExternalTesting
+    static let fiveYearsPackage = Package(
+        identifier: packageType5YearsIdentifier,
+        packageType: .custom,
+        storeProduct: Self.fiveYearsProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
 
@@ -528,6 +546,8 @@ enum TestData {
                             TestData.annualPackage]
     )
     
+    static let packageType5YearsIdentifier = "Five years"
+    
     static let offeringWithLinTemplate5Paywall = Offering(
         identifier: Self.offeringIdentifier,
         serverDescription: "Offering",
@@ -536,7 +556,8 @@ enum TestData {
             templateName: PaywallTemplate.template5.rawValue,
             config: .init(
                 packages: [PackageType.annual.identifier,
-                           PackageType.monthly.identifier],
+                           PackageType.monthly.identifier,
+                           packageType5YearsIdentifier],
                 defaultPackage: PackageType.annual.identifier,
                 images: .init(
                     header: "954459_1692992845.png"
@@ -583,8 +604,8 @@ enum TestData {
             assetBaseURL: Self.paywallAssetBaseURL
         ),
         availablePackages: [TestData.monthlyPackage,
-                            TestData.sixMonthPackage,
-                            TestData.annualPackage]
+                            TestData.annualPackage,
+                            TestData.fiveYearsPackage]
     )
 
     static let offeringWithTemplate7Paywall = Offering(

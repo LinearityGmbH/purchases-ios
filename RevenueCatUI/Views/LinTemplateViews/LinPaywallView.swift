@@ -214,7 +214,7 @@ struct LinPaywallView<SubtitleView: View>: View {
             ) {
                 Text(package.localization.offerName ?? package.content.productName)
                     .font(.system(size: 17, weight: .semibold))
-                self.offerDetails(package: package, selected: selected)
+                offerDetails(package: package, selected: selected)
             }
         }
     }

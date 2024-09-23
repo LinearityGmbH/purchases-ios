@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RevenueCat
 
 @available(iOS 15.0, *)
 struct CTAFooterMessageProvider {
@@ -33,7 +34,17 @@ struct CTAFooterMessageProvider {
         value: "%@ recurring, cancel anytime",
         comment: ""
     )
-    func makeTextWithNoIntroOffer(_ variableDataProvider: VariableDataProvider) -> String {
-        String(format: noIntroOfferText, variableDataProvider.localizedPricePerPeriodFull(locale, showZeroDecimalPlacePrices: true))
+    
+    private let nonRenewableText = NSLocalizedString(
+        "Footer.NonRenewable.Description",
+        bundle: Self.bundle,
+        value: "%@, cancel anytime",
+        comment: ""
+    )
+    func makeTextWithNoIntroOffer(_ package: Package) -> String {
+        if package.packageType == .custom {
+            return String(format: nonRenewableText, package.localizedPricePerPeriodFull(locale, showZeroDecimalPlacePrices: true))
+        }
+        return String(format: noIntroOfferText, package.localizedPricePerPeriodFull(locale, showZeroDecimalPlacePrices: true))
     }
 }
