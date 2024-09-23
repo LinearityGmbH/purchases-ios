@@ -152,6 +152,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
         VStack(spacing: 8) {
             ScrollView {
                 scrollableContent
+                    .padding([.leading, .trailing], 2)
                     .padding(.bottom, 8)
                     .frame(maxWidth: .infinity)
             }
