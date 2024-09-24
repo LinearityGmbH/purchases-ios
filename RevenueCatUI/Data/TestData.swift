@@ -231,6 +231,8 @@ enum TestData {
         storeProduct: Self.fiveYearsProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
+    // @PublicForExternalTesting
+    static let packageType5YearsIdentifier = "Five years"
 
     #if DEBUG
     static let productWithIntroOffer = TestStoreProduct(
@@ -545,8 +547,6 @@ enum TestData {
                             TestData.sixMonthPackage,
                             TestData.annualPackage]
     )
-    
-    static let packageType5YearsIdentifier = "Five years"
     
     static let offeringWithLinTemplate5Paywall = Offering(
         identifier: Self.offeringIdentifier,
