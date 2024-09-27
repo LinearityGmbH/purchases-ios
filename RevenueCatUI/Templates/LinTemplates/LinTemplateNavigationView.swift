@@ -74,7 +74,7 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     @ViewBuilder
     var buttonTitle: some View {
         PurchaseButtonLabel(
-            package: configuration.packages.single,
+            packages: configuration.packages,
             colors: configuration.colors,
             introEligibility: introEligibility
         )

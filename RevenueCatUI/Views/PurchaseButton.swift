@@ -22,7 +22,6 @@ struct PurchaseButton: View {
     let colors: PaywallData.Configuration.Colors
     let fonts: PaywallFontProvider
     let mode: PaywallViewMode
-    let actionOverride: (() -> ())?
 
     @EnvironmentObject
     private var introEligibilityViewModel: IntroEligibilityViewModel
@@ -34,16 +33,14 @@ struct PurchaseButton: View {
     init(
         packages: TemplateViewConfiguration.PackageConfiguration,
         selectedPackage: TemplateViewConfiguration.Package,
-        configuration: TemplateViewConfiguration,
-        actionOverride: (() -> ())? = nil
+        configuration: TemplateViewConfiguration
     ) {
         self.init(
             packages: packages,
             selectedPackage: selectedPackage,
             colors: configuration.colors,
             fonts: configuration.fonts,
-            mode: configuration.mode,
-            actionOverride: actionOverride
+            mode: configuration.mode
         )
     }
 
@@ -67,15 +64,13 @@ struct PurchaseButton: View {
         selectedPackage: TemplateViewConfiguration.Package,
         colors: PaywallData.Configuration.Colors,
         fonts: PaywallFontProvider,
-        mode: PaywallViewMode,
-        actionOverride: (() -> ())? = nil
+        mode: PaywallViewMode
     ) {
         self.packages = packages
         self.selectedPackage = selectedPackage
         self.colors = colors
         self.fonts = fonts
         self.mode = mode
-        self.actionOverride = actionOverride
     }
 
     var body: some View {
@@ -84,17 +79,13 @@ struct PurchaseButton: View {
 
     private var button: some View {
         AsyncButton {
-            if let actionOverride {
-                actionOverride()
-            } else {
-                guard !self.purchaseHandler.actionInProgress else { return }
-                guard !self.selectedPackage.currentlySubscribed else {
-                    Logger.warning(Strings.product_already_subscribed)
-                    return
-                }
-                
-                _ = try await self.purchaseHandler.purchase(package: self.selectedPackage.content)
+            guard !self.purchaseHandler.actionInProgress else { return }
+            guard !self.selectedPackage.currentlySubscribed else {
+                Logger.warning(Strings.product_already_subscribed)
+                return
             }
+            
+            _ = try await self.purchaseHandler.purchase(package: self.selectedPackage.content)
         } label: {
             ConsistentPackageContentView(
                 packages: self.packages.all,
@@ -177,16 +168,53 @@ private extension PurchaseButton {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct PurchaseButtonLabel: View {
 
-    let package: TemplateViewConfiguration.Package
-    let colors: PaywallData.Configuration.Colors
+    let textWithNoIntroOffer: String?
+    let textWithIntroOffer: String?
+    let color: Color
     let introEligibility: IntroEligibilityStatus?
+    
+    init(packages: TemplateViewConfiguration.PackageConfiguration, colors: PaywallData.Configuration.Colors, introEligibility: IntroEligibilityStatus?) {
+        self.init(
+            introductoryOfferDaysDuration: packages.introductoryOfferDaysDuration,
+            colors: colors,
+            introEligibility: introEligibility
+        )
+    }
+    
+    init(package: TemplateViewConfiguration.Package, colors: PaywallData.Configuration.Colors, introEligibility: IntroEligibilityStatus?) {
+        self.init(
+            introductoryOfferDaysDuration: package.content.introductoryOfferDaysDuration,
+            colors: colors,
+            introEligibility: introEligibility
+        )
+    }
+    
+    private init(introductoryOfferDaysDuration: Int?, colors: PaywallData.Configuration.Colors, introEligibility: IntroEligibilityStatus?) {
+        self.textWithIntroOffer = String(
+            format: NSLocalizedString(
+                "CTA.TitleWithOffer",
+                bundle: LinTemplatesResources.linTemplate5Bundle,
+                value: "Start %d-days free trial",
+                comment: ""
+            ),
+            introductoryOfferDaysDuration ?? 7
+        )
+        self.textWithNoIntroOffer = NSLocalizedString(
+            "CTA.TitleWithNoOffer",
+            bundle: LinTemplatesResources.linTemplate5Bundle,
+            value: "Unlock Linearity Pro",
+            comment: ""
+        )
+        self.color = colors.callToActionForegroundColor
+        self.introEligibility = introEligibility
+    }
 
     var body: some View {
         IntroEligibilityStateView(
-            display: .callToAction,
-            localization: self.package.localization,
-            introEligibility: self.introEligibility,
-            foregroundColor: self.colors.callToActionForegroundColor
+            textWithNoIntroOffer: textWithNoIntroOffer,
+            textWithIntroOffer: textWithIntroOffer,
+            introEligibility: introEligibility,
+            foregroundColor: color
         )
     }
 
