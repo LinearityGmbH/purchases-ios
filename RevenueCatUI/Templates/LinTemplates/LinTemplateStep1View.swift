@@ -74,7 +74,6 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
                 ineligibleFallback: selectedPackage.localization.title
             ))
             subtitle
-                .padding([.bottom], 10)
             featureList
         }
     }
@@ -97,11 +96,11 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     @ViewBuilder
     private var featureList: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Spacer()
+            Spacer(minLength: 10)
             ForEach(features, id: \.title) { titleSubtitle in
                 featureListItemView(title: titleSubtitle.title, subtitle: titleSubtitle.subtitle)
             }
-            Spacer()
+            Spacer(minLength: 10)
         }
     }
     
