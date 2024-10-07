@@ -416,6 +416,10 @@ extension Attribution {
     func unsyncedAttributesByKey(appUserID: String) -> SubscriberAttribute.Dictionary {
         self.subscriberAttributesManager.unsyncedAttributesByKey(appUserID: appUserID)
     }
+    
+    public var isThereUnsyncedAttributes: Bool {
+        !subscriberAttributesManager.unsyncedAttributesByKeyForAllUsers().isEmpty
+    }
 
     var unsyncedAdServicesToken: String? {
         get async {
