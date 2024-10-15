@@ -15,21 +15,24 @@ struct LinTemplateStep1Configuration: Decodable {
         case imageName = "image_name"
     }
     
-    let titleKey: String
+    let titleKey: String?
     let imageName: String
 }
 
 extension LinTemplateStep1Configuration {
     static let `default` = LinTemplateStep1Configuration(
-        titleKey: "Step1.AuxiliaryDetailsView.Artboards",
-        imageName: "paywall-first-step-artboards"
+        titleKey: nil,
+        imageName: "paywall-first-step-general"
     )
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 private extension LinTemplateStep1Configuration {
-    var title: String {
-        localize(titleKey, value: "Auxiliary Title")
+    var title: String? {
+        if let titleKey {
+            return localize(titleKey, value: "Auxiliary Title")
+        }
+        return nil
     }
     
     var image: ImageResource {
@@ -157,12 +160,14 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     @ViewBuilder
     private var auxiliaryDetailsView: some View {
-        VStack() {
+        VStack {
             Spacer()
-            Text(LocalizedStringKey(auxiliaryConfiguration.title))
-                .font(.system(size: 20))
-                .foregroundStyle(.black)
-                .padding([.leading, .trailing, .bottom], 20)
+            if let title = auxiliaryConfiguration.title {
+                Text(LocalizedStringKey(title))
+                    .font(.system(size: 20))
+                    .foregroundStyle(.black)
+                    .padding([.leading, .trailing, .bottom], 20)
+            }
             Image(auxiliaryConfiguration.image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
