@@ -9,10 +9,42 @@ import Foundation
 import RevenueCat
 import SwiftUI
 
+struct LinTemplateStep1Configuration: Decodable {
+    enum CodingKeys: String, CodingKey {
+        case titleKey = "title_key"
+        case imageName = "image_name"
+    }
+    
+    let titleKey: String
+    let imageName: String
+}
+
+extension LinTemplateStep1Configuration {
+    static let `default` = LinTemplateStep1Configuration(
+        titleKey: "Step1.AuxiliaryDetailsView.Artboards",
+        imageName: "paywall-first-step-artboards"
+    )
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension LinTemplateStep1Configuration {
+    var title: String {
+        localize(titleKey, value: "Auxiliary Title")
+    }
+    
+    var image: ImageResource {
+        ImageResource(
+            name: imageName,
+            bundle: LinTemplatesResources.linTemplate5Step1Bundle
+        )
+    }
+}
+
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
+    let auxiliaryConfiguration: LinTemplateStep1Configuration
     
     private let accentColor: Color
     private let buttonView: () -> ButtonView
@@ -36,10 +68,12 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     init(
         configuration: TemplateViewConfiguration,
+        auxiliaryConfiguration: LinTemplateStep1Configuration,
         accentColor: Color,
         buttonView: @escaping () -> ButtonView
     ) {
         self.configuration = configuration
+        self.auxiliaryConfiguration = auxiliaryConfiguration
         self.accentColor = accentColor
         self.buttonView = buttonView
     }
@@ -123,20 +157,13 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     @ViewBuilder
     private var auxiliaryDetailsView: some View {
-        #if targetEnvironment(macCatalyst)
-        let imageName = "paywall-first-step-macOS"
-        #else
-        let imageName = "paywall-first-step-iOS"
-        #endif
-        let imageResource = ImageResource(name: imageName, bundle: LinTemplatesResources.linTemplate5Step1Bundle)
         VStack() {
             Spacer()
-            // wrap around LocalizedStringKey to have Markdown support
-            Text(LocalizedStringKey(localize("Step1.AuxiliaryDetailsView.Title", value: "Boost your productivity **with AI-powered tools**")))
+            Text(LocalizedStringKey(auxiliaryConfiguration.title))
                 .font(.system(size: 20))
                 .foregroundStyle(.black)
                 .padding([.leading, .trailing, .bottom], 20)
-            Image(imageResource)
+            Image(auxiliaryConfiguration.image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
             Spacer()
@@ -173,6 +200,10 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
             ) { configuration in
                 LinTemplateStep1View(
                     configuration: configuration,
+                    auxiliaryConfiguration: .init(
+                        titleKey: "Hi **Paywall**",
+                        imageName: "paywall-first-step-macOS"
+                    ),
                     accentColor: configuration.colors.accent1Color
                 ) {
                     LinNavigationLink(
