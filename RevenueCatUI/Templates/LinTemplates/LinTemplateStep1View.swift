@@ -13,16 +13,19 @@ struct LinTemplateStep1Configuration: Decodable {
     enum CodingKeys: String, CodingKey {
         case titleKey = "title_key"
         case imageName = "image_name"
+        case backgroundColourName = "background_colour_name"
     }
     
     let titleKey: String?
     let imageName: String
+    let backgroundColourName: String
 }
 
 extension LinTemplateStep1Configuration {
     static let `default` = LinTemplateStep1Configuration(
         titleKey: nil,
-        imageName: "paywall-first-step-general"
+        imageName: "paywall-first-step-general",
+        backgroundColourName: "paywall-first-step-general-colour"
     )
 }
 
@@ -40,6 +43,10 @@ private extension LinTemplateStep1Configuration {
             name: imageName,
             bundle: LinTemplatesResources.linTemplate5Step1Bundle
         )
+    }
+    
+    var backgroundColour: Color {
+        Color(backgroundColourName, bundle: LinTemplatesResources.linTemplate5Step1Bundle)
     }
 }
 
@@ -173,7 +180,7 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
                 .aspectRatio(contentMode: .fit)
             Spacer()
         }
-        .background(Color("paywall-first-step-imageBackgroundColor", bundle: LinTemplatesResources.linTemplate5Step1Bundle))
+        .background(auxiliaryConfiguration.backgroundColour)
     }
 }
 
@@ -207,7 +214,8 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
                     configuration: configuration,
                     auxiliaryConfiguration: .init(
                         titleKey: "Hi **Paywall**",
-                        imageName: "paywall-first-step-macOS"
+                        imageName: "paywall-first-step-macOS",
+                        backgroundColourName: "paywall-first-step-general-colour"
                     ),
                     accentColor: configuration.colors.accent1Color
                 ) {
