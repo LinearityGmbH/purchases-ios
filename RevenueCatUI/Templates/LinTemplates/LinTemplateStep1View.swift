@@ -12,19 +12,22 @@ import SwiftUI
 struct LinTemplateStep1Configuration: Decodable {
     enum CodingKeys: String, CodingKey {
         case titleKey = "title_key"
-        case imageName = "image_name"
+        case imageNameMacOS = "image_name_macos"
+        case imageNameIOS = "image_name_ios"
         case backgroundColourName = "background_colour_name"
     }
     
     let titleKey: String?
-    let imageName: String
+    let imageNameMacOS: String
+    let imageNameIOS: String
     let backgroundColourName: String
 }
 
 extension LinTemplateStep1Configuration {
     static let `default` = LinTemplateStep1Configuration(
         titleKey: nil,
-        imageName: "paywall-first-step-general",
+        imageNameMacOS: "paywall-first-step-general",
+        imageNameIOS: "paywall-first-step-general",
         backgroundColourName: "paywall-first-step-general-colour"
     )
 }
@@ -39,7 +42,12 @@ private extension LinTemplateStep1Configuration {
     }
     
     var image: ImageResource {
-        ImageResource(
+        #if targetEnvironment(macCatalyst)
+        let imageName = imageNameMacOS
+        #else
+        let imageName = imageNameIOS
+        #endif
+        return ImageResource(
             name: imageName,
             bundle: LinTemplatesResources.linTemplate5Step1Bundle
         )
@@ -214,7 +222,8 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
                     configuration: configuration,
                     auxiliaryConfiguration: .init(
                         titleKey: "Hi **Paywall**",
-                        imageName: "paywall-first-step-macOS",
+                        imageNameMacOS: "paywall-first-step-macOS",
+                        imageNameIOS: "paywall-first-step-iOS",
                         backgroundColourName: "paywall-first-step-general-colour"
                     ),
                     accentColor: configuration.colors.accent1Color
