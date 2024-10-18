@@ -9,10 +9,60 @@ import Foundation
 import RevenueCat
 import SwiftUI
 
+struct LinTemplateStep1Configuration: Decodable {
+    enum CodingKeys: String, CodingKey {
+        case titleKey = "title_key"
+        case imageNameMacOS = "image_name_macos"
+        case imageNameIOS = "image_name_ios"
+        case backgroundColourName = "background_colour_name"
+    }
+    
+    let titleKey: String?
+    let imageNameMacOS: String
+    let imageNameIOS: String
+    let backgroundColourName: String
+}
+
+extension LinTemplateStep1Configuration {
+    static let `default` = LinTemplateStep1Configuration(
+        titleKey: nil,
+        imageNameMacOS: "paywall-first-step-general",
+        imageNameIOS: "paywall-first-step-general",
+        backgroundColourName: "paywall-first-step-general-colour"
+    )
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension LinTemplateStep1Configuration {
+    var title: String? {
+        if let titleKey {
+            return localize(titleKey, value: "Auxiliary Title")
+        }
+        return nil
+    }
+    
+    var image: ImageResource {
+        #if targetEnvironment(macCatalyst)
+        let imageName = imageNameMacOS
+        #else
+        let imageName = imageNameIOS
+        #endif
+        return ImageResource(
+            name: imageName,
+            bundle: LinTemplatesResources.linTemplate5Step1Bundle
+        )
+    }
+    
+    var backgroundColour: Color {
+        Color(backgroundColourName, bundle: LinTemplatesResources.linTemplate5Step1Bundle)
+    }
+}
+
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
+    let auxiliaryConfiguration: LinTemplateStep1Configuration
     
     private let accentColor: Color
     private let buttonView: () -> ButtonView
@@ -36,10 +86,12 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     init(
         configuration: TemplateViewConfiguration,
+        auxiliaryConfiguration: LinTemplateStep1Configuration,
         accentColor: Color,
         buttonView: @escaping () -> ButtonView
     ) {
         self.configuration = configuration
+        self.auxiliaryConfiguration = auxiliaryConfiguration
         self.accentColor = accentColor
         self.buttonView = buttonView
     }
@@ -123,25 +175,20 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
     
     @ViewBuilder
     private var auxiliaryDetailsView: some View {
-        #if targetEnvironment(macCatalyst)
-        let imageName = "paywall-first-step-macOS"
-        #else
-        let imageName = "paywall-first-step-iOS"
-        #endif
-        let imageResource = ImageResource(name: imageName, bundle: LinTemplatesResources.linTemplate5Step1Bundle)
-        VStack() {
+        VStack {
             Spacer()
-            // wrap around LocalizedStringKey to have Markdown support
-            Text(LocalizedStringKey(localize("Step1.AuxiliaryDetailsView.Title", value: "Boost your productivity **with AI-powered tools**")))
-                .font(.system(size: 20))
-                .foregroundStyle(.black)
-                .padding([.leading, .trailing, .bottom], 20)
-            Image(imageResource)
+            if let title = auxiliaryConfiguration.title {
+                Text(LocalizedStringKey(title))
+                    .font(.system(size: 20))
+                    .foregroundStyle(.black)
+                    .padding([.leading, .trailing, .bottom], 20)
+            }
+            Image(auxiliaryConfiguration.image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
             Spacer()
         }
-        .background(Color("paywall-first-step-imageBackgroundColor", bundle: LinTemplatesResources.linTemplate5Step1Bundle))
+        .background(auxiliaryConfiguration.backgroundColour)
     }
 }
 
@@ -173,6 +220,12 @@ struct LinTemplate5Step1View_Previews: PreviewProvider {
             ) { configuration in
                 LinTemplateStep1View(
                     configuration: configuration,
+                    auxiliaryConfiguration: .init(
+                        titleKey: "Hi **Paywall**",
+                        imageNameMacOS: "paywall-first-step-macOS",
+                        imageNameIOS: "paywall-first-step-iOS",
+                        backgroundColourName: "paywall-first-step-general-colour"
+                    ),
                     accentColor: configuration.colors.accent1Color
                 ) {
                     LinNavigationLink(
