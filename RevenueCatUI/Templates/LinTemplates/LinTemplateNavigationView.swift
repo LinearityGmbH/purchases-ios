@@ -13,6 +13,7 @@ import RevenueCat
 struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     
     let configuration: TemplateViewConfiguration
+    let step1Configuration: LinTemplateStep1Configuration
     
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
@@ -31,16 +32,19 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
     
     init(_ configuration: TemplateViewConfiguration) {
         self.configuration = configuration
+        self.step1Configuration = .default
         self.showAllPackages = true
         _hideCloseButton = Binding.constant(true)
     }
     
     init(
         _ configuration: TemplateViewConfiguration,
+        step1Configuration: LinTemplateStep1Configuration,
         showAllPackages: Bool,
         hideCloseButton: Binding<Bool>
     ) {
         self.configuration = configuration
+        self.step1Configuration = step1Configuration
         self.showAllPackages = showAllPackages
         _hideCloseButton = hideCloseButton
     }
@@ -49,6 +53,7 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
         NavigationStack {
             LinTemplateStep1View(
                 configuration: configuration,
+                auxiliaryConfiguration: step1Configuration,
                 accentColor: accentColor
             ) {
                 LinNavigationLink(
@@ -105,6 +110,7 @@ struct LinTemplateNavigation_Previews: PreviewProvider {
             ) {
                 LinTemplateNavigationView(
                     $0,
+                    step1Configuration: .default,
                     showAllPackages: false,
                     hideCloseButton: Binding.constant(true)
                 )
