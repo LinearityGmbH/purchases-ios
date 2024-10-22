@@ -148,7 +148,7 @@ extension PaywallData {
             // In case the offering was not updated yet, keep reading the previous selection value.
             let oldSelectionFallback: LinPaywall = offering.getMetadataValue(for: "show_new_paywall", default: false) ? .canvaStyleOneStep : .defaultRC
             let paywallVersion = LinPaywall(rawValue: offering.getMetadataValue(for: "paywall_version", default: oldSelectionFallback.rawValue)) ?? oldSelectionFallback
-            let step1Configuration: LinTemplateStep1Configuration = offering.getMetadataValue(for: "step1_paywall", default: .default)
+            let step1Configuration: LinTemplateStep1Configuration = offering.getMetadataValue(for: "step1_paywall") ?? .default
             switch paywallVersion {
             case .defaultRC:
                 LinTemplateView(configuration)
