@@ -37,7 +37,8 @@ extension LinTemplateStep1Configuration {
 private extension LinTemplateStep1Configuration {
     var title: String? {
         if let titleKey {
-            return localize(titleKey, value: "Auxiliary Title")
+            // If the titleKey is not found, we show empty string.
+            return localize(titleKey, value: "")
         }
         return nil
     }
@@ -180,6 +181,7 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
             Spacer()
             if let title = auxiliaryConfiguration.title {
                 Text(LocalizedStringKey(title))
+                    .multilineTextAlignment(.center)
                     .font(.system(size: 20))
                     .foregroundStyle(.black)
                     .padding([.leading, .trailing, .bottom], 20)
