@@ -10,11 +10,12 @@ import RevenueCat
 import SwiftUI
 
 struct LinTemplateStep1Configuration: Decodable {
+    // It has to be snakecase due to the decoder.
     enum CodingKeys: String, CodingKey {
-        case titleKey = "title_key"
-        case imageNameMacOS = "image_name_macos"
-        case imageNameIOS = "image_name_ios"
-        case backgroundColourName = "background_colour_name"
+        case titleKey = "titleKey"
+        case imageNameMacOS = "imageNameMacos"
+        case imageNameIOS = "imageNameIos"
+        case backgroundColourName = "backgroundColourName"
     }
     
     let titleKey: String?
