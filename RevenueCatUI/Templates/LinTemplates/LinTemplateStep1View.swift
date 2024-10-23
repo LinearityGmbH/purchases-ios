@@ -27,8 +27,8 @@ struct LinTemplateStep1Configuration: Decodable {
 extension LinTemplateStep1Configuration {
     static let `default` = LinTemplateStep1Configuration(
         titleKey: "Step1.AuxiliaryDetailsView.Title",
-        imageNameMacOS: "paywall-first-step-general-ios",
-        imageNameIOS: "paywall-first-step-general-macos",
+        imageNameMacOS: "paywall-first-step-general-macos",
+        imageNameIOS: "paywall-first-step-general-ios",
         backgroundColourName: "paywall-first-step-general-colour"
     )
 }
