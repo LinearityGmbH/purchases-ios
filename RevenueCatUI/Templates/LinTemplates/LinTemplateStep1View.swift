@@ -26,9 +26,9 @@ struct LinTemplateStep1Configuration: Decodable {
 
 extension LinTemplateStep1Configuration {
     static let `default` = LinTemplateStep1Configuration(
-        titleKey: nil,
-        imageNameMacOS: "paywall-first-step-general",
-        imageNameIOS: "paywall-first-step-general",
+        titleKey: "Step1.AuxiliaryDetailsView.Title",
+        imageNameMacOS: "paywall-first-step-general-macos",
+        imageNameIOS: "paywall-first-step-general-ios",
         backgroundColourName: "paywall-first-step-general-colour"
     )
 }
@@ -37,8 +37,11 @@ extension LinTemplateStep1Configuration {
 private extension LinTemplateStep1Configuration {
     var title: String? {
         if let titleKey {
-            // If the titleKey is not found, we show empty string.
-            return localize(titleKey, value: "")
+            let localizedText = localize(titleKey, value: "")
+            if localizedText.isEmpty {
+                return nil
+            }
+            return localizedText
         }
         return nil
     }
