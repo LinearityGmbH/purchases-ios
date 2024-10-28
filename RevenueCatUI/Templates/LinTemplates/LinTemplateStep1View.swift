@@ -38,7 +38,7 @@ private extension LinTemplateStep1Configuration {
     var title: String? {
         if let titleKey {
             let localizedText = localize(titleKey, value: "")
-            if localizedText.isEmpty {
+            if localizedText.isEmpty || localizedText == titleKey {
                 return nil
             }
             return localizedText
