@@ -425,13 +425,13 @@ extension OfferingsManager.Error: CustomNSError {
 
 }
 
-func userInfo(for response: OfferingsResponse) -> [String: Any] {
-	var userInfo: [String: Any] = [
+func userInfo(for response: OfferingsResponse) -> [String: AnyHashable] {
+	var userInfo: [String: AnyHashable] = [
 		"response.currentOfferingId": response.currentOfferingId ?? "<nil>",
 	]
 
-	let offerings = response.offerings.map { offering in
-		var dictionary: [String: Any] = [
+    let offerings = response.offerings.map { offering in
+		var dictionary: [String: AnyHashable] = [
 			"identifier": offering.identifier,
 			"description": offering.description,
 		]
@@ -451,7 +451,7 @@ func userInfo(for response: OfferingsResponse) -> [String: Any] {
 func sendError(
 	_ error: Error,
 	title: String,
-	userInfo _userInfo: [String: Any],
+    userInfo _userInfo: [String: AnyHashable],
 	file: String = #file,
 	function: String = #function,
 	line: UInt = #line
@@ -464,7 +464,12 @@ func sendError(
 	let nsError = error as NSError
 	userInfo["nsError.code"] = nsError.code
 	userInfo["nsError.domain"] = nsError.domain
-	userInfo["nsError.userInfo"] = nsError.userInfo
+    userInfo["nsError.userInfo"] = nsError.userInfo.mapValues {
+        if let anyHashable = $0 as? AnyHashable {
+            return anyHashable
+        }
+        return "\($0)"
+    }
 	userInfo["nsError.localizedDescription"] = nsError.localizedDescription
 	userInfo["nsError.localizedFailureReason"] = nsError.localizedFailureReason
 	userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
