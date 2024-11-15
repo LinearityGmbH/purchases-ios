@@ -201,7 +201,7 @@ struct LinTemplateStep1View<ButtonView: View>: View, IntroEligibilityProvider {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
-func localize(_ key: String, value: String) -> String {
+private func localize(_ key: String, value: String) -> String {
     NSLocalizedString(
         key,
         bundle: LinTemplatesResources.linTemplate5Step1Bundle,
