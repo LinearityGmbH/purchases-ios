@@ -486,6 +486,7 @@ struct LoadedOfferingPaywallView: View {
         )
     }
     
+    @ViewBuilder
     private var closeButton: some View {
         Button(
             action: {
@@ -525,6 +526,8 @@ struct LoadedOfferingPaywallView: View {
                             )
                         )
                 }
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
             }
         )
         #if targetEnvironment(macCatalyst)
