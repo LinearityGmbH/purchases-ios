@@ -180,11 +180,13 @@ struct PurchaseButtonLabel: View {
     let package: TemplateViewConfiguration.Package
     let colors: PaywallData.Configuration.Colors
     let introEligibility: IntroEligibilityStatus?
+    var customTitle: String? = nil
 
     var body: some View {
         IntroEligibilityStateView(
             display: .callToAction,
             localization: self.package.localization,
+            customText: customTitle,
             introEligibility: self.introEligibility,
             foregroundColor: self.colors.callToActionForegroundColor
         )

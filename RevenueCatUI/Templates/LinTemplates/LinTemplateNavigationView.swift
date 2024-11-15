@@ -81,7 +81,8 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
         PurchaseButtonLabel(
             package: configuration.packages.single,
             colors: configuration.colors,
-            introEligibility: introEligibility
+            introEligibility: introEligibility,
+            customTitle: localize("Step1.Button.Title", value: "Unlock Linearity Pro")
         )
     }
     
