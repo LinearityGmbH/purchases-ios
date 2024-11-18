@@ -81,7 +81,8 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
         PurchaseButtonLabel(
             package: configuration.packages.single,
             colors: configuration.colors,
-            introEligibility: introEligibility
+            introEligibility: introEligibility,
+            customTitle: localize("Step1.Button.Title", value: "Unlock Linearity Pro")
         )
     }
     
@@ -92,6 +93,18 @@ struct LinTemplateNavigationView: TemplateViewType, IntroEligibilityProvider {
             configuration.colors.callToActionBackgroundColor
         }
     }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+private func localize(_ key: String, value: String) -> String {
+    NSLocalizedString(
+        key,
+        bundle: LinTemplatesResources.linTemplate5Step1Bundle,
+        value: value,
+        comment: ""
+    )
 }
 
 #if DEBUG

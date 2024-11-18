@@ -27,6 +27,7 @@ struct IntroEligibilityStateView: View {
 
     private var textWithNoIntroOffer: String?
     private var textWithIntroOffer: String?
+    private var customText: String?
     private var introEligibility: IntroEligibilityStatus?
     private var foregroundColor: Color?
     private var alignment: Alignment
@@ -34,6 +35,7 @@ struct IntroEligibilityStateView: View {
     init(
         display: Display,
         localization: ProcessedLocalizedConfiguration,
+        customText: String? = nil,
         introEligibility: IntroEligibilityStatus?,
         foregroundColor: Color? = nil,
         alignment: Alignment = .center
@@ -41,6 +43,7 @@ struct IntroEligibilityStateView: View {
         self.init(
             textWithNoIntroOffer: display.textWithNoIntroOffer(localization),
             textWithIntroOffer: display.textWithIntroOffer(localization),
+            customText: customText,
             introEligibility: introEligibility,
             foregroundColor: foregroundColor,
             alignment: alignment
@@ -50,12 +53,14 @@ struct IntroEligibilityStateView: View {
     init(
         textWithNoIntroOffer: String?,
         textWithIntroOffer: String?,
+        customText: String? = nil,
         introEligibility: IntroEligibilityStatus?,
         foregroundColor: Color? = nil,
         alignment: Alignment = .center
     ) {
         self.textWithNoIntroOffer = textWithNoIntroOffer
         self.textWithIntroOffer = textWithIntroOffer
+        self.customText = customText
         self.introEligibility = introEligibility
         self.foregroundColor = foregroundColor
         self.alignment = alignment
@@ -76,6 +81,7 @@ struct IntroEligibilityStateView: View {
         return Self.text(
             textWithNoIntroOffer: self.textWithNoIntroOffer,
             textWithIntroOffer: self.textWithIntroOffer,
+            customText: self.customText,
             introEligibility: self.introEligibility
         )
     }
@@ -93,6 +99,7 @@ extension IntroEligibilityStateView {
         return Self.text(
             textWithNoIntroOffer: display.textWithNoIntroOffer(localization),
             textWithIntroOffer: display.textWithIntroOffer(localization),
+            customText: nil,
             introEligibility: introEligibility
         )
     }
@@ -100,8 +107,12 @@ extension IntroEligibilityStateView {
     private static func text(
         textWithNoIntroOffer: String?,
         textWithIntroOffer: String?,
+        customText: String?,
         introEligibility: IntroEligibilityStatus?
     ) -> String {
+        if let customText {
+            return customText
+        }
         if let textWithIntroOffer, introEligibility.isEligibleForIntro {
             return textWithIntroOffer
         } else {
