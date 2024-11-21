@@ -48,6 +48,9 @@ public struct PaywallView: View {
 
     @State
     private var offering: Offering?
+    
+    @State
+    private var paywallDidLoad: Bool = false
 
     @State
     private var customerInfo: CustomerInfo?
@@ -181,7 +184,7 @@ public struct PaywallView: View {
         self.content
             .displayError(self.$error, dismissOnClose: true)
             .preference(key: PaywallDidLoadPreferenceKey.self,
-                        value: self.offering != nil && self.customerInfo != nil)
+                        value: paywallDidLoad)
             .preference(key: PaywallDidFailLoadingPreferenceKey.self,
                         value: self.error)
     }
@@ -194,11 +197,18 @@ public struct PaywallView: View {
                 DebugErrorView(error.localizedDescription, releaseBehavior: .fatalError)
             } else if self.introEligibility.isConfigured, self.purchaseHandler.isConfigured {
                 if let offering = self.offering, let customerInfo = self.customerInfo, !Purchases.shared.attribution.isThereUnsyncedAttributes {
-                    self.paywallView(for: offering,
-                                     activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
-                                     fonts: self.fonts,
-                                     checker: self.introEligibility,
-                                     purchaseHandler: self.purchaseHandler)
+                    self.paywallView(
+                        for: offering,
+                        activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
+                        fonts: self.fonts,
+                        checker: self.introEligibility,
+                        purchaseHandler: self.purchaseHandler
+                    )
+                    .onAppear(
+                        perform: {
+                            paywallDidLoad = true
+                        }
+                    )
                     .transition(Self.transition)
                 } else {
                     LoadingPaywallView(mode: self.mode,
