@@ -196,7 +196,7 @@ public struct PaywallView: View {
             if let error = self.initializationError {
                 DebugErrorView(error.localizedDescription, releaseBehavior: .fatalError)
             } else if self.introEligibility.isConfigured, self.purchaseHandler.isConfigured {
-                if let offering = self.offering, let customerInfo = self.customerInfo, !Purchases.shared.attribution.isThereUnsyncedAttributes {
+                if let offering = self.offering, let customerInfo = self.customerInfo {
                     self.paywallView(
                         for: offering,
                         activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
@@ -218,12 +218,6 @@ public struct PaywallView: View {
                             do {
                                 guard Purchases.isConfigured else {
                                     throw PaywallError.purchasesNotConfigured
-                                }
-                                
-                                if Purchases.shared.attribution.isThereUnsyncedAttributes {
-                                    _ = try? await Purchases.shared.syncAttributesAndOfferingsIfNeeded()
-                                    // Force reload the offering for the placement
-                                    self.offering = nil
                                 }
 
                                 if self.offering == nil {
