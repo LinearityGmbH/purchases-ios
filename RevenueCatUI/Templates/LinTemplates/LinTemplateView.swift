@@ -15,7 +15,7 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplateView: TemplateViewType {
+struct LinTemplateView: TemplateViewType, IntroEligibilityProvider {
     let configuration: TemplateViewConfiguration
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
@@ -23,10 +23,11 @@ struct LinTemplateView: TemplateViewType {
     var verticalSizeClass
     @Environment(\.horizontalSizeClass)
     var horizontalSizeClass
-    
+    @EnvironmentObject
+    var introEligibilityViewModel: IntroEligibilityViewModel
     private let showBackButton: Bool
     @State
-    private var selectedPackage: TemplateViewConfiguration.Package
+    var selectedPackage: TemplateViewConfiguration.Package
     @State
     private var selectedTier: PaywallData.Tier?
 
@@ -54,7 +55,14 @@ struct LinTemplateView: TemplateViewType {
             selectedPackage: $selectedPackage,
             selectedTier: $selectedTier,
             displayImage: true,
-            titleTypeProvider: { package in .fixed(package.localization.title) },
+            titleTypeProvider: { [introEligibilityViewModel] package in
+                let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
+                return .dynamic(
+                    isEligibleToIntro: isEligibleToIntro,
+                    bundle: LinTemplatesResources.linTemplate5Step2Bundle,
+                    ineligibleFallback: selectedPackage.localization.title
+                )
+            },
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
             showBackButton: showBackButton,
             showAllPackages: true,
