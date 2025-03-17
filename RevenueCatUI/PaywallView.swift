@@ -505,13 +505,8 @@ struct LoadedOfferingPaywallView: View {
                     Circle()
                         .fill(
                             Color(
-                                light: .white,
-                                dark: Color(
-                                    red: 118.0 / 255.0,
-                                    green: 118 / 255.0,
-                                    blue: 128 / 255.0,
-                                    opacity: 0.24
-                                )
+                                light: Color.white,
+                                dark: .black
                             )
                         )
                         .frame(width: 30)
@@ -520,13 +515,8 @@ struct LoadedOfferingPaywallView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(
                             Color(
-                                light: .black,
-                                dark: Color(
-                                    red: 235.0 / 255.0,
-                                    green: 235.0 / 255.0,
-                                    blue: 245.0 / 255.0,
-                                    opacity: 0.6
-                                )
+                                light: Color.black,
+                                dark: .white
                             )
                         )
                 }
