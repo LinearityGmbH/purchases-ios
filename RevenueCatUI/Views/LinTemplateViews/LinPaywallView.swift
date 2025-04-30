@@ -9,18 +9,12 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinPaywallView<SubtitleView: View>: View {
+struct LinPaywallView: View {
     
     let configuration: TemplateViewConfiguration
-    let currentColors: LinColorsProvider
-    let displayImage: Bool
-    let showAllPackages: Bool
     
     @Binding
     var selectedPackage: TemplateViewConfiguration.Package
-    @Binding
-    var selectedTier: PaywallData.Tier?
-    var subtitleView: () -> SubtitleView
     
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
@@ -29,38 +23,15 @@ struct LinPaywallView<SubtitleView: View>: View {
     @EnvironmentObject
     private var introEligibilityViewModel: IntroEligibilityViewModel
     
-    private var showTierSelector: Bool {
-        guard let (_, allTiers, _) = configuration.packages.multiTier else {
-            return false
-        }
-        return allTiers.count > 1
-    }
     @ScaledMetric(relativeTo: .body)
     private var iconSize = 25
     
     var body: some View {
-        if showTierSelector {
-            TierPaywallWrapperView(
-                selectedTier: $selectedTier,
-                selectedPackage: $selectedPackage,
-                configuration: configuration,
-                currentColors: currentColors,
-                subtitleView: subtitleView,
-                featuresView: { selectedPackage in
-                    features(package: selectedPackage)
-                },
-                packagesView: { packages in
-                    self.packages(packages: packages)
-                }
-            )
-        } else {
-            subtitleView()
-            features(package: selectedPackage)
-            if horizontalSizeClass == .compact {
-                Spacer()
-            }
-            packages(packages: configuration.packages.all)
+        features(package: selectedPackage)
+        if horizontalSizeClass == .compact {
+            Spacer()
         }
+        packages(packages: configuration.packages.all)
     }
     
     @ViewBuilder
@@ -77,10 +48,10 @@ struct LinPaywallView<SubtitleView: View>: View {
                     if let icon = feature.icon {
                         if icon == .tick {
                             Image(.icCheckmark)
-                                .foregroundColor(currentColors.featureIcon)
+                                .foregroundColor(configuration.colors.featureIcon)
                                 .font(.system(size: 15))
                         } else {
-                            IconView(icon: icon, tint: currentColors.featureIcon)
+                            IconView(icon: icon, tint: configuration.colors.featureIcon)
                                 .frame(width: iconSize, height: iconSize)
                         }
                     }
@@ -99,8 +70,6 @@ struct LinPaywallView<SubtitleView: View>: View {
         
     @ViewBuilder
     private func packages(packages: [TemplateViewConfiguration.Package]) -> some View {
-        let packages = showAllPackages ? packages : Array(packages.prefix(upTo: 1))
-        
         VStack {
             VStack(spacing: 16) {
                 ForEach(packages, id: \.content.id) { package in
@@ -115,9 +84,6 @@ struct LinPaywallView<SubtitleView: View>: View {
                     }
                     .buttonStyle(PackageButtonStyle())
                 }
-            }
-            if horizontalSizeClass == .regular && !self.displayImage {
-                Spacer(minLength: 20)
             }
         }
     }
@@ -139,8 +105,8 @@ struct LinPaywallView<SubtitleView: View>: View {
                 self.roundedRectangle(cornerRadius: 12)
                     .stroke(
                         selected
-                        ? currentColors.selectedOutline
-                        : currentColors.unselectedOutline,
+                        ? configuration.colors.selectedOutline
+                        : configuration.colors.unselectedOutline,
                         lineWidth: Constants.defaultPackageBorderWidth
                     ).background {
                         self.roundedRectangle(cornerRadius: 12).fill(
@@ -167,7 +133,7 @@ struct LinPaywallView<SubtitleView: View>: View {
         selected: Bool
     ) -> some View {
         if let discount = package.discountRelativeToMostExpensivePerMonth {
-            let colors = currentColors
+            let colors = configuration.colors
             
             Text(Localization.localized(discount: discount, locale: self.locale))
                 .textCase(.uppercase)
@@ -202,8 +168,8 @@ struct LinPaywallView<SubtitleView: View>: View {
             ? "checkmark.circle.fill"
             : "circle"
             let color = selected
-            ? currentColors.selectedOutline
-            : currentColors.unselectedOutline
+            ? configuration.colors.selectedOutline
+            : configuration.colors.unselectedOutline
             Image(systemName: image)
                 .resizable()
                 .frame(width: 24, height: 24)
@@ -227,10 +193,27 @@ struct LinPaywallView<SubtitleView: View>: View {
             display: .offerDetails,
             localization: package.localization,
             introEligibility: introEligibilityViewModel.allEligibility[package.content],
-            foregroundColor: currentColors.text1Color,
+            foregroundColor: configuration.colors.text1Color,
             alignment: LinTemplateConstants.packageButtonAlignment
         )
         .fixedSize(horizontal: false, vertical: true)
         .font(configuration.fonts.font(for: .body))
     }
+}
+
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
+private extension PaywallData.Configuration.Colors {
+    
+    var featureIcon: Color { self.accent1Color }
+    var selectedOutline: Color { self.accent2Color }
+    var unselectedOutline: Color { self.accent3Color }
+    var selectedDiscountText: Color { self.text2Color }
+    var unselectedDiscountText: Color { self.text3Color }
+    var selectedTier: Color { self.accent1Color }
+    var callToAction: Color { self.selectedTier }
+    
+    var tierControlBackground: Color { self.tierControlBackgroundColor ?? self.accent1Color }
+    var tierControlForeground: Color { self.tierControlForegroundColor ?? self.text1Color }
+    var tierControlSelectedBackground: Color { self.tierControlSelectedBackgroundColor ?? self.unselectedDiscountText }
+    var tierControlSelectedForeground: Color { self.tierControlSelectedForegroundColor ?? self.text1Color }
 }

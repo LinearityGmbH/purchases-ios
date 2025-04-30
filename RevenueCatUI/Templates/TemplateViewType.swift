@@ -115,15 +115,6 @@ extension PaywallData {
             )
         }
     }
-    
-    enum LinPaywall: Int {
-        case defaultRC
-        case canvaStyleOneStep
-        case canvaStyleTwoSteps
-        case canvaStyleOneStepMonthlyHidden
-        case canvaStyleTwoStepsMonthlyHidden
-        case canvaStyleTwoStepsMonthlyHiddenCloseHiddenOnFirstStep
-    }
 
     @ViewBuilder
     private static func createView(
@@ -144,52 +135,10 @@ extension PaywallData {
             Template3View(configuration)
         case .template4:
             Template4View(configuration)
-        case .template7, .template5:
-            // In case the offering was not updated yet, keep reading the previous selection value.
-            let oldSelectionFallback: LinPaywall = offering.getMetadataValue(for: "show_new_paywall", default: false) ? .canvaStyleOneStep : .defaultRC
-            let paywallVersion = LinPaywall(rawValue: offering.getMetadataValue(for: "paywall_version", default: oldSelectionFallback.rawValue)) ?? oldSelectionFallback
-            let step1Configuration: LinTemplateStep1Configuration = offering.getMetadataValue(for: "first_screen_configuration") ?? .default
-            switch paywallVersion {
-            case .defaultRC:
-                LinTemplateView(configuration)
-            case .canvaStyleOneStep:
-                LinTemplateStep2View(configuration)
-            case .canvaStyleTwoSteps:
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
-                    LinTemplateNavigationView(
-                        configuration,
-                        step1Configuration: step1Configuration,
-                        showAllPackages: true,
-                        hideCloseButton: .constant(true)
-                    )
-                } else {
-                    LinTemplateStep2View(configuration)
-                }
-            case .canvaStyleOneStepMonthlyHidden:
-                LinTemplateStep2View(configuration, showBackButton: false, showAllPackages: false)
-            case .canvaStyleTwoStepsMonthlyHidden:
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
-                    LinTemplateNavigationView(
-                        configuration,
-                        step1Configuration: step1Configuration,
-                        showAllPackages: false,
-                        hideCloseButton: Binding.constant(true)
-                    )
-                } else {
-                    LinTemplateStep2View(configuration, showBackButton: false, showAllPackages: false)
-                }
-            case .canvaStyleTwoStepsMonthlyHiddenCloseHiddenOnFirstStep:
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
-                    LinTemplateNavigationView(
-                        configuration,
-                        step1Configuration: step1Configuration,
-                        showAllPackages: false,
-                        hideCloseButton: hideCloseButton
-                    )
-                } else {
-                    LinTemplateStep2View(configuration, showBackButton: false, showAllPackages: false)
-                }
-            }
+        case .template5:
+            LinTemplateView(configuration)
+        case .template7:
+            Template7View(configuration)
         }
         #endif
     }
