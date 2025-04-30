@@ -41,8 +41,7 @@ struct LinTemplateView: TemplateViewType, IntroEligibilityProvider {
                 let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
                 return .dynamic(
                     isEligibleToIntro: isEligibleToIntro,
-                    bundle: LinTemplatesResources.linTemplate5Step2Bundle,
-                    ineligibleFallback: selectedPackage.localization.title
+                    bundle: LinTemplatesResources.linTemplate5Step2Bundle
                 )
             },
             horizontalPaddingModifier: DefaultHorizontalPaddingModifier()
