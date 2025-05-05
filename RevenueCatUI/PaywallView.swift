@@ -210,13 +210,10 @@ public struct PaywallView: View {
     // swiftlint:disable:next missing_docs
     public var body: some View {
         self.content
-<<<<<<< HEAD
-            .displayError(self.$error, dismissOnClose: true)
             .preference(key: PaywallDidLoadPreferenceKey.self,
                         value: paywallDidLoad)
             .preference(key: PaywallDidFailLoadingPreferenceKey.self,
                         value: self.error)
-=======
             .displayError(self.$error) {
                 guard let onRequestedDismissal = self.onRequestedDismissal else {
                     self.dismiss()
@@ -227,7 +224,6 @@ public struct PaywallView: View {
             // If the parent view uses refreshable, it can be inherited by the paywall view
             // and pulling down in the paywall would execute the parent's refreshable action
             .refreshableDisabled()
->>>>>>> 5.22.2
     }
 
     @MainActor
@@ -238,28 +234,18 @@ public struct PaywallView: View {
                 DebugErrorView(error.localizedDescription, releaseBehavior: .fatalError)
             } else if self.introEligibility.isConfigured, self.purchaseHandler.isConfigured {
                 if let offering = self.offering, let customerInfo = self.customerInfo {
-<<<<<<< HEAD
-                    self.paywallView(
-                        for: offering,
-                        activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
-                        fonts: self.fonts,
-                        checker: self.introEligibility,
-                        purchaseHandler: self.purchaseHandler
-                    )
-                    .onAppear(
-                        perform: {
-                            paywallDidLoad = true
-                        }
-                    )
-=======
                     self.paywallView(for: offering,
                                      useDraftPaywall: self.useDraftPaywall,
                                      activelySubscribedProductIdentifiers: customerInfo.activeSubscriptions,
                                      fonts: self.fonts,
                                      checker: self.introEligibility,
                                      purchaseHandler: self.purchaseHandler)
->>>>>>> 5.22.2
                     .transition(Self.transition)
+                    .onAppear(
+                        perform: {
+                            paywallDidLoad = true
+                        }
+                    )
                 } else {
                     LoadingPaywallView(mode: self.mode,
                                        displayCloseButton: self.displayCloseButton)
@@ -580,21 +566,6 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-<<<<<<< HEAD
-            let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
-            ZStack {
-                view
-                VStack {
-                    Spacer().frame(height: isIPhone ? 0 : 12)
-                    HStack {
-                        Spacer()
-                        closeButton
-                        Spacer().frame(width: 12)
-                    }
-                    Spacer()
-                }
-                .ignoresSafeArea(edges: isIPhone ? [] : .all)
-=======
             NavigationView {
                 // Prevents navigation bar from being showing as translucent
                 if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
@@ -613,8 +584,8 @@ struct LoadedOfferingPaywallView: View {
                             )
                         }
                 }
->>>>>>> 5.22.2
             }
+            .navigationViewStyle(.stack)
         } else {
             view
         }
@@ -631,52 +602,6 @@ struct LoadedOfferingPaywallView: View {
         )
     }
     
-    @ViewBuilder
-    private var closeButton: some View {
-        Button(
-            action: {
-                guard let onRequestedDismissal = self.onRequestedDismissal else {
-                    self.dismiss()
-                    return
-                }
-                onRequestedDismissal()
-            },
-            label: {
-                ZStack {
-                    Circle()
-                        .fill(
-                            Color(
-                                light: Color.white,
-                                dark: .black
-                            )
-                        )
-                        .frame(width: 30)
-                        .shadow(color: .black.opacity(0.2), radius: 5)
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(
-                            Color(
-                                light: Color.black,
-                                dark: .white
-                            )
-                        )
-                }
-                .frame(width: 40, height: 40)
-                .contentShape(Rectangle())
-            }
-        )
-        #if targetEnvironment(macCatalyst)
-        .buttonStyle(.plain)
-        #endif
-        .disabled(self.purchaseHandler.actionInProgress)
-        .hidden(if: self.hideCloseButton)
-        .opacity(
-            self.purchaseHandler.actionInProgress
-            ? Constants.purchaseInProgressButtonOpacity
-            : 1
-        )
-    }
-
     private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
         switch configuration {
         case .success(let configuration):
@@ -685,6 +610,28 @@ struct LoadedOfferingPaywallView: View {
             return nil
         }
     }
+    
+    private func makeToolbar(color: Color?) -> some ToolbarContent {
+        ToolbarItem(placement: .destructiveAction) {
+            Button {
+                guard let onRequestedDismissal = self.onRequestedDismissal else {
+                    self.dismiss()
+                    return
+                }
+                onRequestedDismissal()
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundColor(color)
+            }
+            .disabled(self.purchaseHandler.actionInProgress)
+            .opacity(
+                self.purchaseHandler.actionInProgress
+                ? Constants.purchaseInProgressButtonOpacity
+                : 1
+            )
+        }
+    }
+    
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
