@@ -459,17 +459,11 @@ private struct PaywallContainerView: View {
             .onRestoreCompleted(self.restoreCompleted)
             .onRestoreFailure(self.restoreFailure)
             .onSizeChange(self.onSizeChange)
-<<<<<<< HEAD
             .onPaywallDidLoad(self.onPaywallDidLoad)
             .onPaywallDidFailLoad(self.onPaywallDidFailLoad)
-            .applyIf(self.requestedDismissal != nil) {
-                $0.onRequestedDismissal(self.requestedDismissal!)
-            }
-=======
             .applyIfLet(self.requestedDismissal, apply: { view, requestedDismissal in
                 view.onRequestedDismissal(requestedDismissal)
             })
->>>>>>> 5.22.2
     }
 
 }
