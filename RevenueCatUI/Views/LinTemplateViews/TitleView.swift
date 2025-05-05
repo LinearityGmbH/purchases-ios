@@ -14,16 +14,16 @@ import SwiftUI
 struct TitleView: View {
     
     enum TitleType {
-        case dynamic(isEligibleToIntro: Bool, bundle: Bundle, ineligibleFallback: String)
+        case dynamic(isEligibleToIntro: Bool, bundle: Bundle)
         case fixed(String)
         
         var value: String {
             switch self {
-            case let .dynamic(isEligibleToIntro, bundle, ineligibleFallback):
+            case let .dynamic(isEligibleToIntro, bundle):
                 if isEligibleToIntro {
                     localize("Title.EligibleOffering", value: "Try Linearity Pro for free", bundle: bundle)
                 } else {
-                    ineligibleFallback
+                    localize("Title.NonEligibleOffering", value: "Buy Linearity Pro", bundle: bundle)
                 }
             case .fixed(let string):
                 string

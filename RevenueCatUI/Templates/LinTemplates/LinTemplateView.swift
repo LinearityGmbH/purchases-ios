@@ -25,27 +25,11 @@ struct LinTemplateView: TemplateViewType, IntroEligibilityProvider {
     var horizontalSizeClass
     @EnvironmentObject
     var introEligibilityViewModel: IntroEligibilityViewModel
-    private let showBackButton: Bool
     @State
     var selectedPackage: TemplateViewConfiguration.Package
-    @State
-    private var selectedTier: PaywallData.Tier?
-
-    init(_ configuration: TemplateViewConfiguration) {
-        self.init(configuration, showBackButton: false)
-    }
     
-    init(
-        _ configuration: TemplateViewConfiguration,
-        showBackButton: Bool
-    ) {
-        self.showBackButton = showBackButton
+    init(_ configuration: TemplateViewConfiguration) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
-        if let (firstTier, _, _) = configuration.packages.multiTier {
-            self.selectedTier = firstTier
-        } else {
-            self.selectedTier = nil
-        }
         self.configuration = configuration
     }
     
@@ -53,40 +37,25 @@ struct LinTemplateView: TemplateViewType, IntroEligibilityProvider {
         LinConfigurableTemplateView(
             configuration, 
             selectedPackage: $selectedPackage,
-            selectedTier: $selectedTier,
-            displayImage: true,
             titleTypeProvider: { [introEligibilityViewModel] package in
                 let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
                 return .dynamic(
                     isEligibleToIntro: isEligibleToIntro,
-                    bundle: LinTemplatesResources.linTemplate5Step2Bundle,
-                    ineligibleFallback: selectedPackage.localization.title
+                    bundle: LinTemplatesResources.linTemplate5Step2Bundle
                 )
             },
-            horizontalPaddingModifier: DefaultHorizontalPaddingModifier(),
-            showBackButton: showBackButton,
-            showAllPackages: true,
-            subtitleView: { EmptyView() },
-            subscribeButtonSubtitleView: { (_, _ , _) in EmptyView() }
+            horizontalPaddingModifier: DefaultHorizontalPaddingModifier()
         )
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleView: View, HorizontalPadding: ViewModifier>: View {
-    typealias SubtitleBuilder = () -> SubtitleView
-    typealias ButtonSubtitleBuilder = (
-            _ selectedPackage: Package,
-            _ eligibility: IntroEligibilityStatus?,
-            _ locale: Locale
-        ) -> SubscribeButtonSubtitleView
+struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
 
     let configuration: TemplateViewConfiguration
 
     @Binding
     private var selectedPackage: TemplateViewConfiguration.Package
-    @Binding
-    private var selectedTier: PaywallData.Tier?
 
     @State
     private var displayingAllPlans: Bool
@@ -110,44 +79,20 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
     @Environment(\.dismiss)
     private var dismiss
     
-    private let displayImage: Bool
-    private let subscribeButtonSubtitleView: ButtonSubtitleBuilder
-    private let subtitleView: SubtitleBuilder
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
     private let horizontalPaddingModifier: HorizontalPadding
-    private let showBackButton: Bool
-    @State
-    private var showAllPackages: Bool
     
-    private let currentColors: LinColorsProvider
-
     init(
         _ configuration: TemplateViewConfiguration,
         selectedPackage: Binding<TemplateViewConfiguration.Package>,
-        selectedTier: Binding<PaywallData.Tier?>,
-        displayImage: Bool,
         titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType,
         horizontalPaddingModifier: HorizontalPadding,
-        showBackButton: Bool = false,
-        showAllPackages: Bool = true,
-        @ViewBuilder subtitleView: @escaping SubtitleBuilder,
-        @ViewBuilder subscribeButtonSubtitleView: @escaping ButtonSubtitleBuilder
     ) {
         self._selectedPackage = selectedPackage
-        self._selectedTier = selectedTier
         self.configuration = configuration
-        self.displayImage = displayImage
-        self.subtitleView = subtitleView
-        self.subscribeButtonSubtitleView = subscribeButtonSubtitleView
         self.titleTypeProvider = titleTypeProvider
         self.horizontalPaddingModifier = horizontalPaddingModifier
-        self.showBackButton = showBackButton
-        self._showAllPackages = .init(initialValue: showAllPackages)
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
-        self.currentColors = LinColorsProvider(
-            configuration: configuration,
-            tier: selectedTier.wrappedValue
-        )
     }
 
     var body: some View {
@@ -160,7 +105,7 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
         VStack(spacing: 8) {
             ScrollView(showsIndicators: false) {
                 scrollableContent
-                    .padding([.leading, .trailing], displayImage ? -1 : 2)
+                    .padding([.leading, .trailing], -1)
                     .padding(.bottom, 8)
                     .frame(maxWidth: .infinity)
             }
@@ -168,12 +113,6 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
             subscribeButton
                 .frame(maxWidth: Constants.defaultContentWidth)
                 .modifier(horizontalPaddingModifier)
-            
-            subscribeButtonSubtitleView(
-                selectedPackage.content,
-                introEligibility[self.selectedPackage.content],
-                locale
-            )
             
             FooterView(configuration: self.configuration.configuration,
                        locale: locale,
@@ -183,15 +122,15 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
                        purchaseHandler: self.purchaseHandler,
                        displayingAllPlans: self.$displayingAllPlans)
         }
-        .foregroundColor(currentColors.text1Color)
-        .edgesIgnoringSafeArea(.top, apply: self.displayImage)
+        .foregroundColor(configuration.colors.text1Color)
+        .edgesIgnoringSafeArea(.top)
         .frame(maxHeight: .infinity)
     }
 
     @ViewBuilder
     private var scrollableContent: some View {
         VStack(spacing: 16) {
-            if let header = self.configuration.headerImageURL, self.displayImage {
+            if let header = self.configuration.headerImageURL {
                 Spacer()
                     .frame(
                         maxWidth: .infinity,
@@ -208,24 +147,14 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
 
             Group {
                 
-                LinTitleView(
-                    configuration: configuration,
-                    showBackButton: showBackButton,
-                    selectedPackage: selectedPackage,
-                    titleTypeProvider: titleTypeProvider
+                TitleView(
+                    type: titleTypeProvider(selectedPackage)
                 )
                 
                 LinPaywallView(
                     configuration: configuration,
-                    currentColors: currentColors,
-                    displayImage: displayImage,
-                    showAllPackages: showAllPackages,
-                    selectedPackage: $selectedPackage,
-                    selectedTier: $selectedTier,
-                    subtitleView: subtitleView
+                    selectedPackage: $selectedPackage
                 )
-                
-                showAllPackagesButton
             }
             .frame(maxWidth: Constants.defaultContentWidth)
             .modifier(horizontalPaddingModifier)
@@ -234,43 +163,11 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
     }
 
     private var subscribeButton: some View {
-        if let selectedTier {
-            PurchaseButton(
-                packages: configuration.packages,
-                selectedPackage: selectedPackage,
-                configuration: configuration,
-                selectedTier: selectedTier
-            )
-        } else {
-            PurchaseButton(
-                packages: configuration.packages,
-                selectedPackage: selectedPackage,
-                configuration: configuration
-            )
-        }
-        
-    }
-    
-    @ViewBuilder
-    private var showAllPackagesButton: some View {
-        if !showAllPackages {
-            Button {
-                withAnimation(Constants.toggleAllPlansAnimation) {
-                    showAllPackages = true
-                }
-            } label: {
-                Text(localize("Template5.see_all_plans", value: "See All Plans"))
-                    .foregroundStyle(
-                        Color(
-                            uiColor: UIColor(red: 1.0, green: 150.0 / 255, blue: 20.0 / 255, alpha: 1)
-                        )
-                    )
-                    .font(self.font(for: .callout).weight(.medium))
-            }
-            #if targetEnvironment(macCatalyst)
-            .buttonStyle(.plain)
-            #endif
-        }
+        PurchaseButton(
+            packages: configuration.packages,
+            selectedPackage: selectedPackage,
+            configuration: configuration
+        )
     }
 
     // MARK: -
@@ -290,53 +187,6 @@ struct LinConfigurableTemplateView<SubtitleView: View, SubscribeButtonSubtitleVi
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 enum LinTemplateConstants {
     static let packageButtonAlignment: Alignment = .leading
-    static let cornerRadius: CGFloat = Constants.defaultPackageCornerRadius
-}
-
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, watchOS 6.2, *)
-struct IgnoreSafeAreaConditionally: ViewModifier {
-    
-    let edges: Edge.Set
-    let ignoreSafeArea: Bool
-    
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if ignoreSafeArea {
-            content
-                .edgesIgnoringSafeArea(edges)
-        } else {
-            content
-        }
-    }
-}
-
-// MARK: - Extensions
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private extension LinConfigurableTemplateView {
-    
-    func font(for textStyle: Font.TextStyle) -> Font {
-        return self.configuration.fonts.font(for: textStyle)
-    }
-}
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private extension View {
-    func edgesIgnoringSafeArea(_ edges: Edge.Set, apply: Bool) -> some View {
-        modifier(IgnoreSafeAreaConditionally(edges: edges, ignoreSafeArea: apply))
-    }
-}
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-@available(macOS, unavailable)
-@available(tvOS, unavailable)
-private func localize(_ key: String, value: String) -> String {
-    NSLocalizedString(
-        key,
-        bundle: LinTemplatesResources.linTemplate5Bundle,
-        value: value,
-        comment: ""
-    )
 }
 
 // MARK: -
