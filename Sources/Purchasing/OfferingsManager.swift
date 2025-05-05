@@ -239,17 +239,15 @@ private extension OfferingsManager {
             let products = result.value ?? []
 
             guard products.isEmpty == false else {
-<<<<<<< HEAD
-				let userInfo = userInfo(for: response)
-				sendError(Self.createErrorForEmptyResult(result.error), title: "Products empty", userInfo: userInfo)
-                completion(.failure(Self.createErrorForEmptyResult(result.error)))
-=======
                 // Check if empty products is likely caused by https://github.com/RevenueCat/purchases-ios/issues/4954
                 // There is a widely reported bug in the iOS 18.4 Simulator affecting some HTTP requests
                 let showSimulatorWarning = self.systemInfo.isSubjectToKnownIssue_18_4_sim()
+                if !showSimulatorWarning {
+                    let userInfo = userInfo(for: response)
+                    sendError(Self.createErrorForEmptyResult(result.error), title: "Products empty", userInfo: userInfo)
+                }
                 completion(.failure(Self.createErrorForEmptyResult(result.error,
                                                                    showSimulatorWarning: showSimulatorWarning)))
->>>>>>> 5.22.2
                 return
             }
 
@@ -603,7 +601,6 @@ extension OfferingsManager.Error: CustomNSError {
 
 }
 
-<<<<<<< HEAD
 func userInfo(for response: OfferingsResponse) -> [String: AnyHashable] {
 	var userInfo: [String: AnyHashable] = [
 		"response.currentOfferingId": response.currentOfferingId ?? "<nil>",
@@ -666,21 +663,22 @@ func linearityLog(_ message: String) {
 	Logger.error("[LIN] \(message)")
 }
 
-class GenericError: NSError {
-	var title: String = ""
-	init(title: String) {
-		self.title = title
-		super.init(domain: "Linearity.RevenueCat.GenericError", code: 42)
-	}
-	
-	required init?(coder: NSCoder) {
-		fatalError("init(coder:) has not been implemented")
-	}
-	
-	override var localizedDescription: String {
-		return title
-	}
-=======
+class GenericError: NSError, @unchecked Sendable {
+    var title: String = ""
+    init(title: String) {
+        self.title = title
+        super.init(domain: "Linearity.RevenueCat.GenericError", code: 42)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override var localizedDescription: String {
+        return title
+    }
+}
+
 struct OfferingsResultData {
     let offerings: Offerings
     let requestedProductIds: Set<String>
@@ -735,5 +733,4 @@ private struct PreviewProductType {
             return nil
         }
     }
->>>>>>> 5.22.2
 }
