@@ -650,28 +650,6 @@ struct LoadedOfferingPaywallView: View {
             return nil
         }
     }
-    
-    private func makeToolbar(color: Color?) -> some ToolbarContent {
-        ToolbarItem(placement: .destructiveAction) {
-            Button {
-                guard let onRequestedDismissal = self.onRequestedDismissal else {
-                    self.dismiss()
-                    return
-                }
-                onRequestedDismissal()
-            } label: {
-                Image(systemName: "xmark")
-                    .foregroundColor(color)
-            }
-            .disabled(self.purchaseHandler.actionInProgress)
-            .opacity(
-                self.purchaseHandler.actionInProgress
-                ? Constants.purchaseInProgressButtonOpacity
-                : 1
-            )
-        }
-    }
-    
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
