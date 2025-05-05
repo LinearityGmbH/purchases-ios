@@ -86,7 +86,7 @@ struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
         _ configuration: TemplateViewConfiguration,
         selectedPackage: Binding<TemplateViewConfiguration.Package>,
         titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType,
-        horizontalPaddingModifier: HorizontalPadding,
+        horizontalPaddingModifier: HorizontalPadding
     ) {
         self._selectedPackage = selectedPackage
         self.configuration = configuration
