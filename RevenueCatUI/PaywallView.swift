@@ -566,26 +566,20 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-            NavigationView {
-                // Prevents navigation bar from being showing as translucent
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                    view
-                        .toolbar {
-                            self.makeToolbar(
-                                color: self.getCloseButtonColor(configuration: configuration)
-                            )
-                        }
-                        .toolbarBackground(.hidden, for: .navigationBar)
-                } else {
-                    view
-                        .toolbar {
-                            self.makeToolbar(
-                                color: self.getCloseButtonColor(configuration: configuration)
-                            )
-                        }
+            let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
+            ZStack {
+                view
+                VStack {
+                    Spacer().frame(height: isIPhone ? 0 : 12)
+                    HStack {
+                        Spacer()
+                        closeButton
+                        Spacer().frame(width: 12)
+                    }
+                    Spacer()
                 }
+                .ignoresSafeArea(edges: isIPhone ? [] : .all)
             }
-            .navigationViewStyle(.stack)
         } else {
             view
         }
@@ -599,6 +593,52 @@ struct LoadedOfferingPaywallView: View {
             displayMode: self.mode,
             locale: .current,
             darkMode: self.colorScheme == .dark
+        )
+    }
+    
+    @ViewBuilder
+    private var closeButton: some View {
+        Button(
+            action: {
+                guard let onRequestedDismissal = self.onRequestedDismissal else {
+                    self.dismiss()
+                    return
+                }
+                onRequestedDismissal()
+            },
+            label: {
+                ZStack {
+                    Circle()
+                        .fill(
+                            Color(
+                                light: Color.white,
+                                dark: .black
+                            )
+                        )
+                        .frame(width: 30)
+                        .shadow(color: .black.opacity(0.2), radius: 5)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(
+                            Color(
+                                light: Color.black,
+                                dark: .white
+                            )
+                        )
+                }
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
+            }
+        )
+#if targetEnvironment(macCatalyst)
+        .buttonStyle(.plain)
+#endif
+        .disabled(self.purchaseHandler.actionInProgress)
+        .hidden(if: self.hideCloseButton)
+        .opacity(
+            self.purchaseHandler.actionInProgress
+            ? Constants.purchaseInProgressButtonOpacity
+            : 1
         )
     }
     
