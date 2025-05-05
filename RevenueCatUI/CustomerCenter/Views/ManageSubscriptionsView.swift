@@ -13,8 +13,6 @@
 //  Created by Andrés Boedo on 5/3/24.
 //
 
-#if CUSTOMER_CENTER_ENABLED
-
 import RevenueCat
 import SwiftUI
 
@@ -26,24 +24,34 @@ import SwiftUI
 @available(watchOS, unavailable)
 struct ManageSubscriptionsView: View {
 
-    @Environment(\.dismiss)
-    var dismiss
-
     @Environment(\.appearance)
     private var appearance: CustomerCenterConfigData.Appearance
-    @Environment(\.localization)
-    private var localization: CustomerCenterConfigData.Localization
+
     @Environment(\.colorScheme)
     private var colorScheme
+
+    @Environment(\.supportInformation)
+    private var support
+
+    @Environment(\.localization)
+    private var localization: CustomerCenterConfigData.Localization
+
+    @Environment(\.navigationOptions)
+    var navigationOptions
 
     @StateObject
     private var viewModel: ManageSubscriptionsViewModel
 
     init(screen: CustomerCenterConfigData.Screen,
-         customerCenterActionHandler: CustomerCenterActionHandler?) {
-        let viewModel = ManageSubscriptionsViewModel(screen: screen,
-                                                     customerCenterActionHandler: customerCenterActionHandler)
-        self._viewModel = .init(wrappedValue: viewModel)
+         purchaseInformation: PurchaseInformation?,
+         purchasesProvider: CustomerCenterPurchasesType,
+         actionWrapper: CustomerCenterActionWrapper) {
+        let viewModel = ManageSubscriptionsViewModel(
+            screen: screen,
+            actionWrapper: actionWrapper,
+            purchaseInformation: purchaseInformation,
+            purchasesProvider: purchasesProvider)
+        self.init(viewModel: viewModel)
     }
 
     fileprivate init(viewModel: ManageSubscriptionsViewModel) {
@@ -51,190 +59,183 @@ struct ManageSubscriptionsView: View {
     }
 
     var body: some View {
-        if #available(iOS 16.0, *) {
-            content
-                .navigationDestination(isPresented: .isNotNil(self.$viewModel.feedbackSurveyData)) {
-                    if let feedbackSurveyData = self.viewModel.feedbackSurveyData {
-                        FeedbackSurveyView(feedbackSurveyData: feedbackSurveyData)
+        content
+            .compatibleNavigation(
+                item: $viewModel.feedbackSurveyData,
+                usesNavigationStack: navigationOptions.usesNavigationStack
+            ) { feedbackSurveyData in
+                FeedbackSurveyView(
+                    feedbackSurveyData: feedbackSurveyData,
+                    purchasesProvider: self.viewModel.purchasesProvider,
+                    actionWrapper: self.viewModel.actionWrapper,
+                    isPresented: .isNotNil(self.$viewModel.feedbackSurveyData))
+                .environment(\.appearance, appearance)
+                .environment(\.localization, localization)
+                .environment(\.navigationOptions, navigationOptions)
+            }
+            .compatibleNavigation(
+                isPresented: $viewModel.showPurchases,
+                usesNavigationStack: navigationOptions.usesNavigationStack
+            ) {
+                PurchaseHistoryView(
+                    viewModel: PurchaseHistoryViewModel(purchasesProvider: self.viewModel.purchasesProvider)
+                )
+                .environment(\.appearance, appearance)
+                .environment(\.localization, localization)
+                .environment(\.navigationOptions, navigationOptions)
+            }
+            .sheet(item: self.$viewModel.promotionalOfferData) { promotionalOfferData in
+                PromotionalOfferView(
+                    promotionalOffer: promotionalOfferData.promotionalOffer,
+                    product: promotionalOfferData.product,
+                    promoOfferDetails: promotionalOfferData.promoOfferDetails,
+                    purchasesProvider: self.viewModel.purchasesProvider,
+                    onDismissPromotionalOfferView: { userAction in
+                        Task(priority: .userInitiated) {
+                            await self.viewModel.handleDismissPromotionalOfferView(userAction)
+                        }
                     }
-                }
-        } else {
-            content
-                .background(NavigationLink(
-                    destination: self.viewModel.feedbackSurveyData.map { data in
-                        FeedbackSurveyView(feedbackSurveyData: data)
-                    },
-                    isActive: .isNotNil(self.$viewModel.feedbackSurveyData)
-                ) {
-                    EmptyView()
-                })
-        }
+                )
+                .environment(\.appearance, appearance)
+                .environment(\.localization, localization)
+                .interactiveDismissDisabled()
+            }
+            .sheet(item: self.$viewModel.inAppBrowserURL,
+                   onDismiss: {
+                self.viewModel.onDismissInAppBrowser()
+            }, content: { inAppBrowserURL in
+                SafariView(url: inAppBrowserURL.url)
+            })
+
     }
 
     @ViewBuilder
     var content: some View {
-        ZStack {
-            if self.viewModel.isLoaded {
-                List {
+        List {
+            if let purchaseInformation = self.viewModel.purchaseInformation {
+                SubscriptionDetailsView(
+                    purchaseInformation: purchaseInformation,
+                    refundRequestStatus: self.viewModel.refundRequestStatus
+                )
 
-                    if let subscriptionInformation = self.viewModel.subscriptionInformation {
-                        Section {
-                            SubscriptionDetailsView(
-                                subscriptionInformation: subscriptionInformation,
-                                localization: self.localization,
-                                refundRequestStatusMessage: self.viewModel.refundRequestStatusMessage)
-                        }
+                if support?.displayPurchaseHistoryLink == true {
+                    Button {
+                        viewModel.showPurchases = true
+                    } label: {
+                        Text(localization[.seeAllPurchases])
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
+                }
 
-                    Section {
-                        ManageSubscriptionsButtonsView(viewModel: self.viewModel,
-                                                       loadingPath: self.$viewModel.loadingPath)
-                    } header: {
-                        if let subtitle = self.viewModel.screen.subtitle {
-                            Text(subtitle)
-                                .textCase(nil)
-                        }
+                Section {
+                    ManageSubscriptionsButtonsView(
+                        viewModel: self.viewModel
+                    )
+                } header: {
+                    if let subtitle = self.viewModel.screen.subtitle {
+                        Text(subtitle)
+                            .textCase(nil)
                     }
                 }
             } else {
-                TintedProgressView()
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .compatibleTopBarTrailing) {
-                DismissCircleButton {
-                    dismiss()
+                let fallbackDescription = localization[.tryCheckRestore]
+
+                Section {
+                    CompatibilityContentUnavailableView(
+                        self.viewModel.screen.title,
+                        systemImage: "exclamationmark.triangle.fill",
+                        description: Text(self.viewModel.screen.subtitle ?? fallbackDescription)
+                    )
+                }
+
+                Section {
+                    ManageSubscriptionsButtonsView(viewModel: self.viewModel)
                 }
             }
         }
-        .task {
-            await loadInformationIfNeeded()
+        .dismissCircleButtonToolbarIfNeeded()
+        .overlay {
+            RestorePurchasesAlert(
+                isPresented: self.$viewModel.showRestoreAlert,
+                actionWrapper: self.viewModel.actionWrapper
+            )
         }
-        .navigationTitle(self.viewModel.screen.title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
+        .applyIf(self.viewModel.screen.type == .management, apply: {
+            $0.navigationTitle(self.viewModel.screen.title)
+                .navigationBarTitleDisplayMode(.inline)
+         })
 
-}
-
-@available(iOS 15.0, *)
-@available(macOS, unavailable)
-@available(tvOS, unavailable)
-@available(watchOS, unavailable)
-private extension ManageSubscriptionsView {
-
-    func loadInformationIfNeeded() async {
-        if !self.viewModel.isLoaded {
-            await viewModel.loadScreen()
-        }
-    }
-
-}
-
-@available(iOS 15.0, *)
-@available(macOS, unavailable)
-@available(tvOS, unavailable)
-@available(watchOS, unavailable)
-struct ManageSubscriptionsButtonsView: View {
-
-    @ObservedObject
-    var viewModel: ManageSubscriptionsViewModel
-    @Binding
-    var loadingPath: CustomerCenterConfigData.HelpPath?
-    @Environment(\.openURL)
-    var openURL
-
-    @Environment(\.localization)
-    private var localization: CustomerCenterConfigData.Localization
-
-    var body: some View {
-        let filteredPaths = self.viewModel.screen.paths.filter { path in
-#if targetEnvironment(macCatalyst)
-            return path.type == .refundRequest
-#else
-            return true
-#endif
-        }
-        ForEach(filteredPaths, id: \.id) { path in
-            ManageSubscriptionButton(path: path, viewModel: self.viewModel)
-        }
-    }
-
-}
-
-@available(iOS 15.0, *)
-@available(macOS, unavailable)
-@available(tvOS, unavailable)
-@available(watchOS, unavailable)
-struct ManageSubscriptionButton: View {
-
-    let path: CustomerCenterConfigData.HelpPath
-    @ObservedObject var viewModel: ManageSubscriptionsViewModel
-
-    @Environment(\.appearance) private var appearance: CustomerCenterConfigData.Appearance
-
-    var body: some View {
-        AsyncButton(action: {
-            await self.viewModel.determineFlow(for: path)
-        }, label: {
-            if self.viewModel.loadingPath?.id == path.id {
-                TintedProgressView()
-            } else {
-                Text(path.title)
-            }
-        })
-        .disabled(self.viewModel.loadingPath != nil)
-        .restorePurchasesAlert(isPresented: self.$viewModel.showRestoreAlert)
-        .sheet(item: self.$viewModel.promotionalOfferData,
-               onDismiss: {
-            Task {
-                await self.viewModel.handleSheetDismiss()
-            }
-        },
-               content: { promotionalOfferData in
-            PromotionalOfferView(promotionalOffer: promotionalOfferData.promotionalOffer,
-                                 product: promotionalOfferData.product,
-                                 promoOfferDetails: promotionalOfferData.promoOfferDetails)
-        })
     }
 
 }
 
 #if DEBUG
-@available(iOS 15.0, *)
-@available(macOS, unavailable)
-@available(tvOS, unavailable)
-@available(watchOS, unavailable)
-struct ManageSubscriptionsView_Previews: PreviewProvider {
+ @available(iOS 15.0, *)
+ @available(macOS, unavailable)
+ @available(tvOS, unavailable)
+ @available(watchOS, unavailable)
+ struct ManageSubscriptionsView_Previews: PreviewProvider {
 
+    // swiftlint:disable force_unwrapping
     static var previews: some View {
-
-        CompatibilityNavigationStack {
-            let viewModelMonthlyRenewing = ManageSubscriptionsViewModel(
-                screen: CustomerCenterConfigTestData.customerCenterData.screens[.management]!,
-                subscriptionInformation: CustomerCenterConfigTestData.subscriptionInformationMonthlyRenewing,
-                customerCenterActionHandler: nil,
-                refundRequestStatusMessage: "Refund granted successfully!")
-            ManageSubscriptionsView(viewModel: viewModelMonthlyRenewing)
-                .previewDisplayName("Monthly renewing")
+        ForEach(ColorScheme.allCases, id: \.self) { colorScheme in
+            CompatibilityNavigationStack {
+                let viewModelMonthlyRenewing = ManageSubscriptionsViewModel(
+                    screen: CustomerCenterConfigTestData.customerCenterData.screens[.management]!,
+                    actionWrapper: CustomerCenterActionWrapper(),
+                    purchaseInformation: CustomerCenterConfigTestData.subscriptionInformationMonthlyRenewing,
+                    refundRequestStatus: .success,
+                    purchasesProvider: CustomerCenterPurchases())
+                ManageSubscriptionsView(viewModel: viewModelMonthlyRenewing)
                 .environment(\.localization, CustomerCenterConfigTestData.customerCenterData.localization)
                 .environment(\.appearance, CustomerCenterConfigTestData.customerCenterData.appearance)
-        }
+            }
+            .preferredColorScheme(colorScheme)
+            .previewDisplayName("Monthly renewing - \(colorScheme)")
 
-        CompatibilityNavigationStack {
-            let viewModelYearlyExpiring = ManageSubscriptionsViewModel(
-                screen: CustomerCenterConfigTestData.customerCenterData.screens[.management]!,
-                subscriptionInformation: CustomerCenterConfigTestData.subscriptionInformationYearlyExpiring,
-                customerCenterActionHandler: nil)
-            ManageSubscriptionsView(viewModel: viewModelYearlyExpiring)
-                .previewDisplayName("Yearly expiring")
+            CompatibilityNavigationStack {
+                let viewModelYearlyExpiring = ManageSubscriptionsViewModel(
+                    screen: CustomerCenterConfigTestData.customerCenterData.screens[.management]!,
+                    actionWrapper: CustomerCenterActionWrapper(),
+                    purchaseInformation: CustomerCenterConfigTestData.subscriptionInformationYearlyExpiring,
+                    purchasesProvider: CustomerCenterPurchases())
+                ManageSubscriptionsView(viewModel: viewModelYearlyExpiring)
                 .environment(\.localization, CustomerCenterConfigTestData.customerCenterData.localization)
                 .environment(\.appearance, CustomerCenterConfigTestData.customerCenterData.appearance)
+            }
+            .preferredColorScheme(colorScheme)
+            .previewDisplayName("Yearly expiring - \(colorScheme)")
+
+            CompatibilityNavigationStack {
+                let viewModelYearlyExpiring = ManageSubscriptionsViewModel(
+                    screen: CustomerCenterConfigTestData.customerCenterData.screens[.management]!,
+                    actionWrapper: CustomerCenterActionWrapper(),
+                    purchaseInformation: CustomerCenterConfigTestData.subscriptionInformationFree,
+                    purchasesProvider: CustomerCenterPurchases())
+                ManageSubscriptionsView(viewModel: viewModelYearlyExpiring)
+                .environment(\.localization, CustomerCenterConfigTestData.customerCenterData.localization)
+                .environment(\.appearance, CustomerCenterConfigTestData.customerCenterData.appearance)
+            }
+            .preferredColorScheme(colorScheme)
+            .previewDisplayName("Free subscription - \(colorScheme)")
+
+            CompatibilityNavigationStack {
+                let viewModelYearlyExpiring = ManageSubscriptionsViewModel(
+                    screen: CustomerCenterConfigTestData.customerCenterData.screens[.management]!,
+                    actionWrapper: CustomerCenterActionWrapper(),
+                    purchaseInformation: CustomerCenterConfigTestData.consumable,
+                    purchasesProvider: CustomerCenterPurchases())
+                ManageSubscriptionsView(viewModel: viewModelYearlyExpiring)
+                .environment(\.localization, CustomerCenterConfigTestData.customerCenterData.localization)
+                .environment(\.appearance, CustomerCenterConfigTestData.customerCenterData.appearance)
+            }
+            .preferredColorScheme(colorScheme)
+            .previewDisplayName("Consumable - \(colorScheme)")
         }
     }
 
-}
-
-#endif
+ }
 
 #endif
 

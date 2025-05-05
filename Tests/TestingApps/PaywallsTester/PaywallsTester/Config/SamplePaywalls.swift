@@ -5,11 +5,11 @@
 //  Created by Nacho Soto on 7/27/23.
 //
 
-
-
 import Foundation
 import RevenueCat
-import RevenueCatUI
+
+#if DEBUG
+@testable import RevenueCatUI
 
 import UIKit
 
@@ -37,6 +37,17 @@ final class SamplePaywallLoader {
             availablePackages: self.packages
         )
     }
+
+    #if !os(macOS) && !os(tvOS) // For Paywalls V2
+    func offering(with components: PaywallComponentsData) -> Offering {
+        return .init(
+            identifier: Self.offeringIdentifier,
+            serverDescription: Self.offeringIdentifier,
+            metadata: [:],
+            availablePackages: self.packages
+        )
+    }
+    #endif
 
     func offeringWithDefaultPaywall() -> Offering {
         return .init(
@@ -222,7 +233,7 @@ private extension SamplePaywallLoader {
 // MARK: - Paywalls
 
 private extension SamplePaywallLoader {
-    
+
     static func template1() -> PaywallData {
         return .init(
             templateName: PaywallTemplate.template1.rawValue,
@@ -676,6 +687,8 @@ private extension SamplePaywallLoader {
     static let tosURL = URL(string: "https://revenuecat.com/tos")!
 
 }
+
+#endif
 
 // This is provided by RevenueCatUI only for debug builds
 // But we want to be able to use it in release builds too.

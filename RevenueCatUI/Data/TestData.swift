@@ -9,13 +9,11 @@ import Foundation
 import RevenueCat
 import SwiftUI
 
-// swiftlint:disable type_body_length file_length
+// swiftlint:disable type_body_length file_length force_unwrapping
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-// @PublicForExternalTesting
 enum TestData {
 
-    // @PublicForExternalTesting
     static let customerInfo: CustomerInfo = {
         return .decode(
         """
@@ -150,89 +148,60 @@ enum TestData {
         subscriptionPeriod: nil,
         locale: Self.locale
     )
-    static let fiveYearsProduct = TestStoreProduct(
-        localizedTitle: "5 Years",
-        price: 349.49,
-        localizedPriceString: "$349.49",
-        productIdentifier: "com.revenuecat.product_five_years",
-        productType: .nonRenewableSubscription,
-        localizedDescription: "5 years purchase",
-        subscriptionGroupIdentifier: "group",
-        subscriptionPeriod: nil,
-        locale: Self.locale
-    )
-    // @PublicForExternalTesting
     static let weeklyPackage = Package(
         identifier: PackageType.weekly.identifier,
         packageType: .weekly,
         storeProduct: Self.weeklyProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let monthlyPackage = Package(
         identifier: PackageType.monthly.identifier,
         packageType: .monthly,
         storeProduct: Self.monthlyProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let threeMonthPackage = Package(
         identifier: PackageType.threeMonth.identifier,
         packageType: .threeMonth,
         storeProduct: Self.threeMonthProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let threeMonthPackageThailand = Package(
         identifier: PackageType.threeMonth.identifier,
         packageType: .threeMonth,
         storeProduct: Self.threeMonthProductThailand.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let sixMonthPackage = Package(
         identifier: PackageType.sixMonth.identifier,
         packageType: .sixMonth,
         storeProduct: Self.sixMonthProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let annualPackage = Package(
         identifier: PackageType.annual.identifier,
         packageType: .annual,
         storeProduct: Self.annualProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let annualPackage60 = Package(
         identifier: PackageType.annual.identifier,
         packageType: .annual,
         storeProduct: Self.annualProduct60.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let annualPackage60Taiwan = Package(
         identifier: PackageType.annual.identifier,
         packageType: .annual,
         storeProduct: Self.annualProduct60Taiwan.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
     static let lifetimePackage = Package(
         identifier: PackageType.lifetime.identifier,
         packageType: .lifetime,
         storeProduct: Self.lifetimeProduct.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
-    // @PublicForExternalTesting
-    static let fiveYearsPackage = Package(
-        identifier: packageType5YearsIdentifier,
-        packageType: .custom,
-        storeProduct: Self.fiveYearsProduct.toStoreProduct(),
-        offeringIdentifier: Self.offeringIdentifier
-    )
-    // @PublicForExternalTesting
-    static let packageType5YearsIdentifier = "Five years"
 
     #if DEBUG
     static let productWithIntroOffer = TestStoreProduct(
@@ -249,6 +218,27 @@ enum TestData {
             price: 0,
             localizedPriceString: "$0.00",
             paymentMode: .freeTrial,
+            subscriptionPeriod: .init(value: 1, unit: .week),
+            numberOfPeriods: 1,
+            type: .introductory
+        ),
+        discounts: [],
+        locale: Self.locale
+    )
+    static let productWithIntroOfferPayUpFront = TestStoreProduct(
+        localizedTitle: "PRO monthly",
+        price: 3.99,
+        localizedPriceString: "$3.99",
+        productIdentifier: "com.revenuecat.product_5",
+        productType: .autoRenewableSubscription,
+        localizedDescription: "PRO monthly",
+        subscriptionGroupIdentifier: "group",
+        subscriptionPeriod: .init(value: 1, unit: .month),
+        introductoryDiscount: .init(
+            identifier: "intro",
+            price: 1.99,
+            localizedPriceString: "$1.99",
+            paymentMode: .payUpFront,
             subscriptionPeriod: .init(value: 1, unit: .week),
             numberOfPeriods: 1,
             type: .introductory
@@ -287,6 +277,12 @@ enum TestData {
         identifier: PackageType.monthly.identifier,
         packageType: .monthly,
         storeProduct: productWithIntroOffer.toStoreProduct(),
+        offeringIdentifier: Self.offeringIdentifier
+    )
+    static let packageWithIntroOfferPayUpFront = Package(
+        identifier: PackageType.monthly.identifier,
+        packageType: .monthly,
+        storeProduct: productWithIntroOfferPayUpFront.toStoreProduct(),
         offeringIdentifier: Self.offeringIdentifier
     )
     static let packageWithNoIntroOffer = Package(
@@ -547,264 +543,8 @@ enum TestData {
                             TestData.sixMonthPackage,
                             TestData.annualPackage]
     )
-    
-    static let offeringWithLinTemplate5Paywall = Offering(
-        identifier: Self.offeringIdentifier,
-        serverDescription: "Offering",
-        metadata: [:],
-        paywall: .init(
-            templateName: PaywallTemplate.template5.rawValue,
-            config: .init(
-                packages: [PackageType.annual.identifier,
-                           PackageType.monthly.identifier,
-                           packageType5YearsIdentifier],
-                defaultPackage: PackageType.annual.identifier,
-                images: .init(
-                    header: "954459_1692992845.png"
-                ),
-                colors: .init(
-                    light: .init(
-                        background: "#ffffff",
-                        text1: "#000000",
-                        text2: "#000000",
-                        text3: "#000000",
-                        callToActionBackground: "#FD7C0F",
-                        callToActionForeground: "#111717",
-                        accent1: "#FD7C0F",
-                        accent2: "#FD7C0F",
-                        accent3: "#DFDFDF"
-                    ),
-                    dark: .init(
-                        background: #colorLiteral(red: 0, green: 0, blue: 0, alpha: 1).asPaywallColor,
-                        text1: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1).asPaywallColor,
-                        text2: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1).asPaywallColor,
-                        text3: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1).asPaywallColor,
-                        callToActionBackground: #colorLiteral(red: 0.9921568627, green: 0.4862745098, blue: 0.05882352941, alpha: 1).asPaywallColor,
-                        callToActionForeground: #colorLiteral(red: 0.06666666667, green: 0.09019607843, blue: 0.09019607843, alpha: 1).asPaywallColor,
-                        accent1: #colorLiteral(red: 0.9921568627, green: 0.4862745098, blue: 0.05882352941, alpha: 1).asPaywallColor,
-                        accent2: #colorLiteral(red: 0.9921568627, green: 0.4862745098, blue: 0.05882352941, alpha: 1).asPaywallColor,
-                        accent3: #colorLiteral(red: 0.3764705882, green: 0.3921568627, blue: 0.3882352941, alpha: 1).asPaywallColor
-                    )
-                ),
-                termsOfServiceURL: URL(string: "https://revenuecat.com/tos")!
-            ),
-            localization: .init(
-                title: "Unlock endless design & animation possibilities",
-                callToAction: "Continue",
-                callToActionWithIntroOffer: "Start your Free Trial",
-                offerDetails: "{{ total_price_and_per_month }}",
-                offerDetailsWithIntroOffer: "Free for {{ sub_offer_duration }}, then {{ total_price_and_per_month }}",
-                offerName: "{{ sub_period }}",
-                features: [
-                    .init(title: "Create unlimited Linearity files", iconID: "tick"),
-                    .init(title: "Limitless eye-catching animations", iconID: "tick"),
-                    .init(title: "Get fast priority support", iconID: "tick"),
-                ]
-            ),
-            assetBaseURL: Self.paywallAssetBaseURL
-        ),
-        availablePackages: [TestData.monthlyPackage,
-                            TestData.annualPackage,
-                            TestData.fiveYearsPackage]
-    )
 
     static let offeringWithTemplate7Paywall = Offering(
-        identifier: Self.offeringIdentifier,
-        serverDescription: "Offering",
-        metadata: [:],
-        paywall: .init(
-            templateName: PaywallTemplate.template7.rawValue,
-            config: .init(
-                images: .init(
-                    header: "954459_1692992845.png"
-                ),
-                imagesByTier: [
-                    "basic": .init(
-                        header: "954459_1703109702.png"
-                    ),
-                    "premium": .init(
-                        header: "954459_1701267532.jpeg"
-                    )
-                ],
-                colors: .init(light: .init(), dark: .init()),
-                colorsByTier: [
-                    "basic": .init(
-                        light: .init(
-                            background: "#ffffff",
-                            text1: "#000000",
-                            text2: "#adf5c5",
-                            text3: "#b15d5d",
-                            callToActionBackground: #colorLiteral(red: 0.2588235438, green: 0.7568627596, blue: 0.9686274529, alpha: 1).asPaywallColor,
-                            callToActionForeground: "#ffffff",
-                            accent1: #colorLiteral(red: 0.1764705926, green: 0.4980392158, blue: 0.7568627596, alpha: 1).asPaywallColor,
-                            accent2: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1).asPaywallColor,
-                            accent3: "#7676801F",
-                            tierControlBackground: "#dcdcdc",
-                            tierControlForeground: "#000000",
-                            tierControlSelectedBackground: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1).asPaywallColor,
-                            tierControlSelectedForeground: "#ffffff"
-                        )
-                    ),
-                    "standard": .init(
-                        light: .init(
-                            background: "#ffffff",
-                            text1: "#000000",
-                            text2: "#adf5c5",
-                            text3: "#b15d5d",
-                            callToActionBackground: #colorLiteral(red: 0.8549019694, green: 0.250980407, blue: 0.4784313738, alpha: 1).asPaywallColor,
-                            callToActionForeground: "#ffffff",
-                            accent1: #colorLiteral(red: 0.8078431487, green: 0.02745098062, blue: 0.3333333433, alpha: 1).asPaywallColor,
-                            accent2: "#7676801F",
-                            accent3: #colorLiteral(red: 0.1921568662, green: 0.007843137719, blue: 0.09019608051, alpha: 1).asPaywallColor,
-                            tierControlBackground: "#dcdcdc",
-                            tierControlForeground: "#000000",
-                            tierControlSelectedBackground: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1).asPaywallColor,
-                            tierControlSelectedForeground: "#ffffff"
-                        )
-                    ),
-                    "premium": .init(
-                        light: .init(
-                            background: "#ffffff",
-                            text1: "#000000",
-                            text2: "#adf5c5",
-                            text3: "#b15d5d",
-                            callToActionBackground: #colorLiteral(red: 0.5843137503, green: 0.8235294223, blue: 0.4196078479, alpha: 1).asPaywallColor,
-                            callToActionForeground: "#ffffff",
-                            accent1: #colorLiteral(red: 0.4666666687, green: 0.7647058964, blue: 0.2666666806, alpha: 1).asPaywallColor,
-                            accent2: "#7676801F",
-                            accent3: #colorLiteral(red: 0.1294117719, green: 0.2156862766, blue: 0.06666667014, alpha: 1).asPaywallColor,
-                            tierControlBackground: "#dcdcdc",
-                            tierControlForeground: "#000000",
-                            tierControlSelectedBackground: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1).asPaywallColor,
-                            tierControlSelectedForeground: "#ffffff"
-                        )
-                    )
-                ],
-                tiers: [
-                    .init(
-                        id: "basic",
-                        packages: [
-                            TestData.annualPackage.identifier,
-                            TestData.monthlyPackage.identifier
-                        ],
-                        defaultPackage: TestData.threeMonthPackage.identifier
-                    ),
-                    .init(
-                        id: "standard",
-                        packages: [
-                            TestData.weeklyPackage.identifier,
-                            TestData.threeMonthPackage.identifier
-                        ],
-                        defaultPackage: TestData.weeklyPackage.identifier
-                    ),
-                    .init(
-                        id: "premium",
-                        packages: [
-                            TestData.sixMonthPackage.identifier,
-                            TestData.lifetimePackage.identifier
-                        ],
-                        defaultPackage: TestData.annualPackage.identifier
-                    )
-                ],
-                termsOfServiceURL: URL(string: "https://revenuecat.com/tos")!
-            ),
-            localizationByTier: [
-                "basic": .init(
-                    title: "Get started with our Basic plan",
-                    callToAction: "{{ price_per_period }}",
-                    callToActionWithIntroOffer: "Start your {{ sub_offer_duration }} free trial",
-                    offerDetails: "{{ total_price_and_per_month }}",
-                    offerDetailsWithIntroOffer: "Free for {{ sub_offer_duration }}, " +
-                    "then {{ total_price_and_per_month }}",
-                    offerOverrides: [
-                        TestData.threeMonthPackage.identifier: .init(
-                            offerDetails: "Details",
-                            offerDetailsWithIntroOffer: nil,
-                            offerName: "OVERRIDE Three Month",
-                            offerBadge: nil
-                        ),
-                        TestData.lifetimePackage.identifier: .init(
-                            offerDetails: "Details",
-                            offerDetailsWithIntroOffer: nil,
-                            offerName: "OVERRIDE Lifetime",
-                            offerBadge: nil
-                        )
-                    ],
-                    features: [
-                        .init(title: "Access to 10 cinematic LUTs", iconID: "tick"),
-                        .init(title: "Standard fonts", iconID: "tick"),
-                        .init(title: "2 templates", iconID: "tick")
-                    ],
-                    tierName: "Basic"
-                ),
-                "standard": .init(
-                    title: "Get started with our Standard plan",
-                    callToAction: "{{ price_per_period }}",
-                    callToActionWithIntroOffer: "Start your {{ sub_offer_duration }} free trial",
-                    offerDetails: "{{ total_price_and_per_month }}",
-                    offerDetailsWithIntroOffer: "Free for {{ sub_offer_duration }}, " +
-                    "then {{ total_price_and_per_month }}",
-                    offerOverrides: [
-                        TestData.weeklyPackage.identifier: .init(
-                            offerDetails: "Details",
-                            offerDetailsWithIntroOffer: nil,
-                            offerName: "OVERRIDE Week",
-                            offerBadge: nil
-                        ),
-                        TestData.monthlyPackage.identifier: .init(
-                            offerDetails: "Details",
-                            offerDetailsWithIntroOffer: nil,
-                            offerName: "OVERRIDE Month",
-                            offerBadge: nil
-                        )
-                    ],
-                    features: [
-                        .init(title: "Access to 30 cinematic LUTs", iconID: "tick"),
-                        .init(title: "Pro fonts and transition effects", iconID: "tick"),
-                        .init(title: "10+ templates", iconID: "tick")
-                    ],
-                    tierName: "Standard"
-                ),
-                "premium": .init(
-                    title: "Master the art of video editing",
-                    callToAction: "{{ price_per_period }}",
-                    callToActionWithIntroOffer: "Start your {{ sub_offer_duration }} free trial",
-                    offerDetails: "{{ total_price_and_per_month }}",
-                    offerDetailsWithIntroOffer: "Free for {{ sub_offer_duration }}, " +
-                    "then {{ total_price_and_per_month }}",
-                    offerOverrides: [
-                        TestData.sixMonthPackage.identifier: .init(
-                            offerDetails: "Details",
-                            offerDetailsWithIntroOffer: nil,
-                            offerName: "OVERRIDE Six Month",
-                            offerBadge: nil
-                        ),
-                        TestData.annualPackage.identifier: .init(
-                            offerDetails: "Details",
-                            offerDetailsWithIntroOffer: "",
-                            offerName: "OVERRIDE Annual",
-                            offerBadge: nil
-                        )
-                    ],
-                    features: [
-                        .init(title: "Access to all 150 of our cinematic LUTs", iconID: "tick"),
-                        .init(title: "Custom design tools and transition effects", iconID: "tick"),
-                        .init(title: "100+ exclusive templates", iconID: "tick")
-                    ],
-                    tierName: "Premium"
-                )
-            ],
-            assetBaseURL: Self.paywallAssetBaseURL
-        ),
-        availablePackages: [TestData.weeklyPackage,
-                            TestData.monthlyPackage,
-                            TestData.sixMonthPackage,
-                            TestData.threeMonthPackage,
-                            TestData.annualPackage,
-                            TestData.lifetimePackage]
-    )
-    
-    static let offeringWithLinTemplate7Paywall = Offering(
         identifier: Self.offeringIdentifier,
         serverDescription: "Offering",
         metadata: [:],
@@ -1109,7 +849,6 @@ extension PaywallColor: ExpressibleByStringLiteral {
 
 extension PackageType {
 
-    // @PublicForExternalTesting
     var identifier: String {
         return Package.string(from: self)!
     }

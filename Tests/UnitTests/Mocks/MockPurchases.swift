@@ -48,6 +48,10 @@ final class MockPurchases {
 
     var mockedResponseVerificationMode: Signing.ResponseVerificationMode = .disabled
 
+    var mockedHealthReportRequestResponse: Result<HealthReport, PublicError> = .success(
+        HealthReport(status: .passed, projectId: nil, appId: nil, checks: [])
+    )
+
 }
 
 extension MockPurchases: InternalPurchasesType {
@@ -58,6 +62,10 @@ extension MockPurchases: InternalPurchasesType {
         } else {
             return try self.mockedHealthRequestResponse.get()
         }
+    }
+
+    func healthReportRequest() async throws -> HealthReport {
+        return try self.mockedHealthReportRequestResponse.get()
     }
 
     @available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *)
@@ -119,6 +127,10 @@ extension MockPurchases: PurchasesType {
         self.unimplemented()
     }
 
+    var storeFrontCountryCode: String? {
+        self.unimplemented()
+    }
+
     var isAnonymous: Bool {
         self.unimplemented()
     }
@@ -139,6 +151,14 @@ extension MockPurchases: PurchasesType {
         get { self.unimplemented() }
         // swiftlint:disable:next unused_setter_value
         set { self.unimplemented() }
+    }
+
+    func getStorefront() async -> RevenueCat.Storefront? {
+        self.unimplemented()
+    }
+
+    func getStorefront(completion: @escaping GetStorefrontBlock) {
+        self.unimplemented()
     }
 
     func logIn(
@@ -229,6 +249,14 @@ extension MockPurchases: PurchasesType {
         package: Package,
         promotionalOffer: PromotionalOffer
     ) async throws -> PurchaseResultData {
+        self.unimplemented()
+    }
+
+    func purchase(_ params: PurchaseParams, completion: @escaping PurchaseCompletedBlock) {
+        self.unimplemented()
+    }
+
+    func purchase(_ params: PurchaseParams) async throws -> PurchaseResultData {
         self.unimplemented()
     }
 
@@ -419,10 +447,32 @@ extension MockPurchases: PurchasesType {
         self.unimplemented()
     }
 
+    func setTenjinAnalyticsInstallationID(_ tenjinAnalyticsInstallationID: String?) {
+        self.unimplemented()
+    }
+
+    func setPostHogUserID(_ postHogUserID: String?) {
+        self.unimplemented()
+    }
+
     func collectDeviceIdentifiers() {
         self.unimplemented()
     }
 
+    func redeemWebPurchase(
+        webPurchaseRedemption: WebPurchaseRedemption,
+        completion: @escaping (CustomerInfo?, PublicError?) -> Void
+    ) {
+        self.unimplemented()
+    }
+
+    @objc(params:withCompletion:)
+    func purchaseWithParams(
+        _ params: PurchaseParams,
+        completion: @escaping PurchaseCompletedBlock
+    ) {
+        self.unimplemented()
+    }
 }
 
 extension MockPurchases: PurchasesSwiftType {
@@ -466,4 +516,40 @@ extension MockPurchases: PurchasesSwiftType {
     }
 
     #endif
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func eligibleWinBackOffers(
+        forProduct product: StoreProduct
+    ) async throws -> [WinBackOffer] {
+        self.unimplemented()
+    }
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func eligibleWinBackOffers(
+        forPackage package: Package
+    ) async throws -> [WinBackOffer] {
+        self.unimplemented()
+    }
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func eligibleWinBackOffers(
+        forProduct product: StoreProduct,
+        completion: @escaping @Sendable ([WinBackOffer]?, PublicError?) -> Void
+    ) {
+        self.unimplemented()
+    }
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func eligibleWinBackOffers(
+        forPackage package: Package,
+        completion: @escaping @Sendable ([WinBackOffer]?, PublicError?) -> Void
+    ) {
+       self.unimplemented()
+    }
+
+      func redeemWebPurchase(
+        _ webPurchaseRedemption: WebPurchaseRedemption
+    ) async -> WebPurchaseRedemptionResult {
+        self.unimplemented()
+    }
 }

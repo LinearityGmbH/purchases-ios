@@ -38,10 +38,16 @@
     [a setOnesignalUserID: @""];
     [a setCleverTapID: nil];
     [a setCleverTapID: @""];
+    [a setKochavaDeviceID:nil];
+    [a setKochavaDeviceID:@""];
     [a setMixpanelDistinctID: nil];
     [a setMixpanelDistinctID: @""];
     [a setFirebaseAppInstanceID: nil];
     [a setFirebaseAppInstanceID: @""];
+    [a setTenjinAnalyticsInstallationID: nil];
+    [a setTenjinAnalyticsInstallationID: @""];
+    [a setPostHogUserID:nil];
+    [a setPostHogUserID:@""];
     [a setMediaSource: nil];
     [a setMediaSource: @""];
     [a setCampaign: nil];

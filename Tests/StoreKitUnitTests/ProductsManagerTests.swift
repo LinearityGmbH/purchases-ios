@@ -113,16 +113,130 @@ class ProductsManagerTests: StoreKitConfigTestCase {
         expect(unwrappedFirstProduct.currencyCode) == "EUR"
     }
 
-    private func createManager(storeKitVersion: StoreKitVersion) -> ProductsManager {
+    fileprivate func createManager(storeKitVersion: StoreKitVersion,
+                                   storefront: StorefrontType? = nil,
+                                   diagnosticsTracker: DiagnosticsTrackerType? = nil) -> ProductsManager {
         let platformInfo = Purchases.PlatformInfo(flavor: "xyz", version: "123")
+        let systemInfo = MockSystemInfo(
+            platformInfo: platformInfo,
+            finishTransactions: true,
+            storeKitVersion: storeKitVersion
+        )
+        systemInfo.stubbedStorefront = storefront
         return ProductsManager(
-            systemInfo: MockSystemInfo(
-                platformInfo: platformInfo,
-                finishTransactions: true,
-                storeKitVersion: storeKitVersion
-            ),
+            diagnosticsTracker: diagnosticsTracker,
+            systemInfo: systemInfo,
             requestTimeout: Self.requestTimeout
         )
     }
 
 }
+
+// swiftlint:disable type_name
+@available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
+class SK1ProductsManagerDiagnosticsTrackingTests: ProductsManagerTests {
+
+    private var mockDiagnosticsTracker: MockDiagnosticsTracker!
+
+    private var productsManager: ProductsManager!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        try AvailabilityChecks.iOS15APIAvailableOrSkipTest()
+
+        self.mockDiagnosticsTracker = MockDiagnosticsTracker()
+    }
+
+    func testFetchProductsWithIdentifiersSK1TracksCorrectly() throws {
+        let manager = self.createManager(storeKitVersion: .storeKit1,
+                                         storefront: MockStorefront(countryCode: "USA"),
+                                         diagnosticsTracker: self.mockDiagnosticsTracker)
+
+        let identifier = "com.revenuecat.monthly_4.99.1_week_intro"
+        let notFoundIdentifier = "unknown_identifier"
+        _ = waitUntilValue(timeout: Self.requestDispatchTimeout) { completed in
+            manager.products(withIdentifiers: Set([identifier, notFoundIdentifier]), completion: completed)
+        }
+
+        expect(self.mockDiagnosticsTracker.trackedProductsRequestParams.value).toEventually(haveCount(1))
+        let params = try XCTUnwrap(self.mockDiagnosticsTracker.trackedProductsRequestParams.value.first)
+        expect(params.wasSuccessful) == true
+        expect(params.storeKitVersion) == .storeKit1
+        expect(Set(params.requestedProductIds)) == [identifier, notFoundIdentifier]
+        expect(Set(params.notFoundProductIds)) == [notFoundIdentifier]
+        expect(params.errorMessage).to(beNil())
+        expect(params.errorCode).to(beNil())
+        expect(params.storefront) == "USA"
+    }
+
+}
+// swiftlint:enable type_name
+
+// swiftlint:disable type_name
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+class SK2ProductsManagerDiagnosticsTrackingTests: ProductsManagerTests {
+
+    private var mockDiagnosticsTracker: MockDiagnosticsTracker!
+
+    private var productsManager: ProductsManager!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        try AvailabilityChecks.iOS16APIAvailableOrSkipTest()
+
+        self.mockDiagnosticsTracker = MockDiagnosticsTracker()
+    }
+
+    func testFetchProductsWithIdentifiersSK2TracksCorrectly() throws {
+        let manager = self.createManager(storeKitVersion: .storeKit2,
+                                         diagnosticsTracker: self.mockDiagnosticsTracker)
+
+        let identifier = "com.revenuecat.monthly_4.99.1_week_intro"
+        let notFoundIdentifier = "unknown_identifier"
+        _ = waitUntilValue(timeout: Self.requestDispatchTimeout) { completed in
+            manager.products(withIdentifiers: Set([identifier, notFoundIdentifier]), completion: completed)
+        }
+
+        expect(self.mockDiagnosticsTracker.trackedProductsRequestParams.value).toEventually(haveCount(1))
+        let params = try XCTUnwrap(self.mockDiagnosticsTracker.trackedProductsRequestParams.value.first)
+        expect(params.wasSuccessful) == true
+        expect(params.storeKitVersion) == .storeKit2
+        expect(Set(params.requestedProductIds)) == [identifier, notFoundIdentifier]
+        expect(Set(params.notFoundProductIds)) == [notFoundIdentifier]
+        expect(params.errorMessage).to(beNil())
+        expect(params.errorCode).to(beNil())
+        expect(params.storeKitErrorDescription).to(beNil())
+    }
+
+    #if swift(>=5.9)
+    @available(iOS 17.0, tvOS 17.0, macOS 14.0, watchOS 10.0, *)
+    func testFetchProductsWithIdentifiersSK2ErrorTracksCorrectly() async throws {
+        try AvailabilityChecks.iOS17APIAvailableOrSkipTest()
+
+        try await self.testSession.setSimulatedError(.generic(.unknown), forAPI: .loadProducts)
+        let manager = self.createManager(storeKitVersion: .storeKit2,
+                                         diagnosticsTracker: self.mockDiagnosticsTracker)
+
+        let identifier = "com.revenuecat.monthly_4.99.1_week_intro"
+        _ = try? await manager.products(withIdentifiers: Set([identifier]))
+
+        try await asyncWait(
+            description: "Diagnostics tracker should have been called",
+            timeout: .seconds(4),
+            pollInterval: .milliseconds(100)
+        ) { [diagnosticsTracker = self.mockDiagnosticsTracker!] in
+            diagnosticsTracker.trackedProductsRequestParams.value.count == 1
+        }
+        let params = self.mockDiagnosticsTracker.trackedProductsRequestParams.value.first
+        expect(params?.wasSuccessful) == false
+        expect(params?.storeKitVersion) == .storeKit2
+        expect(params?.errorMessage) == "Products request error: Unable to Complete Request"
+        expect(params?.errorCode) == 2
+        expect(params?.storeKitErrorDescription) == StoreKitError.unknown.trackingDescription
+    }
+    #endif
+
+}
+// swiftlint:enable type_name

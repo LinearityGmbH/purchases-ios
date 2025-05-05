@@ -22,7 +22,8 @@ class MockOfferingsFactory: OfferingsFactory {
                              response: .init(currentOfferingId: "base",
                                              offerings: [],
                                              placements: nil,
-                                             targeting: nil))
+                                             targeting: nil,
+                                             uiConfig: nil))
         }
         if nilOfferings {
             return nil
@@ -52,11 +53,13 @@ class MockOfferingsFactory: OfferingsFactory {
                       packages: [
                         .init(identifier: "", platformProductIdentifier: "$rc_monthly")
                       ])
-            ], placements: nil, targeting: nil)
+            ], placements: nil, targeting: nil, uiConfig: nil)
 
         )
     }
 }
+
+extension MockOfferingsFactory: @unchecked Sendable { }
 
 extension OfferingsResponse {
 
@@ -70,7 +73,8 @@ extension OfferingsResponse {
                   ])
         ],
         placements: nil,
-        targeting: nil
+        targeting: nil,
+        uiConfig: nil
     )
 
 }

@@ -64,6 +64,8 @@ class PurchasesSubscriberAttributesTests: TestCase {
     var mockManageSubsHelper: MockManageSubscriptionsHelper!
     var mockBeginRefundRequestHelper: MockBeginRefundRequestHelper!
     var mockStoreMessagesHelper: MockStoreMessagesHelper!
+    var mockWinBackOfferEligibilityCalculator: MockWinBackOfferEligibilityCalculator!
+    var webPurchaseRedemptionHelper: WebPurchaseRedemptionHelper!
 
     var purchases: Purchases!
 
@@ -87,7 +89,8 @@ class PurchasesSubscriberAttributesTests: TestCase {
         ]
         self.mockOperationDispatcher = MockOperationDispatcher()
         self.mockReceiptParser = MockReceiptParser()
-        self.mockProductsManager = MockProductsManager(systemInfo: systemInfo,
+        self.mockProductsManager = MockProductsManager(diagnosticsTracker: nil,
+                                                       systemInfo: systemInfo,
                                                        requestTimeout: Configuration.storeKitRequestTimeoutDefault)
         self.mockIntroEligibilityCalculator = MockIntroEligibilityCalculator(productsManager: mockProductsManager,
                                                                              receiptParser: mockReceiptParser)
@@ -108,7 +111,8 @@ class PurchasesSubscriberAttributesTests: TestCase {
                                                        currentUserProvider: mockIdentityManager,
                                                        backend: mockBackend,
                                                        attributionFetcher: mockAttributionFetcher,
-                                                       subscriberAttributesManager: mockSubscriberAttributesManager)
+                                                       subscriberAttributesManager: mockSubscriberAttributesManager,
+                                                       systemInfo: self.systemInfo)
         self.attribution = Attribution(subscriberAttributesManager: self.mockSubscriberAttributesManager,
                                        currentUserProvider: self.mockIdentityManager,
                                        attributionPoster: self.mockAttributionPoster,
@@ -143,7 +147,8 @@ class PurchasesSubscriberAttributesTests: TestCase {
                                                          systemInfo: systemInfo,
                                                          backend: mockBackend,
                                                          offeringsFactory: MockOfferingsFactory(),
-                                                         productsManager: mockProductsManager)
+                                                         productsManager: mockProductsManager,
+                                                         diagnosticsTracker: nil)
         self.mockManageSubsHelper = MockManageSubscriptionsHelper(systemInfo: systemInfo,
                                                                   customerInfoManager: customerInfoManager,
                                                                   currentUserProvider: mockIdentityManager)
@@ -152,6 +157,10 @@ class PurchasesSubscriberAttributesTests: TestCase {
                                                                          currentUserProvider: mockIdentityManager)
         self.mockTransactionsManager = MockTransactionsManager(receiptParser: mockReceiptParser)
         self.mockStoreMessagesHelper = .init()
+        self.mockWinBackOfferEligibilityCalculator = MockWinBackOfferEligibilityCalculator()
+        self.webPurchaseRedemptionHelper = .init(backend: self.mockBackend,
+                                                 identityManager: self.mockIdentityManager,
+                                                 customerInfoManager: self.customerInfoManager)
     }
 
     override func tearDown() {
@@ -167,24 +176,29 @@ class PurchasesSubscriberAttributesTests: TestCase {
     func setupPurchases() {
         self.mockIdentityManager.mockIsAnonymous = false
 
-        let purchasesOrchestrator = PurchasesOrchestrator(productsManager: self.mockProductsManager,
-                                                          paymentQueueWrapper: self.paymentQueueWrapper,
-                                                          systemInfo: self.systemInfo,
-                                                          subscriberAttributes: self.attribution,
-                                                          operationDispatcher: self.mockOperationDispatcher,
-                                                          receiptFetcher: self.mockReceiptFetcher,
-                                                          receiptParser: self.mockReceiptParser,
-                                                          transactionFetcher: self.mockTransactionFetcher,
-                                                          customerInfoManager: self.customerInfoManager,
-                                                          backend: self.mockBackend,
-                                                          transactionPoster: self.transactionPoster,
-                                                          currentUserProvider: self.mockIdentityManager,
-                                                          transactionsManager: self.mockTransactionsManager,
-                                                          deviceCache: self.mockDeviceCache,
-                                                          offeringsManager: self.mockOfferingsManager,
-                                                          manageSubscriptionsHelper: self.mockManageSubsHelper,
-                                                          beginRefundRequestHelper: self.mockBeginRefundRequestHelper,
-                                                          storeMessagesHelper: self.mockStoreMessagesHelper)
+        let purchasesOrchestrator = PurchasesOrchestrator(
+            productsManager: self.mockProductsManager,
+            paymentQueueWrapper: self.paymentQueueWrapper,
+            systemInfo: self.systemInfo,
+            subscriberAttributes: self.attribution,
+            operationDispatcher: self.mockOperationDispatcher,
+            receiptFetcher: self.mockReceiptFetcher,
+            receiptParser: self.mockReceiptParser,
+            transactionFetcher: self.mockTransactionFetcher,
+            customerInfoManager: self.customerInfoManager,
+            backend: self.mockBackend,
+            transactionPoster: self.transactionPoster,
+            currentUserProvider: self.mockIdentityManager,
+            transactionsManager: self.mockTransactionsManager,
+            deviceCache: self.mockDeviceCache,
+            offeringsManager: self.mockOfferingsManager,
+            manageSubscriptionsHelper: self.mockManageSubsHelper,
+            beginRefundRequestHelper: self.mockBeginRefundRequestHelper,
+            storeMessagesHelper: self.mockStoreMessagesHelper,
+            diagnosticsTracker: nil,
+            winBackOfferEligibilityCalculator: self.mockWinBackOfferEligibilityCalculator,
+            paywallEventsManager: nil,
+            webPurchaseRedemptionHelper: self.webPurchaseRedemptionHelper)
         let trialOrIntroductoryPriceEligibilityChecker = TrialOrIntroPriceEligibilityChecker(
             systemInfo: systemInfo,
             receiptFetcher: mockReceiptFetcher,
@@ -192,7 +206,8 @@ class PurchasesSubscriberAttributesTests: TestCase {
             backend: mockBackend,
             currentUserProvider: mockIdentityManager,
             operationDispatcher: mockOperationDispatcher,
-            productsManager: mockProductsManager
+            productsManager: mockProductsManager,
+            diagnosticsTracker: nil
         )
         purchases = Purchases(appUserID: mockIdentityManager.currentAppUserID,
                               requestFetcher: mockRequestFetcher,
@@ -220,7 +235,8 @@ class PurchasesSubscriberAttributesTests: TestCase {
                               trialOrIntroPriceEligibilityChecker: .create(
                                 with: trialOrIntroductoryPriceEligibilityChecker
                               ),
-                              storeMessagesHelper: self.mockStoreMessagesHelper)
+                              storeMessagesHelper: self.mockStoreMessagesHelper,
+                              diagnosticsTracker: nil)
         purchasesOrchestrator.delegate = purchases
         purchases!.delegate = purchasesDelegate
         Purchases.setDefaultInstance(purchases!)
@@ -438,6 +454,16 @@ class PurchasesSubscriberAttributesTests: TestCase {
             .to(equal((nil, purchases.appUserID)))
     }
 
+    func testSetAndClearKochavaDeviceID() {
+        setupPurchases()
+        purchases.attribution.setKochavaDeviceID("kochava")
+        purchases.attribution.setKochavaDeviceID(nil)
+        expect(self.mockSubscriberAttributesManager.invokedSetKochavaDeviceIDParametersList[0])
+            .to(equal(("kochava", purchases.appUserID)))
+        expect(self.mockSubscriberAttributesManager.invokedSetKochavaDeviceIDParametersList[1])
+            .to(equal((nil, purchases.appUserID)))
+    }
+
     func testSetAndClearMixpanelDistinctID() {
         setupPurchases()
         purchases.attribution.setMixpanelDistinctID("mixp")
@@ -455,6 +481,26 @@ class PurchasesSubscriberAttributesTests: TestCase {
         expect(self.mockSubscriberAttributesManager.invokedSetFirebaseAppInstanceIDParametersList[0]) ==
         ("fireb", purchases.appUserID)
         expect(self.mockSubscriberAttributesManager.invokedSetFirebaseAppInstanceIDParametersList[1]) ==
+        (nil, purchases.appUserID)
+    }
+
+    func testSetAndClearTenjinAnalyticsInstallationID() {
+        setupPurchases()
+        purchases.attribution.setTenjinAnalyticsInstallationID("tenjin")
+        purchases.attribution.setTenjinAnalyticsInstallationID(nil)
+        expect(self.mockSubscriberAttributesManager.invokedSetTenjinAnalyticsInstallationIDParametersList[0]) ==
+        ("tenjin", purchases.appUserID)
+        expect(self.mockSubscriberAttributesManager.invokedSetTenjinAnalyticsInstallationIDParametersList[1]) ==
+        (nil, purchases.appUserID)
+    }
+
+    func testSetAndClearPostHogUserID() {
+        setupPurchases()
+        purchases.attribution.setPostHogUserID("posthog")
+        purchases.attribution.setPostHogUserID(nil)
+        expect(self.mockSubscriberAttributesManager.invokedSetPostHogUserIDParametersList[0]) ==
+        ("posthog", purchases.appUserID)
+        expect(self.mockSubscriberAttributesManager.invokedSetPostHogUserIDParametersList[1]) ==
         (nil, purchases.appUserID)
     }
 
@@ -648,6 +694,28 @@ class PurchasesSubscriberAttributesTests: TestCase {
         expect(self.mockSubscriberAttributesManager.invokedSetFirebaseAppInstanceIDParameters?.firebaseAppInstanceID) ==
         "123abc"
         expect(self.mockSubscriberAttributesManager.invokedSetFirebaseAppInstanceIDParameters?.appUserID) ==
+        mockIdentityManager.currentAppUserID
+    }
+
+    func testSetTenjinAnalyticsInstallationIDMakesRightCalls() {
+        setupPurchases()
+
+        Purchases.shared.attribution.setTenjinAnalyticsInstallationID("123abc")
+        expect(self.mockSubscriberAttributesManager.invokedSetTenjinAnalyticsInstallationIDCount) == 1
+        expect(self.mockSubscriberAttributesManager.invokedSetTenjinAnalyticsInstallationIDParameters?.tenjinID) ==
+        "123abc"
+        expect(self.mockSubscriberAttributesManager.invokedSetTenjinAnalyticsInstallationIDParameters?.appUserID) ==
+        mockIdentityManager.currentAppUserID
+    }
+
+    func testSetPostHogUserIDMakesRightCalls() {
+        setupPurchases()
+
+        Purchases.shared.attribution.setPostHogUserID("123abc")
+        expect(self.mockSubscriberAttributesManager.invokedSetPostHogUserIDCount) == 1
+        expect(self.mockSubscriberAttributesManager.invokedSetPostHogUserIDParameters?.postHogUserID) ==
+        "123abc"
+        expect(self.mockSubscriberAttributesManager.invokedSetPostHogUserIDParameters?.appUserID) ==
         mockIdentityManager.currentAppUserID
     }
 

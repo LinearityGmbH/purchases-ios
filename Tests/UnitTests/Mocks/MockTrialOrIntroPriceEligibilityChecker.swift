@@ -19,7 +19,8 @@ class MockTrialOrIntroPriceEligibilityChecker: TrialOrIntroPriceEligibilityCheck
     convenience init() {
         let platformInfo = Purchases.PlatformInfo(flavor: "xyz", version: "123")
         let systemInfo = MockSystemInfo(platformInfo: platformInfo, finishTransactions: true)
-        let productsManager = MockProductsManager(systemInfo: systemInfo,
+        let productsManager = MockProductsManager(diagnosticsTracker: nil,
+                                                  systemInfo: systemInfo,
                                                   requestTimeout: Configuration.storeKitRequestTimeoutDefault)
         self.init(systemInfo: systemInfo,
                   receiptFetcher: MockReceiptFetcher(requestFetcher: MockRequestFetcher(), systemInfo: systemInfo),
@@ -28,8 +29,10 @@ class MockTrialOrIntroPriceEligibilityChecker: TrialOrIntroPriceEligibilityCheck
                   backend: MockBackend(),
                   currentUserProvider: MockCurrentUserProvider(mockAppUserID: "app_user"),
                   operationDispatcher: MockOperationDispatcher(),
-                  productsManager: MockProductsManager(systemInfo: systemInfo,
-                                                       requestTimeout: Configuration.storeKitRequestTimeoutDefault))
+                  productsManager: MockProductsManager(diagnosticsTracker: nil,
+                                                       systemInfo: systemInfo,
+                                                       requestTimeout: Configuration.storeKitRequestTimeoutDefault),
+                  diagnosticsTracker: nil)
     }
 
     var invokedCheckTrialOrIntroPriceEligibilityFromOptimalStore = false
@@ -51,15 +54,16 @@ class MockTrialOrIntroPriceEligibilityChecker: TrialOrIntroPriceEligibilityCheck
     var invokedSk1checkTrialOrIntroPriceEligibilityCount = 0
     var invokedSk1checkTrialOrIntroPriceEligibilityParameters: (productIdentifiers: Set<String>, Void)?
     var invokedSk1checkTrialOrIntroPriceEligibilityParametersList = [(productIdentifiers: Set<String>, Void)]()
-    var stubbedSk1checkTrialOrIntroPriceEligibilityReceiveEligibilityResult: [String: IntroEligibility] = [:]
+    var stubbedSk1checkTrialOrIntroPriceEligibilityResult: ([String: IntroEligibility], Error?) = ([:], nil)
 
     override func sk1CheckEligibility(_ productIdentifiers: Set<String>,
-                                      completion: @escaping ReceiveIntroEligibilityBlock) {
+                                      completion: @escaping ([String: IntroEligibility], Error?) -> Void) {
         invokedSk1checkTrialOrIntroPriceEligibility = true
         invokedSk1checkTrialOrIntroPriceEligibilityCount += 1
         invokedSk1checkTrialOrIntroPriceEligibilityParameters = (productIdentifiers, ())
         invokedSk1checkTrialOrIntroPriceEligibilityParametersList.append((productIdentifiers, ()))
-        completion(stubbedSk1checkTrialOrIntroPriceEligibilityReceiveEligibilityResult)
+        let stubbedResult = stubbedSk1checkTrialOrIntroPriceEligibilityResult
+        completion(stubbedResult.0, stubbedResult.1)
     }
 
     var invokedSk2checkTrialOrIntroPriceEligibility = false
@@ -79,3 +83,5 @@ class MockTrialOrIntroPriceEligibilityChecker: TrialOrIntroPriceEligibilityCheck
     }
 
 }
+
+extension MockTrialOrIntroPriceEligibilityChecker: @unchecked Sendable {}

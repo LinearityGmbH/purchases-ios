@@ -1,27 +1,23 @@
-### New Features
-* Price rounding logic (#4132) via James Borthwick (@jamesrb1)
-### Bugfixes
-* [Customer Center] Migrate to List style (#4190) via Cody Kerns (@codykerns)
-* [Paywalls] Improve locale consistency (#4158) via Josh Holtz (@joshdholtz)
-* Set Paywalls Tester deployment target to iOS 15 (#4196) via James Borthwick (@jamesrb1)
-* [Customer Center] Hide Contact Support button if URL can't be created (#4192) via Cesar de la Vega (@vegaro)
-* Fix the setting for SKIP_INSTALL in Xcode project (#4195) via Andy Boedo (@aboedo)
-* [Customer Center] Improving customer center buttons (#4165) via Cody Kerns (@codykerns)
-* Revert workaround for iOS 18 beta 5 SwiftUI crash (#4173) via Mark Villacampa (@MarkVillacampa)
-* [Paywalls] Make iOS version calculation lazy (#4163) via Mark Villacampa (@MarkVillacampa)
-* [Paywalls] Observe `PurchaseHandler` when owned externally (#4097) via James Borthwick (@jamesrb1)
-### Other Changes
-* [Customer Center] Clean up colors in WrongPlatformView and NoSubscriptionsView (#4204) via Cesar de la Vega (@vegaro)
-* Fix failing `all-tests` and retry more flaky tests (#4188) via Josh Holtz (@joshdholtz)
-* Compatibility content unavailable improvements (#4197) via James Borthwick (@jamesrb1)
-* Create lane to enable customer center (#4191) via Cesar de la Vega (@vegaro)
-* XCFramework artifacts in CircleCI (#4189) via Andy Boedo (@aboedo)
-* [Customer Center] CustomerCenterViewModel checks whether the app is the latest version (#4169) via JayShortway (@JayShortway)
-* export RevenueCatUI xcframework (#4172) via Andy Boedo (@aboedo)
-* Corrects references from ManageSubscriptionsButtonStyle to ButtonsStyle.  (#4186) via JayShortway (@JayShortway)
-* Speed up carthage installation tests (#4184) via Andy Boedo (@aboedo)
-* Customer center improvements (#4166) via James Borthwick (@jamesrb1)
-* replace `color(from colorInformation:)` global with extension (#4183) via Andy Boedo (@aboedo)
-* Fix tests in main (#4174) via Andy Boedo (@aboedo)
-* Enable customer center tests (#4171) via James Borthwick (@jamesrb1)
-* [Customer Center] Initial implementation (#3967) via Cesar de la Vega (@vegaro)
+## RevenueCat SDK
+### 🐞 Bugfixes
+* Fix Backwards compatibility errors introduced by new `testSDKHealthCheck` implementation (#5022) via Pol Piella Abadia (@polpielladev)
+* [Paywalls v2] fixes crash when getting invalid URL from paywall components localization (#5016) via Antonio Pallares (@ajpallares)
+
+## RevenueCatUI SDK
+### Paywallv2
+#### 🐞 Bugfixes
+* [Paywalls v2] Fixes blank lines not showing up (#5024) via JayShortway (@JayShortway)
+### Customer Center
+#### 🐞 Bugfixes
+* fix: Wrap viewmodel binding into another binding (#5023) via Facundo Menzella (@facumenzella)
+
+### 🔄 Other Changes
+* [Paywalls] Add new button component action for web paywall links (#5029) via Mark Villacampa (@MarkVillacampa)
+* [Customer center] show manage subscriptions through purchases provider (#5025) via Antonio Pallares (@ajpallares)
+* [Diagnostics] add `host` parameter to `http_request_performed` event (#4982) via Antonio Pallares (@ajpallares)
+* fix compilation issues in older versions of Xcode (#5021) via Antonio Pallares (@ajpallares)
+* Add load shedder integration tests for consumable and non-consumable products (#5018) via Toni Rico (@tonidero)
+* Use fallback API hosts when receiving server down response (#4970) via Antonio Pallares (@ajpallares)
+* feat: Introduce maestro for UI testing (#5013) via Facundo Menzella (@facumenzella)
+* [Paywalls v2] Adds logs to indicate whether URLs are opened successfully (#5020) via JayShortway (@JayShortway)
+* [DX-345] Update the `testSDKHealth` to use the new `/health_report` endpoint (#4979) via Pol Piella Abadia (@polpielladev)

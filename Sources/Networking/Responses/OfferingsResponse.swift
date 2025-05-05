@@ -13,12 +13,11 @@
 
 import Foundation
 
-// swiftlint:disable nesting
-
 struct OfferingsResponse {
 
     struct Offering {
 
+        // swiftlint:disable:next nesting
         struct Package {
 
             let identifier: String
@@ -33,7 +32,8 @@ struct OfferingsResponse {
         var paywall: PaywallData?
         @DefaultDecodable.EmptyDictionary
         var metadata: [String: AnyDecodable]
-
+        var paywallComponents: PaywallComponentsData?
+        var draftPaywallComponents: PaywallComponentsData?
     }
 
     struct Placements {
@@ -51,6 +51,8 @@ struct OfferingsResponse {
     let offerings: [Offering]
     let placements: Placements?
     let targeting: Targeting?
+    let uiConfig: UIConfig?
+
 }
 
 extension OfferingsResponse {
@@ -64,6 +66,9 @@ extension OfferingsResponse {
         )
     }
 
+    var packages: [Offering.Package] {
+        return self.offerings.flatMap { $0.packages }
+    }
 }
 
 extension OfferingsResponse.Offering.Package: Codable, Equatable {}

@@ -1,6 +1,6 @@
 orbs:
   macos: circleci/macos@2.5.1
-  slack: circleci/slack@4.10.1
+  slack: circleci/slack@5.0.0
   # Disabled until compatible with M1: codecov: codecov/codecov@3.3.0
   # codecov: codecov/codecov@3.3.0
 
@@ -37,7 +37,7 @@ executors:
     parameters:
       xcode_version:
         type: string
-        default: '15.3'
+        default: '16.0'
     macos:
       xcode: << parameters.xcode_version >>
     resource_class: macos.m1.medium.gen1
@@ -50,7 +50,7 @@ executors:
     parameters:
       xcode_version:
         type: string
-        default: '15.3'
+        default: '16.0'
     macos:
       xcode: << parameters.xcode_version >>
     resource_class: macos.m1.large.gen1
@@ -70,7 +70,7 @@ aliases:
   release-tags: &release-tags
     filters:
       tags:
-        ignore: 
+        ignore:
           - /^.*-SNAPSHOT/
           - /^.*-customercenter.alpha.*/
       branches:
@@ -92,6 +92,27 @@ aliases:
         only: main
 
 commands:
+  slack-notify-on-fail:
+    steps:
+      - slack/notify:
+          branch_pattern: main
+          channel: 'feed-circleci-ios-failures'
+          event: fail
+          template: basic_fail_1
+  set-maximum-duration:
+    parameters:
+      seconds:
+        type: integer
+        default: 600
+    steps:
+      - run:
+          name: Set maximum job duration to << parameters.seconds >> seconds
+          background: true
+          command: |
+            sleep << parameters.seconds >>
+            curl --request POST \
+            --url https://circleci.com/api/v2/project/gh/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/job/$CIRCLE_BUILD_NUM/cancel \
+            --header "Circle-Token: $CIRCLECI_API_TOKEN"
   install-runtime:
     parameters:
       runtime-name:
@@ -113,16 +134,17 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - v2-gem-cache-{{ checksum "Gemfile.lock" }}-{{ arch }}
+            - v3-gem-cache-{{ checksum "Gemfile.lock" }}-{{ arch }}
       # CircleCI images fail on Ruby 3.3
       # https://github.com/fastlane/fastlane/issues/21794#issuecomment-2021331335
       # Also, not using macos/switch-ruby because its broken
       - run:
-          name: Set Ruby 3.2.2
+          # We're using Ruby 3.2.0 here to avoid an issue that caused a crash with Fastlane and Ruby 3.2.2.
+          name: Set Ruby 3.2.0
           command: |
             eval "$(rbenv init -)"
-            rbenv install -s 3.2.2  # Replace with your required Ruby version
-            rbenv global 3.2.2
+            rbenv install -s 3.2.0  # Replace with your required Ruby version
+            rbenv global 3.2.0
             rbenv rehash
       - run:
           name: Verify Ruby version
@@ -135,7 +157,7 @@ commands:
             bundle config set --local path 'vendor/bundle'
             bundle install
       - save_cache:
-          key: v2-gem-cache-{{ checksum "Gemfile.lock" }}-{{ arch }}
+          key: v3-gem-cache-{{ checksum "Gemfile.lock" }}-{{ arch }}
           paths:
             - vendor/bundle
 
@@ -374,7 +396,7 @@ commands:
           command: bundle exec fastlane backend_integration_tests test_plan:"<< parameters.test_plan >>"
           no_output_timeout: 5m
           environment:
-            SCAN_DEVICE: iPhone 15 (17.4.0)
+            SCAN_DEVICE: iPhone 16 (18.0.0)
       - compress_result_bundle:
           directory: fastlane/test_output/xctest/ios
           bundle_name: BackendIntegrationTests
@@ -385,6 +407,20 @@ commands:
           destination: scan-test-output
 
 jobs:
+
+  validate-package-swift:
+    parameters:
+       xcode_version:
+         type: string
+    executor:
+      name: macos-executor
+      xcode_version: << parameters.xcode_version >> 
+    steps:
+      - checkout
+      - run:
+          name: Validate Package.swift
+          command: swift package describe
+
   spm-release-build-xcode-14:
     executor:
       name: macos-executor
@@ -396,6 +432,20 @@ jobs:
           name: SPM Release Build
           command: swift build -c release --target RevenueCat
           no_output_timeout: 30m
+      - slack-notify-on-fail
+
+  spm-release-build-xcode-16:
+    executor:
+      name: macos-executor
+      xcode_version: '16.0.0'
+
+    steps:
+      - checkout
+      - run:
+          name: SPM Release Build
+          command: swift build -c release --target RevenueCat
+          no_output_timeout: 30m
+      - slack-notify-on-fail
 
   spm-release-build-xcode-15:
     executor:
@@ -408,6 +458,7 @@ jobs:
           name: SPM Release Build
           command: swift build -c release --target RevenueCat
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   spm-xcode-14-1:
     executor:
@@ -424,6 +475,7 @@ jobs:
           name: SPM RevenueCatUI Release Build
           command: swift build -c release --target RevenueCatUI
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   pod-lib-lint:
     executor:
@@ -448,6 +500,7 @@ jobs:
           name: SPM RevenueCatUI Release Build
           command: swift build -c release --target RevenueCatUI
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   api-tests:
     executor:
@@ -458,6 +511,7 @@ jobs:
       - run:
           name: API Tests
           command: bundle exec fastlane run_api_tests
+      - slack-notify-on-fail
 
   spm-receipt-parser:
     executor:
@@ -468,6 +522,7 @@ jobs:
           name: SPM Receipt Parser
           command: swift build -c release --target ReceiptParser
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   spm-revenuecat-ui-ios-15:
     executor:
@@ -497,6 +552,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output
           destination: scan-test-output
+      - slack-notify-on-fail
 
   spm-revenuecat-ui-ios-16:
     executor:
@@ -530,6 +586,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-revenuecat-ui-ios-17:
     executor:
@@ -564,6 +621,39 @@ jobs:
           path: fastlane/test_output
           destination: scan-test-output
 
+  run-revenuecat-ui-ios-18:
+    executor:
+      name: macos-executor
+      xcode_version: '16.0'
+
+    steps:
+      - checkout
+      - install-dependencies:
+          install_swiftlint: false
+      - update-spm-installation-commit
+      - run:
+          name: SPM RevenueCatUI Release Build
+          command: swift build -c release --target RevenueCatUI
+          no_output_timeout: 5m
+      - run:
+          name: SPM RevenueCatUI Tests
+          command: bundle exec fastlane test_revenuecatui
+          no_output_timeout: 15m
+          environment:
+            DEVICE: iPhone 16,OS=18.0
+      - create-snapshot-pr-if-needed:
+          condition: << pipeline.parameters.generate_revenuecatui_snapshots >>
+          job: "create_snapshots_repo_pr"
+          version: "revenuecatui-18"
+      - compress_result_bundle:
+          directory: fastlane/test_output
+          bundle_name: revenuecatui
+      - store_test_results:
+          path: fastlane/test_output/revenuecatui/tests.xml
+      - store_artifacts:
+          path: fastlane/test_output
+          destination: scan-test-output
+
   spm-revenuecat-ui-watchos:
     executor:
       name: macos-executor
@@ -577,7 +667,7 @@ jobs:
           no_output_timeout: 15m
           environment:
             PLATFORM: watchOS Simulator
-            DEVICE: Apple Watch Series 9 (45mm),OS=10.4
+            DEVICE: Apple Watch Series 10 (46mm),OS=11.0
             BUILD_SDK: watchsimulator
       - compress_result_bundle:
           directory: fastlane/test_output
@@ -587,6 +677,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-test-macos:
     executor:
@@ -605,6 +696,35 @@ jobs:
           condition: << pipeline.parameters.generate_snapshots >>
           job: "create_snapshot_pr"
           version: "macos"
+      - store_test_results:
+          path: fastlane/test_output
+      - store_artifacts:
+          path: fastlane/test_output/xctest
+          destination: scan-test-output
+      - slack-notify-on-fail
+
+  run-test-ios-18:
+    executor:
+      name: macos-executor
+      xcode_version: '16.0'
+
+    steps:
+      - checkout
+      - install-dependencies:
+          install_swiftlint: false
+      - run:
+          name: Run tests
+          command: bundle exec fastlane test_ios
+          no_output_timeout: 15m
+          environment:
+            SCAN_DEVICE: iPhone 16 (18.0)
+      - compress_result_bundle:
+          directory: fastlane/test_output/xctest/ios
+          bundle_name: RevenueCat
+      - create-snapshot-pr-if-needed:
+          condition: << pipeline.parameters.generate_snapshots >>
+          job: "create_snapshot_pr"
+          version: "ios-18"
       - store_test_results:
           path: fastlane/test_output
       - store_artifacts:
@@ -670,17 +790,21 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output/xctest
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-test-ios-15:
     executor:
       name: macos-executor
-      xcode_version: '14.3.0'
+      # Needs to be 15.2.0 because if not running on Swift 5.9, the tests fail
+      xcode_version: '15.2.0'
 
     steps:
       - checkout
       - install-dependencies:
           install_swiftlint: false
       - update-spm-installation-commit
+      - install-runtime:
+          runtime-name: iOS 15.5
       - run:
           name: Run tests
           command: bundle exec fastlane test_ios
@@ -699,6 +823,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output/xctest
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-test-tvos:
     executor:
@@ -718,6 +843,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output/xctest
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-test-watchos:
     executor:
@@ -731,7 +857,7 @@ jobs:
           no_output_timeout: 5m
           environment:
             SCAN_PLATFORM: watchOS Simulator
-            SCAN_DEVICE: Apple Watch Series 9 (45mm) (10.4)
+            SCAN_DEVICE: Apple Watch Series 10 (46mm) (11.0)
             BUILD_SDK: watchsimulator
       - compress_result_bundle:
           directory: fastlane/test_output/xctest/watchos
@@ -745,6 +871,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output/xctest
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-test-ios-14:
     executor:
@@ -781,6 +908,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output/xctest
           destination: scan-test-output
+      - slack-notify-on-fail
 
   run-test-ios-13:
     executor:
@@ -816,6 +944,7 @@ jobs:
       - store_artifacts:
           path: fastlane/test_output/xctest
           destination: scan-test-output
+      - slack-notify-on-fail
 
   build-tv-watch-and-macos:
     executor:
@@ -827,6 +956,7 @@ jobs:
           name: Build tvOS, watchOS and macOS
           command: bundle exec fastlane build_tv_watch_mac
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   build-visionos:
     executor:
@@ -838,6 +968,7 @@ jobs:
           name: Build visionOS
           command: bundle exec fastlane build_visionos
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   backend-integration-tests-SK1:
     executor:
@@ -845,6 +976,7 @@ jobs:
     steps:
       - run-backend-tests:
           test_plan: "BackendIntegrationTests-SK1"
+      - slack-notify-on-fail
 
   backend-integration-tests-SK2:
     executor:
@@ -852,6 +984,7 @@ jobs:
     steps:
       - run-backend-tests:
           test_plan: "BackendIntegrationTests-SK2"
+      - slack-notify-on-fail
 
   backend-integration-tests-other:
     executor:
@@ -859,6 +992,7 @@ jobs:
     steps:
       - run-backend-tests:
           test_plan: "BackendIntegrationTests-Other"
+      - slack-notify-on-fail
 
   backend-integration-tests-offline:
     executor:
@@ -866,6 +1000,7 @@ jobs:
     steps:
       - run-backend-tests:
           test_plan: "BackendIntegrationTests-Offline"
+      - slack-notify-on-fail
 
   backend-integration-tests-custom-entitlements:
     executor:
@@ -873,6 +1008,7 @@ jobs:
     steps:
       - run-backend-tests:
           test_plan: "BackendIntegrationTests-CustomEntitlements"
+      - slack-notify-on-fail
 
   release-checks:
     executor:
@@ -908,6 +1044,7 @@ jobs:
       - store_artifacts:
           path: RevenueCatUI.xcframework.zip
           destination: RevenueCatUI.xcframework.zip
+      - slack-notify-on-fail
 
   docs-build:
     executor:
@@ -924,6 +1061,7 @@ jobs:
           command: bundle exec fastlane build_docs
           environment:
             DOCS_IOS_VERSION: "17.4"
+      - slack-notify-on-fail
 
   docs-deploy:
     executor:
@@ -940,6 +1078,7 @@ jobs:
           command: bundle exec fastlane build_and_publish_docs
           environment:
             DOCS_IOS_VERSION: "17.4"
+      - slack-notify-on-fail
 
   make-release:
     executor:
@@ -953,6 +1092,7 @@ jobs:
           name: Deploy new version
           command: bundle exec fastlane release
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   push-revenuecat-pod:
     executor:
@@ -965,6 +1105,7 @@ jobs:
           name: Deploy new version
           command: bundle exec fastlane push_revenuecat_pod
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   push-revenuecatui-pod:
     executor:
@@ -977,6 +1118,7 @@ jobs:
           name: Deploy new version
           command: bundle exec fastlane push_revenuecatui_pod
           no_output_timeout: 30m
+      - slack-notify-on-fail
 
   prepare-next-version:
     executor:
@@ -989,6 +1131,7 @@ jobs:
       - run:
           name: Prepare next version
           command: bundle exec fastlane prepare_next_version
+      - slack-notify-on-fail
 
   installation-tests-cocoapods:
     executor:
@@ -1005,6 +1148,7 @@ jobs:
             bundle exec pod install
       - scan-and-archive:
           directory: Tests/InstallationTests/CocoapodsInstallation
+      - slack-notify-on-fail
 
   installation-tests-swift-package-manager:
     executor:
@@ -1018,6 +1162,7 @@ jobs:
           directory: Tests/InstallationTests/SPMInstallation/
       - scan-and-archive-all-platforms:
           directory: Tests/InstallationTests/SPMInstallation/
+      - slack-notify-on-fail
 
   installation-tests-custom-entitlement-computation-swift-package-manager:
     executor:
@@ -1031,6 +1176,7 @@ jobs:
           directory: Tests/InstallationTests/SPMCustomEntitlementComputationInstallation/
       - scan:
           directory: Tests/InstallationTests/SPMCustomEntitlementComputationInstallation/
+      - slack-notify-on-fail
 
   installation-tests-receipt-parser:
     executor:
@@ -1044,6 +1190,7 @@ jobs:
           directory: Tests/InstallationTests/ReceiptParserInstallation/
       - scan-and-archive-all-platforms:
           directory: Tests/InstallationTests/ReceiptParserInstallation/
+      - slack-notify-on-fail
 
   installation-tests-carthage:
     executor:
@@ -1066,6 +1213,7 @@ jobs:
 
       - install-dependencies-scan-and-archive:
           directory: Tests/InstallationTests/CarthageInstallation/
+      - slack-notify-on-fail
 
   installation-tests-xcode-direct-integration:
     executor:
@@ -1077,6 +1225,7 @@ jobs:
 
       - install-dependencies-scan-and-archive:
           directory: Tests/InstallationTests/XcodeDirectInstallation/
+      - slack-notify-on-fail
 
   lint:
     executor:
@@ -1150,7 +1299,7 @@ jobs:
           command: bundle exec fastlane backend_integration_tests test_plan:"BackendIntegrationTests-All-CI"
           no_output_timeout: 5m
           environment:
-            SCAN_DEVICE: iPhone 14 (17.2.0)
+            SCAN_DEVICE: iPhone 16 (18.0.0)
       - compress_result_bundle:
           directory: fastlane/test_output/xctest/ios
           bundle_name: BackendIntegrationTests
@@ -1192,6 +1341,20 @@ jobs:
       - run:
           name: Submit Purchase Tester
           command: bundle exec fastlane deploy_purchase_tester dry_run:<< parameters.dry_run >>
+      - slack-notify-on-fail
+
+  emerge_purchases_ui_snapshot_tests:
+    executor:
+      name: macos-executor
+    steps:
+      - checkout
+      - setup-git-credentials
+      - trust-github-key
+      - install-dependencies
+      - update-spm-installation-commit
+      - run:
+          name: Build Paywalls Tester
+          command: bundle exec fastlane build_paywalls_tester_for_emerge
 
   deploy-to-spm:
     docker:
@@ -1215,6 +1378,7 @@ workflows:
   generate-snapshot:
     when: << pipeline.parameters.generate_snapshots >>
     jobs:
+      - run-test-ios-18
       - run-test-ios-17
       - run-test-ios-16
       - run-test-ios-15
@@ -1229,6 +1393,7 @@ workflows:
       - spm-revenuecat-ui-ios-15
       - spm-revenuecat-ui-ios-16
       - run-revenuecat-ui-ios-17
+      - run-revenuecat-ui-ios-18
 
   build-test:
     when:
@@ -1239,16 +1404,25 @@ workflows:
         - not: << pipeline.parameters.generate_revenuecatui_snapshots >>
     jobs:
       - lint
+      - validate-package-swift:
+          name: validate-package-swift-5.7
+          xcode_version: "14.0.1"
+      - validate-package-swift:
+          name: validate-package-swift-5.8
+          xcode_version: "14.3.1"
       - run-test-ios-17
+      - run-test-ios-18
       - pod-lib-lint
       - run-revenuecat-ui-ios-17
+      - run-revenuecat-ui-ios-18
+      - emerge_purchases_ui_snapshot_tests
 
   create-tag:
     when:
       and:
         - not:
             equal: [scheduled_pipeline, << pipeline.trigger_source >>]
-        - matches: 
+        - matches:
             pattern: "^release/.*$"
             value: << pipeline.git.branch >>
     jobs:
@@ -1333,7 +1507,7 @@ workflows:
       - docs-deploy
 
   # To trigger tests manually, log into circleCI, select the project, a branch, and then click "Trigger Pipeline"
-  # in the top right hand corner of the screen. In the modal that appears, set the following parameter fields 
+  # in the top right hand corner of the screen. In the modal that appears, set the following parameter fields
   # and click "Trigger Pipeline" to begin the pipeline:
   #   - Parameter Type: string
   #   - Name: action
@@ -1341,44 +1515,98 @@ workflows:
   all-tests:
     when:
       or:
-        - matches: 
-            pattern: "^release/.*$"
+        - matches:
+            pattern: "^(release/.*|main)$"
             value: << pipeline.git.branch >>
-        - equal:
-            - "run-manual-tests"
-            - << pipeline.parameters.action >>
-        - equal: 
-            - "run-from-github-comments"
-            - << pipeline.parameters.GHA_Meta >>
+        - equal: ["run-manual-tests", << pipeline.parameters.action >>]
+        - equal: ["run-from-github-comments", << pipeline.parameters.GHA_Meta >>]
     jobs:
-      - backend-integration-tests-SK1
-      - backend-integration-tests-SK2
-      - backend-integration-tests-custom-entitlements
-      - backend-integration-tests-other
-      - build-tv-watch-and-macos
-      - build-visionos
-      - docs-build
-      - run-test-ios-14
-      - run-test-ios-15
-      - run-test-ios-16
-      - run-test-macos
-      - run-test-tvos
-      - run-test-watchos
-      - spm-receipt-parser
-      - spm-release-build
-      - spm-release-build-xcode-14
-      - spm-release-build-xcode-15
-      - spm-revenuecat-ui-ios-15
-      - spm-revenuecat-ui-ios-16
-      - run-revenuecat-ui-ios-17
-      - spm-revenuecat-ui-watchos
-      - installation-tests-cocoapods
-      - installation-tests-swift-package-manager
-      - installation-tests-custom-entitlement-computation-swift-package-manager
-      - installation-tests-carthage
-      - installation-tests-xcode-direct-integration
-      - installation-tests-receipt-parser
-      - api-tests
+      - backend-integration-tests-SK1:
+          context:
+            - slack-secrets-ios
+      - backend-integration-tests-SK2:
+          context:
+            - slack-secrets-ios
+      - backend-integration-tests-custom-entitlements:
+          context:
+            - slack-secrets-ios
+      - backend-integration-tests-other:
+          context:
+            - slack-secrets-ios
+      - backend-integration-tests-offline:
+          context:
+            - slack-secrets-ios
+      - build-tv-watch-and-macos:
+          context:
+            - slack-secrets-ios
+      - build-visionos:
+          context:
+            - slack-secrets-ios
+      - docs-build:
+          context:
+            - slack-secrets-ios
+      - run-test-ios-14:
+          context:
+            - slack-secrets-ios
+      - run-test-ios-15:
+          context:
+            - slack-secrets-ios
+      - run-test-ios-16:
+          context:
+            - slack-secrets-ios
+      - run-test-macos:
+          context:
+            - slack-secrets-ios
+      - run-test-tvos:
+          context:
+            - slack-secrets-ios
+      - run-test-watchos:
+          context:
+            - slack-secrets-ios
+      - spm-receipt-parser:
+          context:
+            - slack-secrets-ios
+      - spm-release-build:
+          context:
+            - slack-secrets-ios
+      - spm-release-build-xcode-14:
+          context:
+            - slack-secrets-ios
+      - spm-release-build-xcode-15:
+          context:
+            - slack-secrets-ios
+      - spm-revenuecat-ui-ios-15:
+          context:
+            - slack-secrets-ios
+      - spm-revenuecat-ui-ios-16:
+          context:
+            - slack-secrets-ios
+      - spm-revenuecat-ui-watchos:
+          context:
+            - slack-secrets-ios
+      - installation-tests-cocoapods:
+          context:
+            - slack-secrets-ios
+      - installation-tests-swift-package-manager:
+          context:
+            - slack-secrets-ios
+      - installation-tests-custom-entitlement-computation-swift-package-manager:
+          context:
+            - slack-secrets-ios
+      - installation-tests-carthage:
+          context:
+            - slack-secrets-ios
+      - installation-tests-xcode-direct-integration:
+          context:
+            - slack-secrets-ios
+      - installation-tests-receipt-parser:
+          context:
+            - slack-secrets-ios
+      - api-tests:
+          context:
+            - slack-secrets-ios
       - deploy-purchase-tester:
           dry_run: true
-      
+          context:
+            - slack-secrets-ios
+

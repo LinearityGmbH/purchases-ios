@@ -28,6 +28,27 @@ import Foundation
  */
 @objc(RCOffering) public final class Offering: NSObject {
 
+    /// Initialize a ``PaywallComponents``
+    public struct PaywallComponents {
+
+        /**
+         Paywall components configuration defined in RevenueCat dashboard.
+         */
+        public let uiConfig: UIConfig
+
+        /**
+         Paywall components configuration defined in RevenueCat dashboard.
+         */
+        public let data: PaywallComponentsData
+
+        /// Initialize a ``PaywallComponents``.
+        public init(uiConfig: UIConfig, data: PaywallComponentsData) {
+            self.uiConfig = uiConfig
+            self.data = data
+        }
+
+    }
+
     /**
      Unique identifier defined in RevenueCat dashboard.
      */
@@ -46,9 +67,30 @@ import Foundation
     @objc public var metadata: [String: Any] { self._metadata.data }
 
     /**
-    Paywall configuration defined in RevenueCat dashboard.
+     Paywall configuration defined in RevenueCat dashboard.
+
+     Use ``hasPaywall`` to check if the offering has a paywall.
      */
     public let paywall: PaywallData?
+
+    /**
+     Paywall components configuration defined in RevenueCat dashboard.
+
+     Use ``hasPaywall`` to check if the offering has a paywall.
+     */
+    public let paywallComponents: PaywallComponents?
+
+    /**
+     Whether the offering contains a paywall.
+     */
+    public var hasPaywall: Bool {
+        return paywall != nil || paywallComponents != nil
+    }
+
+    /**
+     Draft paywall components configuration defined in RevenueCat dashboard.
+     */
+    @_spi(Internal) public let draftPaywallComponents: PaywallComponents?
 
     /**
      Array of ``Package`` objects available for purchase.
@@ -144,15 +186,38 @@ import Foundation
             serverDescription: serverDescription,
             metadata: metadata,
             paywall: nil,
+            paywallComponents: nil,
             availablePackages: availablePackages
         )
     }
+
     /// Initialize an ``Offering`` given a list of ``Package``s.
-    public init(
+    public convenience init(
         identifier: String,
         serverDescription: String,
         metadata: [String: Any] = [:],
         paywall: PaywallData? = nil,
+        paywallComponents: PaywallComponents? = nil,
+        availablePackages: [Package]
+    ) {
+        self.init(
+            identifier: identifier,
+            serverDescription: serverDescription,
+            metadata: metadata,
+            paywall: paywall,
+            paywallComponents: paywallComponents,
+            draftPaywallComponents: nil,
+            availablePackages: availablePackages
+        )
+    }
+
+    init(
+        identifier: String,
+        serverDescription: String,
+        metadata: [String: Any] = [:],
+        paywall: PaywallData? = nil,
+        paywallComponents: PaywallComponents? = nil,
+        draftPaywallComponents: PaywallComponents?,
         availablePackages: [Package]
     ) {
         self.identifier = identifier
@@ -160,6 +225,8 @@ import Foundation
         self.availablePackages = availablePackages
         self._metadata = Metadata(data: metadata)
         self.paywall = paywall
+        self.paywallComponents = paywallComponents
+        self.draftPaywallComponents = draftPaywallComponents
 
         var foundPackages: [PackageType: Package] = [:]
 
@@ -225,20 +292,21 @@ extension Offering {
     }
 
     /// - Returns: The `metadata` value associated to `key` for the expected `Decodable` type,
-    /// or `nil` if not found.
-    /// - Throws: Error if the content couldn't be deserialized to the expected type.
+    /// or `nil` if not found or if the content couldn't be deserialized to the expected type.
     /// - Note: This decodes JSON using `JSONDecoder.KeyDecodingStrategy.convertFromSnakeCase`.
     public func getMetadataValue<T: Decodable>(for key: String) -> T? {
-        do {
-            guard let value = self.metadata[key] else { return nil }
-            let data = try JSONSerialization.data(withJSONObject: value)
+        guard let value = self.metadata[key] else { return nil }
 
-            return try JSONDecoder.default.decode(
-                T.self,
-                jsonData: data,
-                logErrors: true
-            )
-        } catch {
+        if JSONSerialization.isValidJSONObject(value),
+            let data = try? JSONSerialization.data(withJSONObject: value) {
+            return try? JSONDecoder.default.decode(
+                            T.self,
+                            jsonData: data,
+                            logErrors: true
+                        )
+        } else if let value = value as? T {
+            return value
+        } else {
             return nil
         }
     }
@@ -251,6 +319,8 @@ extension Offering: Identifiable {
     public var id: String { return self.identifier }
 
 }
+
+extension Offering.PaywallComponents: Sendable {}
 
 extension Offering: Sendable {}
 

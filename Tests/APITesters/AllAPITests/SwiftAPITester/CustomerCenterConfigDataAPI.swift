@@ -8,29 +8,47 @@
 import Foundation
 import RevenueCat
 
-#if CUSTOMER_CENTER_ENABLED
-
 func checkCustomerCenterConfigData(_ data: CustomerCenterConfigData) {
     let screens: [CustomerCenterConfigData.Screen.ScreenType: CustomerCenterConfigData.Screen] = data.screens
     let appearance: CustomerCenterConfigData.Appearance = data.appearance
     let localization: CustomerCenterConfigData.Localization = data.localization
     let support: CustomerCenterConfigData.Support = data.support
     let lastPublishedAppVersion = data.lastPublishedAppVersion
+    let productId = data.productId
 
     let _: CustomerCenterConfigData = .init(screens: screens,
                                             appearance: appearance,
                                             localization: localization,
                                             support: support,
-                                            lastPublishedAppVersion: lastPublishedAppVersion)
+                                            lastPublishedAppVersion: lastPublishedAppVersion,
+                                            productId: productId)
 }
 
-func checkHelpPath(_ path: CustomerCenterConfigData.HelpPath) {
+func checkHelpPath(
+    _ path: CustomerCenterConfigData.HelpPath,
+    isoDuration: ISODuration
+) {
     let id: String = path.id
     let title: String = path.title
+    let url: URL? = path.url
+    let openMethod: CustomerCenterConfigData.HelpPath.OpenMethod? = path.openMethod
     let type: CustomerCenterConfigData.HelpPath.PathType = path.type
     let detail: CustomerCenterConfigData.HelpPath.PathDetail? = path.detail
 
-    let _: CustomerCenterConfigData.HelpPath = .init(id: id, title: title, type: type, detail: detail)
+    let _: CustomerCenterConfigData.HelpPath = .init(id: id,
+                                                     title: title,
+                                                     url: url,
+                                                     openMethod: openMethod,
+                                                     type: type,
+                                                     detail: detail)
+
+    let _: CustomerCenterConfigData.HelpPath = .init(id: id,
+                                                     title: title,
+                                                     url: url,
+                                                     openMethod: openMethod,
+                                                     type: type,
+                                                     detail: detail,
+                                                     refundWindowDuration: .duration(isoDuration))
 }
 
 func checkHelpPathDetail(_ detail: CustomerCenterConfigData.HelpPath.PathDetail) {
@@ -49,11 +67,13 @@ func checkPromotionalOffer(_ offer: CustomerCenterConfigData.HelpPath.Promotiona
     let eligible: Bool = offer.eligible
     let title: String = offer.title
     let subtitle: String = offer.subtitle
+    let productMapping: [String: String] = offer.productMapping
 
     let _: CustomerCenterConfigData.HelpPath.PromotionalOffer = .init(iosOfferId: iosOfferId,
                                                                       eligible: eligible,
                                                                       title: title,
-                                                                      subtitle: subtitle)
+                                                                      subtitle: subtitle,
+                                                                      productMapping: productMapping)
 }
 
 func checkFeedbackSurvey(_ survey: CustomerCenterConfigData.HelpPath.FeedbackSurvey) {
@@ -99,5 +119,3 @@ func checkPathType(_ type: CustomerCenterConfigData.HelpPath.PathType) {
         break
     }
 }
-
-#endif

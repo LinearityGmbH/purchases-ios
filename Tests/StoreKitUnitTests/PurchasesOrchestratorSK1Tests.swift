@@ -179,7 +179,8 @@ class PurchasesOrchestratorSK1Tests: BasePurchasesOrchestratorTests, PurchasesOr
         let product = try await self.fetchSk1Product()
         let (transaction, customerInfo, error, userCancelled) = await withCheckedContinuation { continuation in
             orchestrator.purchase(product: StoreProduct(sk1Product: product),
-                                  package: nil) { transaction, customerInfo, error, userCancelled in
+                                  package: nil,
+                                  trackDiagnostics: false) { transaction, customerInfo, error, userCancelled in
                 continuation.resume(returning: (transaction, customerInfo, error, userCancelled))
             }
         }
@@ -188,6 +189,37 @@ class PurchasesOrchestratorSK1Tests: BasePurchasesOrchestratorTests, PurchasesOr
         expect(error).to(matchError(ErrorCode.purchaseCancelledError))
         expect(userCancelled) == true
         expect(self.backend.invokedPostReceiptData) == false
+    }
+
+    @available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *)
+    func testPurchaseSyncsPaywallEvents() async throws {
+        try AvailabilityChecks.iOS15APIAvailableOrSkipTest()
+
+        self.backend.stubbedPostReceiptResult = .success(mockCustomerInfo)
+
+        let product = try await self.fetchSk1Product()
+        let storeProduct = try await self.fetchSk1StoreProduct()
+        let package = Package(identifier: "package",
+                              packageType: .monthly,
+                              storeProduct: .from(product: storeProduct),
+                              offeringIdentifier: "offering")
+
+        let payment = storeKit1Wrapper.payment(with: product)
+
+        _ = await withCheckedContinuation { continuation in
+            orchestrator.purchase(sk1Product: product,
+                                  payment: payment,
+                                  package: package,
+                                  wrapper: self.storeKit1Wrapper) { transaction, customerInfo, error, userCancelled in
+                continuation.resume(returning: (transaction, customerInfo, error, userCancelled))
+            }
+        }
+
+        let manager = try self.mockPaywallEventsManager
+
+        try await asyncWait { await manager.invokedFlushEvents == true }
+
+        expect(self.operationDispatcher.invokedDispatchAsyncOnWorkerThreadDelayParam) == JitterableDelay.none
     }
 
     // MARK: - Purchasing, StoreKit 1 only
@@ -260,7 +292,7 @@ class PurchasesOrchestratorSK1Tests: BasePurchasesOrchestratorTests, PurchasesOr
         payment.productIdentifier = ""
 
         let (transaction, customerInfo, error, cancelled) =
-        try await withCheckedThrowingContinuation { continuation in
+        try await withUnsafeThrowingContinuation { continuation in
             self.orchestrator.purchase(
                 sk1Product: product,
                 payment: payment,
@@ -287,7 +319,7 @@ class PurchasesOrchestratorSK1Tests: BasePurchasesOrchestratorTests, PurchasesOr
         let payment = self.storeKit1Wrapper.payment(with: product)
         self.receiptFetcher.shouldReturnReceipt = false
 
-        let (_, _, error, _) = try await withCheckedThrowingContinuation { continuation in
+        let (_, _, error, _) = try await withUnsafeThrowingContinuation { continuation in
             self.orchestrator.purchase(
                 sk1Product: product,
                 payment: payment,
@@ -298,6 +330,86 @@ class PurchasesOrchestratorSK1Tests: BasePurchasesOrchestratorTests, PurchasesOr
             }
         }
         expect(error).to(matchError(ErrorCode.missingReceiptFileError))
+    }
+
+    // MARK: - PurchaseParams
+
+    func testPurchaseWithPurchaseParamsPostsReceipt() async throws {
+        self.backend.stubbedPostReceiptResult = .success(mockCustomerInfo)
+
+        let product = try await fetchSk1Product()
+        let storeProduct = StoreProduct(sk1Product: product)
+        let package = Package(identifier: "package",
+                              packageType: .monthly,
+                              storeProduct: .from(product: storeProduct),
+                              offeringIdentifier: "offering")
+
+        var params = PurchaseParams.Builder(package: package)
+
+        #if ENABLE_TRANSACTION_METADATA
+        params = params.with(metadata: ["key": "value"])
+        #endif
+
+        _ = await withCheckedContinuation { continuation in
+            orchestrator.purchase(params: params.build(),
+                                  trackDiagnostics: false) { transaction, customerInfo, error, userCancelled in
+                continuation.resume(returning: (transaction, customerInfo, error, userCancelled))
+            }
+        }
+
+        expect(self.receiptFetcher.receiptDataCalled) == true
+        expect(self.receiptFetcher.receiptDataReceivedRefreshPolicy) == .always
+
+        expect(self.backend.invokedPostReceiptDataCount) == 1
+        expect(self.backend.invokedPostReceiptData).to(beTrue())
+        expect(self.backend.invokedPostReceiptDataParameters?.data) ==
+            .receipt(self.receiptFetcher.mockReceiptData)
+        // Metadata is not supported in SK1
+        expect(self.backend.invokedPostReceiptDataParameters?.transactionData.metadata).to(beNil())
+        expect(self.backend.invokedPostReceiptDataParameters?.productData).toNot(beNil())
+        expect(
+            self.backend.invokedPostReceiptDataParameters?.transactionData.presentedOfferingContext?.offeringIdentifier
+        ) == "offering"
+        expect(self.backend.invokedPostReceiptDataParameters?.transactionData.source.initiationSource) == .purchase
+    }
+
+    func testPurchaseWithPurchaseParamsReturnsCorrectValues() async throws {
+        backend.stubbedPostReceiptResult = .success(mockCustomerInfo)
+
+        let product = try await self.fetchSk1Product()
+        let storeProduct = StoreProduct(sk1Product: product)
+        let discount = MockStoreProductDiscount(offerIdentifier: "offerid1",
+                                                currencyCode: product.priceLocale.currencyCode,
+                                                price: 11.1,
+                                                localizedPriceString: "$11.10",
+                                                paymentMode: .payAsYouGo,
+                                                subscriptionPeriod: .init(value: 1, unit: .month),
+                                                numberOfPeriods: 2,
+                                                type: .promotional)
+        let offer = PromotionalOffer.SignedData(identifier: "",
+                                                keyIdentifier: "",
+                                                nonce: UUID(),
+                                                signature: "",
+                                                timestamp: 0)
+        let promoOffer = PromotionalOffer(discount: discount, signedData: offer)
+        let params = PurchaseParams.Builder(product: storeProduct)
+                .with(promotionalOffer: promoOffer)
+                .build()
+
+        let (transaction, customerInfo, error, userCancelled) = await withCheckedContinuation { continuation in
+            orchestrator.purchase(params: params,
+                                  trackDiagnostics: false) { transaction, customerInfo, error, userCancelled in
+                continuation.resume(returning: (transaction, customerInfo, error, userCancelled))
+            }
+        }
+
+        expect(transaction?.sk1Transaction?.payment.paymentDiscount).toNot(beNil())
+        expect(transaction?.sk1Transaction?.productIdentifier) == product.productIdentifier
+        expect(userCancelled) == false
+        expect(error).to(beNil())
+
+        let expectedCustomerInfo: CustomerInfo = .emptyInfo
+        expect(customerInfo) == expectedCustomerInfo
     }
 
     // MARK: - Paywalls
@@ -674,4 +786,136 @@ class PurchasesOrchestratorSK1Tests: BasePurchasesOrchestratorTests, PurchasesOr
         }
     }
 
+}
+
+@available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
+class PurchasesOrchestratorSK1TrackingTests: PurchasesOrchestratorSK1Tests {
+
+    func testPurchaseSK1TracksCorrectly() async throws {
+        try AvailabilityChecks.iOS16APIAvailableOrSkipTest()
+
+        let transactionListener = MockStoreKit2TransactionListener()
+        let storeKit2ObserverModePurchaseDetector = MockStoreKit2ObserverModePurchaseDetector()
+        let diagnosticsSynchronizer = MockDiagnosticsSynchronizer()
+        let diagnosticsTracker = MockDiagnosticsTracker()
+
+        self.setUpOrchestrator(storeKit2TransactionListener: transactionListener,
+                               storeKit2StorefrontListener: StoreKit2StorefrontListener(delegate: nil),
+                               storeKit2ObserverModePurchaseDetector: storeKit2ObserverModePurchaseDetector,
+                               diagnosticsSynchronizer: diagnosticsSynchronizer,
+                               diagnosticsTracker: diagnosticsTracker)
+
+        backend.stubbedPostReceiptResult = .success(mockCustomerInfo)
+        systemInfo.stubbedStorefront = MockStorefront(countryCode: "USA")
+
+        let product = try await self.fetchSk1Product()
+        let payment = storeKit1Wrapper.payment(with: product)
+
+        let (transaction, _, _, _) = await withCheckedContinuation { continuation in
+            orchestrator.purchase(sk1Product: product,
+                                  payment: payment,
+                                  package: nil,
+                                  wrapper: self.storeKit1Wrapper) { transaction, customerInfo, error, userCancelled in
+                continuation.resume(returning: (transaction, customerInfo, error, userCancelled))
+            }
+        }
+
+        expect(transaction).toNot(beNil())
+        try await asyncWait(
+            description: "Diagnostics tracker should have been called",
+            timeout: .seconds(4),
+            pollInterval: .milliseconds(100)
+        ) { [diagnosticsTracker = diagnosticsTracker] in
+            diagnosticsTracker.trackedPurchaseRequestParams.value.count == 1
+        }
+
+        let params = try XCTUnwrap(diagnosticsTracker.trackedPurchaseRequestParams.value.first)
+        expect(params.wasSuccessful).to(beTrue())
+        expect(params.storeKitVersion) == .storeKit1
+        expect(params.errorMessage).to(beNil())
+        expect(params.errorCode).to(beNil())
+        expect(params.storeKitErrorDescription).to(beNil())
+        expect(params.productId) == Self.productID
+        expect(params.promotionalOfferId).to(beNil())
+        expect(params.winBackOfferApplied) == false
+        expect(params.purchaseResult).to(beNil())
+        expect(params.storefront) == "USA"
+
+        expect(self.mockDateProvider.invokedNowCount) == 2
+        expect(params.responseTime) == Self.eventTimestamp2.timeIntervalSince(Self.eventTimestamp1)
+    }
+
+    func testPurchaseWithInvalidPromotionalOfferSignatureTracksError() async throws {
+        try AvailabilityChecks.iOS16APIAvailableOrSkipTest()
+
+        let transactionListener = MockStoreKit2TransactionListener()
+        let storeKit2ObserverModePurchaseDetector = MockStoreKit2ObserverModePurchaseDetector()
+        let diagnosticsSynchronizer = MockDiagnosticsSynchronizer()
+        let diagnosticsTracker = MockDiagnosticsTracker()
+
+        self.setUpOrchestrator(storeKit2TransactionListener: transactionListener,
+                               storeKit2StorefrontListener: StoreKit2StorefrontListener(delegate: nil),
+                               storeKit2ObserverModePurchaseDetector: storeKit2ObserverModePurchaseDetector,
+                               diagnosticsSynchronizer: diagnosticsSynchronizer,
+                               diagnosticsTracker: diagnosticsTracker)
+
+        storeKit1Wrapper.mockAddPaymentTransactionState = .failed
+        storeKit1Wrapper.mockTransactionError = NSError(domain: SKErrorDomain,
+                                                        code: SKError.Code.invalidSignature.rawValue)
+        let product = try await self.fetchSk1Product()
+        let offer = PromotionalOffer.SignedData(identifier: "promotional-offer-id",
+                                                keyIdentifier: "",
+                                                nonce: UUID(),
+                                                signature: "",
+                                                timestamp: 0)
+
+        let (transaction, _, _, _) = await withCheckedContinuation { continuation in
+            orchestrator.purchase(sk1Product: product,
+                                  promotionalOffer: offer,
+                                  package: nil,
+                                  wrapper: self.storeKit1Wrapper) { transaction, customerInfo, error, userCancelled in
+                continuation.resume(returning: (transaction, customerInfo, error, userCancelled))
+            }
+        }
+        expect(transaction).toNot(beNil())
+        try await asyncWait(
+            description: "Diagnostics tracker should have been called",
+            timeout: .seconds(4),
+            pollInterval: .milliseconds(100)
+        ) { [diagnosticsTracker = diagnosticsTracker] in
+            diagnosticsTracker.trackedPurchaseRequestParams.value.count == 1
+        }
+        let params = try XCTUnwrap(diagnosticsTracker.trackedPurchaseRequestParams.value.first)
+        expect(params.wasSuccessful).to(beFalse())
+        expect(params.storeKitVersion) == .storeKit1
+        expect(params.errorMessage) == "The operation couldn’t be completed. (SKErrorDomain error 12.)"
+        expect(params.errorCode) == ErrorCode.invalidPromotionalOfferError.rawValue
+        expect(params.storeKitErrorDescription) == SKError.Code.invalidSignature.trackingDescription
+        expect(params.productId) == Self.productID
+        expect(params.promotionalOfferId) == "promotional-offer-id"
+        expect(params.winBackOfferApplied) == false
+        expect(params.purchaseResult).to(beNil())
+
+        expect(self.mockDateProvider.invokedNowCount) == 2
+        expect(params.responseTime) == Self.eventTimestamp2.timeIntervalSince(Self.eventTimestamp1)
+    }
+
+    #if compiler(>=6.0)
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    func testEligibleWinBackOffersThrowsWhenInSK1Mode() async throws {
+        try AvailabilityChecks.iOS18APIAvailableOrSkipTest()
+        self.setUpOrchestrator()
+        let product = try await self.fetchSk1Product()
+        let storeProduct = StoreProduct(sk1Product: product)
+
+        var error: Error?
+        do {
+            _ = try await self.orchestrator.eligibleWinBackOffers(forProduct: storeProduct)
+        } catch let thrownError {
+            error = thrownError
+        }
+
+        expect(error).to(matchError(ErrorCode.featureNotSupportedWithStoreKit1))
+    }
+    #endif
 }

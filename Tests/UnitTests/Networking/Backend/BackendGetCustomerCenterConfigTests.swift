@@ -11,8 +11,6 @@
 //
 //  Created by Cesar de la Vega on 29/6/24.
 
-#if CUSTOMER_CENTER_ENABLED
-
 import Foundation
 import Nimble
 import XCTest
@@ -143,6 +141,7 @@ class BackendGetCustomerCenterConfigTests: BaseBackendTests {
         let response = try XCTUnwrap(result.value?.value)
         let customerCenter = try XCTUnwrap(response.customerCenter)
         let appearance = try XCTUnwrap(customerCenter.appearance)
+        let support = try XCTUnwrap(customerCenter.support)
 
         expect(customerCenter.localization.locale) == "en_US"
         expect(customerCenter.localization.localizedStrings).to(haveCount(2))
@@ -216,6 +215,10 @@ class BackendGetCustomerCenterConfigTests: BaseBackendTests {
         let option3 = feedbackSurvey.options[2]
         expect(option3.id) == "jargnapocps"
         expect(option3.title) == "Bought by mistake"
+
+        expect(support.email) == "support@revenuecat.com"
+        expect(support.displayPurchaseHistoryLink) == true
+        expect(support.shouldWarnCustomerToUpdate) == false
     }
 
     func testGetCustomerCenterConfigFailSendsNil() {
@@ -301,7 +304,10 @@ private extension BackendGetCustomerCenterConfigTests {
                                 "ios_offer_id": "rc-refund-offer",
                                 "eligible": true,
                                 "title": "Wait!",
-                                "subtitle": "Here's an offer for you"
+                                "subtitle": "Here's an offer for you",
+                                "product_mapping": [
+                                    "product_id": "offer_id"
+                                ]
                             ] as [String: Any],
                             "title": "Request a refund",
                             "type": "REFUND_REQUEST"
@@ -320,7 +326,10 @@ private extension BackendGetCustomerCenterConfigTests {
                                             "ios_offer_id": "rc-cancel-offer",
                                             "eligible": false,
                                             "title": "Wait!",
-                                            "subtitle": "Here's an offer for you"
+                                            "subtitle": "Here's an offer for you",
+                                            "product_mapping": [
+                                                "product_id": "offer_id"
+                                            ]
                                         ] as [String: Any],
                                         "title": "Too expensive"
                                     ] as [String: Any],
@@ -330,7 +339,10 @@ private extension BackendGetCustomerCenterConfigTests {
                                             "ios_offer_id": "rc-cancel-offer",
                                             "eligible": false,
                                             "title": "Wait!",
-                                            "subtitle": "Here's an offer for you"
+                                            "subtitle": "Here's an offer for you",
+                                            "product_mapping": [
+                                                "product_id": "offer_id"
+                                            ]
                                         ] as [String: Any],
                                         "title": "Don't use the app"
                                     ] as [String: Any],
@@ -376,11 +388,11 @@ private extension BackendGetCustomerCenterConfigTests {
                 "mode": "CUSTOM"
             ] as [String: Any],
             "support": [
-                "email": "support@revenuecat.com"
+                "email": "support@revenuecat.com",
+                "should_warn_customer_to_update": false,
+                "display_purchase_history_link": true
             ] as [String: Any]
         ] as [String: Any]
     ]
 
 }
-
-#endif
