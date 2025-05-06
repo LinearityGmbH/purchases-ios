@@ -18,7 +18,7 @@ public let OfferingsErrorNotification = Notification.Name(rawValue: "Linearity.O
 // swiftlint:disable file_length
 
 class OfferingsManager {
-
+    
     private let deviceCache: DeviceCache
     private let operationDispatcher: OperationDispatcher
     private let systemInfo: SystemInfo
@@ -27,7 +27,7 @@ class OfferingsManager {
     private let productsManager: ProductsManagerType
     private let diagnosticsTracker: DiagnosticsTrackerType?
     private let dateProvider: DateProvider
-
+    
     init(deviceCache: DeviceCache,
          operationDispatcher: OperationDispatcher,
          systemInfo: SystemInfo,
@@ -45,7 +45,7 @@ class OfferingsManager {
         self.diagnosticsTracker = diagnosticsTracker
         self.dateProvider = dateProvider
     }
-
+    
     func offerings(
         appUserID: String,
         fetchPolicy: FetchPolicy = .default,
@@ -55,9 +55,9 @@ class OfferingsManager {
     ) {
         self.trackGetOfferingsStartedIfNeeded(trackDiagnostics: trackDiagnostics)
         let startTime = self.dateProvider.now()
-
+        
         self.systemInfo.isApplicationBackgrounded { isAppBackgrounded in
-
+            
             guard !fetchCurrent && !self.systemInfo.dangerousSettings.uiPreviewMode else {
                 self.fetchFromNetwork(appUserID: appUserID,
                                       fetchPolicy: fetchPolicy) { [weak self] result in
@@ -71,7 +71,7 @@ class OfferingsManager {
                 }
                 return
             }
-
+            
             guard let memoryCachedOfferings = self.cachedOfferings else {
                 self.fetchFromNetwork(appUserID: appUserID,
                                       fetchPolicy: fetchPolicy) { [weak self] result in
@@ -85,7 +85,7 @@ class OfferingsManager {
                 }
                 return
             }
-
+            
             let cacheStatus = self.deviceCache.offeringsCacheStatus(isAppBackgrounded: isAppBackgrounded)
             Logger.debug(Strings.offering.vending_offerings_cache_from_memory)
             self.trackGetOfferingsResultIfNeeded(trackDiagnostics: trackDiagnostics,
@@ -94,10 +94,10 @@ class OfferingsManager {
                                                  error: nil,
                                                  requestedProductIds: nil,
                                                  notFoundProductIds: nil)
-
+            
             self.dispatchCompletionOnMainThreadIfPossible(completion,
                                                           value: .success(memoryCachedOfferings))
-
+            
             if cacheStatus == .stale {
                 self.updateOfferingsCache(appUserID: appUserID,
                                           isAppBackgrounded: isAppBackgrounded,
@@ -106,11 +106,11 @@ class OfferingsManager {
             }
         }
     }
-
+    
     var cachedOfferings: Offerings? {
         return self.deviceCache.cachedOfferings
     }
-
+    
     func updateOfferingsCache(
         appUserID: String,
         isAppBackgrounded: Bool,
@@ -124,10 +124,10 @@ class OfferingsManager {
                                                   appUserID: appUserID,
                                                   fetchPolicy: fetchPolicy,
                                                   completion: completion)
-
+                
             case let .failure(.networkError(networkError)) where networkError.isServerDown:
                 Logger.warn(Strings.offering.fetching_offerings_failed_server_down)
-
+                
                 // If unable to fetch offerings when server is down, attempt to load them from disk cache.
                 self.fetchCachedOfferingsFromDisk(appUserID: appUserID,
                                                   fetchPolicy: fetchPolicy) { offerings in
@@ -138,48 +138,48 @@ class OfferingsManager {
                                                         completion: completion)
                     }
                 }
-
+                
             case let .failure(error):
                 self.handleOfferingsUpdateError(.backendError(error), completion: completion)
             }
         }
     }
-
+    
     func getMissingProductIDs(productIDsFromStore: Set<String>,
                               productIDsFromBackend: Set<String>) -> Set<String> {
         guard !productIDsFromBackend.isEmpty else {
             return []
         }
-
+        
         return productIDsFromBackend.subtracting(productIDsFromStore)
     }
-
+    
     func invalidateCachedOfferings(appUserID: String) {
         self.deviceCache.clearOfferingsCache(appUserID: appUserID)
     }
-
+    
     func invalidateAndReFetchCachedOfferingsIfAppropiate(appUserID: String) {
         let cachedOfferings = self.deviceCache.cachedOfferings
         self.invalidateCachedOfferings(appUserID: appUserID)
-
+        
         if cachedOfferings != nil {
             self.offerings(appUserID: appUserID,
                            fetchPolicy: .ignoreNotFoundProducts,
                            trackDiagnostics: false) { @Sendable _ in }
         }
     }
-
+    
 }
 
 private extension OfferingsManager {
-
+    
     func fetchFromNetwork(
         appUserID: String,
         fetchPolicy: FetchPolicy = .default,
         completion: (@MainActor @Sendable (Result<OfferingsResultData, Error>) -> Void)?
     ) {
         Logger.debug(Strings.offering.no_cached_offerings_fetching_from_network)
-
+        
         self.systemInfo.isApplicationBackgrounded { isAppBackgrounded in
             self.updateOfferingsCache(appUserID: appUserID,
                                       isAppBackgrounded: isAppBackgrounded,
@@ -187,7 +187,7 @@ private extension OfferingsManager {
                                       completion: completion)
         }
     }
-
+    
     func fetchCachedOfferingsFromDisk(
         appUserID: String,
         fetchPolicy: FetchPolicy,
@@ -198,7 +198,7 @@ private extension OfferingsManager {
             completion(nil)
             return
         }
-
+        
         self.createOfferings(
             from: response,
             fetchPolicy: fetchPolicy,
@@ -206,38 +206,38 @@ private extension OfferingsManager {
                 switch result {
                 case let .success(offeringsResultData):
                     Logger.debug(Strings.offering.vending_offerings_cache_from_disk)
-
+                    
                     // Cache in memory but as stale, so it can be re-updated when possible
                     cache.cacheInMemory(offerings: offeringsResultData.offerings)
                     cache.clearOfferingsCacheTimestamp()
-
+                    
                     completion(offeringsResultData)
-
+                    
                 case .failure:
                     completion(nil)
                 }
             }
         )
     }
-
+    
     func createOfferings(
         from response: OfferingsResponse,
         fetchPolicy: FetchPolicy,
         completion: @escaping (@Sendable (Result<OfferingsResultData, Error>) -> Void)
     ) {
         let productIdentifiers = response.productIdentifiers
-
+        
         guard !productIdentifiers.isEmpty else {
             let errorMessage = Strings.offering.configuration_error_no_products_for_offering.description
-			let userInfo = userInfo(for: response)
-			sendError(Error.configurationError(errorMessage, underlyingError: nil), title: "No product identifiers configured for offering", userInfo: userInfo)
+            let userInfo = userInfo(for: response)
+            sendError(Error.configurationError(errorMessage, underlyingError: nil), title: "No product identifiers configured for offering", userInfo: userInfo)
             completion(.failure(.configurationError(errorMessage, underlyingError: nil)))
             return
         }
-
+        
         self.fetchProducts(withIdentifiers: productIdentifiers, fromResponse: response) { result in
             let products = result.value ?? []
-
+            
             guard products.isEmpty == false else {
                 // Check if empty products is likely caused by https://github.com/RevenueCat/purchases-ios/issues/4954
                 // There is a widely reported bug in the iOS 18.4 Simulator affecting some HTTP requests
@@ -250,51 +250,51 @@ private extension OfferingsManager {
                                                                    showSimulatorWarning: showSimulatorWarning)))
                 return
             }
-
+            
             let productsByID = products.dictionaryWithKeys { $0.productIdentifier }
-
+            
             let missingProductIDs = self.getMissingProductIDs(productIDsFromStore: Set(productsByID.keys),
                                                               productIDsFromBackend: productIdentifiers)
             if !missingProductIDs.isEmpty {
-				var userInfo = userInfo(for: response)
-				userInfo["missingProductIDs"] = Array(missingProductIDs)
-				sendError(
-					GenericError(title: Strings.offering.cannot_find_product_configuration_error(
-						identifiers: missingProductIDs
-					).description),
-					title: "Missing product IDs configuration error",
-					userInfo: userInfo
-				)
+                var userInfo = userInfo(for: response)
+                userInfo["missingProductIDs"] = Array(missingProductIDs)
+                sendError(
+                    GenericError(title: Strings.offering.cannot_find_product_configuration_error(
+                        identifiers: missingProductIDs
+                    ).description),
+                    title: "Missing product IDs configuration error",
+                    userInfo: userInfo
+                )
                 switch fetchPolicy {
                 case .ignoreNotFoundProducts:
                     Logger.appleWarning(
                         Strings.offering.cannot_find_product_configuration_error(identifiers: missingProductIDs)
                     )
-
+                    
                 case .failIfProductsAreMissing:
                     completion(.failure(.missingProducts(identifiers: missingProductIDs)))
                     return
                 }
             }
-
+            
             if let createdOfferings = self.offeringsFactory.createOfferings(from: productsByID, data: response) {
                 completion(.success(OfferingsResultData(offerings: createdOfferings,
                                                         requestedProductIds: productIdentifiers,
                                                         notFoundProductIds: missingProductIDs)))
             } else {
-				let userInfo = userInfo(for: response)
-				sendError(
-					GenericError(title: Strings.offering.cannot_find_product_configuration_error(
-						identifiers: missingProductIDs
-					).description),
-					title: "No offerings found",
-					userInfo: userInfo
-				)
+                let userInfo = userInfo(for: response)
+                sendError(
+                    GenericError(title: Strings.offering.cannot_find_product_configuration_error(
+                        identifiers: missingProductIDs
+                    ).description),
+                    title: "No offerings found",
+                    userInfo: userInfo
+                )
                 completion(.failure(.noOfferingsFound()))
             }
         }
     }
-
+    
     func handleOfferingsBackendResult(
         with response: OfferingsResponse,
         appUserID: String,
@@ -305,16 +305,16 @@ private extension OfferingsManager {
             switch result {
             case let .success(offeringsResultData):
                 Logger.rcSuccess(Strings.offering.offerings_stale_updated_from_network)
-
+                
                 self.deviceCache.cache(offerings: offeringsResultData.offerings, appUserID: appUserID)
                 self.dispatchCompletionOnMainThreadIfPossible(completion, value: .success(offeringsResultData))
-
+                
             case let .failure(error):
                 self.handleOfferingsUpdateError(error, completion: completion)
             }
         }
     }
-
+    
     private static func createErrorForEmptyResult(_ error: PurchasesError?,
                                                   showSimulatorWarning: Bool = false) -> OfferingsManager.Error {
         if let purchasesError = error,
@@ -328,7 +328,7 @@ private extension OfferingsManager {
                                        underlyingError: error?.asPublicError)
         }
     }
-
+    
     func handleOfferingsUpdateError(
         _ error: Error,
         completion: (@MainActor @Sendable (Result<OfferingsResultData, Error>) -> Void)?
@@ -337,7 +337,7 @@ private extension OfferingsManager {
                                                                     underlyingError: error.underlyingError))
         self.dispatchCompletionOnMainThreadIfPossible(completion, value: .failure(error))
     }
-
+    
     func dispatchCompletionOnMainThreadIfPossible<T>(
         _ completion: (@MainActor @Sendable (T) -> Void)?,
         value: T
@@ -348,7 +348,7 @@ private extension OfferingsManager {
             }
         }
     }
-
+    
     private func fetchProducts(
         withIdentifiers identifiers: Set<String>,
         fromResponse response: OfferingsResponse,
@@ -361,9 +361,9 @@ private extension OfferingsManager {
             self.productsManager.products(withIdentifiers: identifiers, completion: completion)
         }
     }
-
+    
     // MARK: - For UI Preview mode
-
+    
     /// Generates a set of dummy `StoreProduct`s with hardcoded information exclusively for UI Preview mode.
     private func createPreviewProducts(
         productIdentifiers: Set<String>,
@@ -373,7 +373,7 @@ private extension OfferingsManager {
         let products = productIdentifiers.map { identifier -> StoreProduct in
             let productType = self.inferredPreviewProductType(from: packagesByProductID[identifier],
                                                               productIdentifier: identifier)
-
+            
             let introductoryDiscount: TestStoreProductDiscount? = {
                 // To allow introductory offers in UI Preview mode,
                 // all dummy yearly subscriptions have a 1-week free trial
@@ -388,7 +388,7 @@ private extension OfferingsManager {
                     type: .introductory
                 )
             }()
-
+            
             let testProduct = TestStoreProduct(
                 localizedTitle: "PRO \(productType.type)",
                 price: Decimal(productType.price),
@@ -401,13 +401,13 @@ private extension OfferingsManager {
                 introductoryDiscount: introductoryDiscount,
                 discounts: []
             )
-
+            
             return testProduct.toStoreProduct()
         }
-
+        
         return Set(products)
     }
-
+    
     private func inferredPreviewProductType(
         from package: OfferingsResponse.Offering.Package?,
         productIdentifier: String
@@ -418,7 +418,7 @@ private extension OfferingsManager {
         } else {
             // Try to guess basing on the product identifier
             let id = productIdentifier.lowercased()
-
+            
             let packageType: PackageType
             if id.contains("lifetime") || id.contains("forever") || id.contains("permanent") {
                 packageType = .lifetime
@@ -440,15 +440,15 @@ private extension OfferingsManager {
             return PreviewProductType(packageType: packageType) ?? .default
         }
     }
-
+    
     func trackGetOfferingsStartedIfNeeded(trackDiagnostics: Bool) {
         if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *),
-            trackDiagnostics,
+           trackDiagnostics,
            let diagnosticsTracker = self.diagnosticsTracker {
             diagnosticsTracker.trackOfferingsStarted()
         }
     }
-
+    
     // swiftlint:disable:next function_parameter_count
     func trackGetOfferingsResultIfNeeded(trackDiagnostics: Bool,
                                          startTime: Date,
@@ -457,11 +457,11 @@ private extension OfferingsManager {
                                          requestedProductIds: Set<String>?,
                                          notFoundProductIds: Set<String>?) {
         if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *),
-            trackDiagnostics,
+           trackDiagnostics,
            let diagnosticsTracker = self.diagnosticsTracker {
-
+            
             let responseTime = self.dateProvider.now().timeIntervalSince(startTime)
-
+            
             diagnosticsTracker.trackOfferingsResult(requestedProductIds: requestedProductIds,
                                                     notFoundProductIds: notFoundProductIds,
                                                     errorMessage: error?.localizedDescription,
@@ -476,17 +476,17 @@ private extension OfferingsManager {
 }
 
 extension OfferingsManager {
-
+    
     /// Determines the behavior when products in an `Offering` are not found
     internal enum FetchPolicy {
-
+        
         case ignoreNotFoundProducts
         case failIfProductsAreMissing
-
+        
         static let `default`: Self = .ignoreNotFoundProducts
-
+        
     }
-
+    
 }
 
 // @unchecked because:
@@ -496,41 +496,41 @@ extension OfferingsManager: @unchecked Sendable {}
 // MARK: - Errors
 
 extension OfferingsManager {
-
+    
     enum Error: Swift.Error {
-
+        
         case backendError(BackendError)
         case configurationError(String, PublicError?, ErrorSource)
         case timeout(PurchasesError)
         case noOfferingsFound(ErrorSource)
         case missingProducts(identifiers: Set<String>, ErrorSource)
-
+        
     }
-
+    
 }
 
 extension OfferingsManager.Error: PurchasesErrorConvertible {
-
+    
     var asPurchasesError: PurchasesError {
         switch self {
         case let .backendError(backendError):
             return backendError.asPurchasesError
-
+            
         case let .timeout(underlyingError):
             return underlyingError
-
+            
         case let .configurationError(errorMessage, underlyingError, source):
             return ErrorUtils.configurationError(message: errorMessage,
                                                  underlyingError: underlyingError,
                                                  fileName: source.file,
                                                  functionName: source.function,
                                                  line: source.line)
-
+            
         case let .noOfferingsFound(source):
             return ErrorUtils.unexpectedBackendResponseError(fileName: source.file,
                                                              functionName: source.function,
                                                              line: source.line)
-
+            
         case let .missingProducts(identifiers, source):
             return ErrorUtils.configurationError(
                 message: Strings.offering.cannot_find_product_configuration_error(identifiers: identifiers).description,
@@ -540,7 +540,7 @@ extension OfferingsManager.Error: PurchasesErrorConvertible {
             )
         }
     }
-
+    
     static func configurationError(
         _ errorMessage: String,
         underlyingError: NSError?,
@@ -550,7 +550,7 @@ extension OfferingsManager.Error: PurchasesErrorConvertible {
     ) -> Self {
         return .configurationError(errorMessage, underlyingError, .init(file: file, function: function, line: line))
     }
-
+    
     static func noOfferingsFound(
         file: String = #fileID,
         function: String = #function,
@@ -558,7 +558,7 @@ extension OfferingsManager.Error: PurchasesErrorConvertible {
     ) -> Self {
         return .noOfferingsFound(.init(file: file, function: function, line: line))
     }
-
+    
     static func missingProducts(
         identifiers: Set<String>,
         file: String = #fileID,
@@ -567,17 +567,17 @@ extension OfferingsManager.Error: PurchasesErrorConvertible {
     ) -> Self {
         return .missingProducts(identifiers: identifiers, .init(file: file, function: function, line: line))
     }
-
+    
 }
 
 extension OfferingsManager.Error: CustomNSError {
-
+    
     var errorUserInfo: [String: Any] {
         return [
             NSUnderlyingErrorKey: self.underlyingError as NSError? as Any
         ]
     }
-
+    
     var errorDescription: String? {
         switch self {
         case .backendError: return nil
@@ -587,7 +587,7 @@ extension OfferingsManager.Error: CustomNSError {
         case .missingProducts: return nil
         }
     }
-
+    
     fileprivate var underlyingError: Error? {
         switch self {
         case let .backendError(.networkError(error)): return error
@@ -598,69 +598,69 @@ extension OfferingsManager.Error: CustomNSError {
         case .missingProducts: return nil
         }
     }
-
+    
 }
 
 func userInfo(for response: OfferingsResponse) -> [String: AnyHashable] {
-	var userInfo: [String: AnyHashable] = [
-		"response.currentOfferingId": response.currentOfferingId ?? "<nil>",
-	]
-
+    var userInfo: [String: AnyHashable] = [
+        "response.currentOfferingId": response.currentOfferingId ?? "<nil>",
+    ]
+    
     let offerings = response.offerings.map { offering in
-		var dictionary: [String: AnyHashable] = [
-			"identifier": offering.identifier,
-			"description": offering.description,
-		]
-		let packages = offering.packages.map { package in
-			return [
-				"identifier": package.identifier,
-				"platformProductIdentifier": package.platformProductIdentifier,
-			]
-		}
-		dictionary["packages"] = packages
-		return dictionary
-	}
-	userInfo["response.offerings"] = offerings
-	return userInfo
+        var dictionary: [String: AnyHashable] = [
+            "identifier": offering.identifier,
+            "description": offering.description,
+        ]
+        let packages = offering.packages.map { package in
+            return [
+                "identifier": package.identifier,
+                "platformProductIdentifier": package.platformProductIdentifier,
+            ]
+        }
+        dictionary["packages"] = packages
+        return dictionary
+    }
+    userInfo["response.offerings"] = offerings
+    return userInfo
 }
 
 func sendError(
-	_ error: Error,
-	title: String,
+    _ error: Error,
+    title: String,
     userInfo _userInfo: [String: AnyHashable],
-	file: String = #file,
-	function: String = #function,
-	line: UInt = #line
+    file: String = #file,
+    function: String = #function,
+    line: UInt = #line
 ) {
-	var userInfo = _userInfo
-	
-	userInfo["error.title"] = title
-
-	userInfo["error.description"] = error.localizedDescription
-	let nsError = error as NSError
-	userInfo["nsError.code"] = nsError.code
-	userInfo["nsError.domain"] = nsError.domain
+    var userInfo = _userInfo
+    
+    userInfo["error.title"] = title
+    
+    userInfo["error.description"] = error.localizedDescription
+    let nsError = error as NSError
+    userInfo["nsError.code"] = nsError.code
+    userInfo["nsError.domain"] = nsError.domain
     userInfo["nsError.userInfo"] = nsError.userInfo.mapValues {
         if let anyHashable = $0 as? AnyHashable {
             return anyHashable
         }
         return "\($0)"
     }
-	userInfo["nsError.localizedDescription"] = nsError.localizedDescription
-	userInfo["nsError.localizedFailureReason"] = nsError.localizedFailureReason
-	userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
-	userInfo["nsError.localizedRecoveryOptions"] = nsError.localizedRecoveryOptions
-
-	linearityLog("Encountered error with title='\(title)', error: '\(error)', userInfo: '\(userInfo)'")
-
-	DispatchQueue.main.async {
-		let notification = Notification(name: OfferingsErrorNotification, object: nil, userInfo: userInfo)
-		NotificationCenter.default.post(notification)
-	}
+    userInfo["nsError.localizedDescription"] = nsError.localizedDescription
+    userInfo["nsError.localizedFailureReason"] = nsError.localizedFailureReason
+    userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
+    userInfo["nsError.localizedRecoveryOptions"] = nsError.localizedRecoveryOptions
+    
+    linearityLog("Encountered error with title='\(title)', error: '\(error)', userInfo: '\(userInfo)'")
+    
+    DispatchQueue.main.async {
+        let notification = Notification(name: OfferingsErrorNotification, object: nil, userInfo: userInfo)
+        NotificationCenter.default.post(notification)
+    }
 }
 
 func linearityLog(_ message: String) {
-	Logger.error("[LIN] \(message)")
+    Logger.error("[LIN] \(message)")
 }
 
 class GenericError: NSError, @unchecked Sendable {
@@ -690,15 +690,15 @@ private struct PreviewProductType {
     let type: String
     let price: Double
     let period: SubscriptionPeriod?
-
+    
     static let `default` = PreviewProductType(type: "lifetime", price: 249.99, period: nil)
-
+    
     private init(type: String, price: Double, period: SubscriptionPeriod?) {
         self.type = type
         self.price = price
         self.period = period
     }
-
+    
     init?(packageType: PackageType) {
         switch packageType {
         case .lifetime:
