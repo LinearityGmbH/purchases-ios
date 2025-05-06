@@ -24,6 +24,7 @@ struct ButtonComponentView: View {
     @State private var showCustomerCenter = false
     @State private var showingWebPaywallLinkAlert = false
     @State private var webPaywallLinkURL: URL?
+    @State private var linearityPaywallLinkURL: URL?
 
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
@@ -85,6 +86,9 @@ struct ButtonComponentView: View {
                         }
 #endif
                         onDismiss()
+                    } else if let linearityPaywallLinkURL {
+                        navigateToUrl(url: linearityPaywallLinkURL, method: .externalBrowser)
+                        onDismiss()
                     }
                 }
             } message: {
@@ -142,7 +146,7 @@ struct ButtonComponentView: View {
         case .url(let url, let method),
                 .privacyPolicy(let url, let method),
                 .terms(let url, let method):
-            navigateToUrl(url: url, method: method)
+            openLinearityPaywallLink(url: url)
         case .unknown:
             break
         case .webPaywallLink(url: let url, method: let method):
@@ -195,6 +199,11 @@ struct ButtonComponentView: View {
         case .unknown:
             break
         }
+    }
+    
+    private func openLinearityPaywallLink(url: URL) {
+        linearityPaywallLinkURL = url
+        showingWebPaywallLinkAlert = true
     }
 
     private func openWebPaywallLink(url: URL, method: PaywallComponent.ButtonComponent.URLMethod) {
