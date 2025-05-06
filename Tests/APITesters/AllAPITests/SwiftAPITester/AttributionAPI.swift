@@ -49,11 +49,20 @@ func checkAttributionAPI() {
     attribution.setCleverTapID("")
     attribution.setCleverTapID(nil)
 
+    attribution.setKochavaDeviceID("")
+    attribution.setKochavaDeviceID(nil)
+
     attribution.setMixpanelDistinctID("")
     attribution.setMixpanelDistinctID(nil)
 
     attribution.setFirebaseAppInstanceID("")
     attribution.setFirebaseAppInstanceID(nil)
+
+    attribution.setTenjinAnalyticsInstallationID("")
+    attribution.setTenjinAnalyticsInstallationID(nil)
+
+    attribution.setPostHogUserID("")
+    attribution.setPostHogUserID(nil)
 
     attribution.setMediaSource("")
     attribution.setMediaSource(nil)

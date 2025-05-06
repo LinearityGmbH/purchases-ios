@@ -11,8 +11,6 @@
 //
 //  Created by Cesar de la Vega on 18/7/24.
 
-#if CUSTOMER_CENTER_ENABLED
-
 import Foundation
 import RevenueCat
 
@@ -22,8 +20,30 @@ import RevenueCat
 @available(watchOS, unavailable)
 final class CustomerCenterPurchases: CustomerCenterPurchasesType {
 
+    var isSandbox: Bool {
+        return Purchases.shared.isSandbox
+    }
+
+    var appUserID: String {
+        return Purchases.shared.appUserID
+    }
+
+    var isConfigured: Bool {
+        return Purchases.isConfigured
+    }
+
+    var storeFrontCountryCode: String? {
+        return Purchases.shared.storeFrontCountryCode
+    }
+
     func customerInfo() async throws -> RevenueCat.CustomerInfo {
         try await Purchases.shared.customerInfo()
+    }
+
+    func customerInfo(
+        fetchPolicy: CacheFetchPolicy
+    ) async throws -> RevenueCat.CustomerInfo {
+        try await Purchases.shared.customerInfo(fetchPolicy: fetchPolicy)
     }
 
     func products(_ productIdentifiers: [String]) async -> [StoreProduct] {
@@ -36,6 +56,35 @@ final class CustomerCenterPurchases: CustomerCenterPurchasesType {
                                                     product: product)
     }
 
-}
+    func purchase(
+        product: StoreProduct,
+        promotionalOffer: PromotionalOffer
+    ) async throws -> PurchaseResultData {
+        try await Purchases.shared.purchase(
+            product: product,
+            promotionalOffer: promotionalOffer
+        )
+    }
 
-#endif
+    func track(customerCenterEvent: any CustomerCenterEventType) {
+        Purchases.shared.track(customerCenterEvent: customerCenterEvent)
+    }
+
+    func loadCustomerCenter() async throws -> CustomerCenterConfigData {
+        try await Purchases.shared.loadCustomerCenter()
+    }
+
+    func restorePurchases() async throws -> CustomerInfo {
+        try await Purchases.shared.restorePurchases()
+    }
+
+    func syncPurchases() async throws -> CustomerInfo {
+        try await Purchases.shared.syncPurchases()
+    }
+
+    #if os(iOS) || os(visionOS)
+    func beginRefundRequest(forProduct productID: String) async throws -> RefundRequestStatus {
+        try await Purchases.shared.beginRefundRequest(forProduct: productID)
+    }
+    #endif
+}

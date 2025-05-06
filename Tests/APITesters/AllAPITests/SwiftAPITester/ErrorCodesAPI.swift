@@ -53,9 +53,15 @@ func checkPurchasesErrorCodeEnums() {
          .invalidPromotionalOfferError,
          .offlineConnectionError,
          .featureNotAvailableInCustomEntitlementsComputationMode,
-         .signatureVerificationFailed:
+         .signatureVerificationFailed,
+         .featureNotSupportedWithStoreKit1:
         print(errCode!)
     @unknown default:
         fatalError()
     }
+}
+
+var publicError: PublicError!
+func checkPublicError() {
+    var errorCode: ErrorCode? = publicError.asErrorCode
 }

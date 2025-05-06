@@ -16,13 +16,16 @@ import Foundation
 class InternalAPI {
 
     typealias ResponseHandler = (BackendError?) -> Void
+    typealias HealthReportResponseHandler = (Result<HealthReport, BackendError>) -> Void
 
     private let backendConfig: BackendConfiguration
     private let healthCallbackCache: CallbackCache<HealthOperation.Callback>
+    private let healthReportCallbackCache: CallbackCache<HealthReportOperation.Callback>
 
     init(backendConfig: BackendConfiguration) {
         self.backendConfig = backendConfig
         self.healthCallbackCache = .init()
+        self.healthReportCallbackCache = .init()
     }
 
     func healthRequest(signatureVerification: Bool, completion: @escaping ResponseHandler) {
@@ -38,15 +41,29 @@ class InternalAPI {
                                                  cacheStatus: cacheStatus)
     }
 
+    func healthReportRequest(appUserID: String, completion: @escaping HealthReportResponseHandler) {
+        let config = NetworkOperation.UserSpecificConfiguration(httpClient: self.backendConfig.httpClient,
+                                                                appUserID: appUserID)
+        let factory = HealthReportOperation.createFactory(configuration: config,
+                                                          callbackCache: self.healthReportCallbackCache)
+        let callback = HealthReportOperation.Callback(cacheKey: factory.cacheKey, completion: completion)
+        let cacheStatus = self.healthReportCallbackCache.add(callback)
+
+        self.backendConfig.addCacheableOperation(with: factory,
+                                                 delay: .none,
+                                                 cacheStatus: cacheStatus)
+    }
+
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    func postPaywallEvents(events: [PaywallStoredEvent], completion: @escaping ResponseHandler) {
+    func postPaywallEvents(events: [StoredEvent], completion: @escaping ResponseHandler) {
         guard !events.isEmpty else {
             completion(nil)
             return
         }
 
+        let request = EventsRequest(events: events)
         let operation = PostPaywallEventsOperation(configuration: .init(httpClient: self.backendConfig.httpClient),
-                                                   request: .init(events: events),
+                                                   request: request,
                                                    responseHandler: completion)
 
         self.backendConfig.operationQueue.addOperation(operation)
@@ -72,7 +89,7 @@ extension InternalAPI {
 
     /// - Throws: `BackendError`
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    func postPaywallEvents(events: [PaywallStoredEvent]) async throws {
+    func postPaywallEvents(events: [StoredEvent]) async throws {
         let error = await Async.call { completion in
             self.postPaywallEvents(events: events, completion: completion)
         }

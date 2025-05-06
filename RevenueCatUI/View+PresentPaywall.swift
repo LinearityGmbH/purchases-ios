@@ -78,7 +78,7 @@ extension View {
     /// - Note: If loading the `CustomerInfo` fails (for example, if Internet is offline),
     /// the paywall won't be displayed.
     ///
-    /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
+    /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// If `nil` (the default), `Offerings.current` will be used. Note that specifying this parameter means
     /// that it will ignore the offering configured in an active experiment.
     /// - Parameter fonts: An optional ``PaywallFontProvider``.
@@ -136,7 +136,7 @@ extension View {
     /// - Note: If loading the `CustomerInfo` fails (for example, if Internet is offline),
     /// the paywall won't be displayed.
     ///
-    /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
+    /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// If `nil` (the default), `Offerings.current` will be used. Note that specifying this parameter means
     /// that it will ignore the offering configured in an active experiment.
     /// - Parameter fonts: An optional ``PaywallFontProvider``.
@@ -175,6 +175,7 @@ extension View {
             purchaseStarted: purchaseStarted,
             purchaseCompleted: purchaseCompleted,
             purchaseCancelled: purchaseCancelled,
+            restoreStarted: restoreStarted,
             restoreCompleted: restoreCompleted,
             purchaseFailure: purchaseFailure,
             restoreFailure: restoreFailure,
@@ -211,7 +212,7 @@ extension View {
     /// - Note: If loading the `CustomerInfo` fails (for example, if Internet is offline),
     /// the paywall won't be displayed.
     ///
-    /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
+    /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// If `nil` (the default), `Offerings.current` will be used. Note that specifying this parameter means
     /// that it will ignore the offering configured in an active experiment.
     /// - Parameter fonts: An optional ``PaywallFontProvider``.
@@ -295,7 +296,7 @@ extension View {
     /// - Note: If loading the `CustomerInfo` fails (for example, if Internet is offline),
     /// the paywall won't be displayed.
     ///
-    /// - Parameter offering: The `Offering` containing the desired `PaywallData` to display.
+    /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// If `nil` (the default), `Offerings.current` will be used. Note that specifying this parameter means
     /// that it will ignore the offering configured in an active experiment.
     /// - Parameter fonts: An optional ``PaywallFontProvider``.

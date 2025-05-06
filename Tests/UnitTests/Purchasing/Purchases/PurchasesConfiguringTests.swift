@@ -516,10 +516,65 @@ class PurchasesConfiguringTests: BasePurchasesTests {
         expect(Self.create(purchasesAreCompletedBy: .revenueCat).offlineCustomerInfoEnabled) == true
     }
 
-    private static func create(purchasesAreCompletedBy: PurchasesAreCompletedBy) -> Purchases {
+    func testOfflineCustomerInfoDisabledForCustomEntitlementsComputation() throws {
+        try AvailabilityChecks.iOS15APIAvailableOrSkipTest()
+
+        expect(
+            Self.create(
+                purchasesAreCompletedBy: .revenueCat,
+                dangerousSettings: .init(customEntitlementComputation: true)
+            ).offlineCustomerInfoEnabled
+        ) == false
+    }
+
+    // MARK: StoreKit2PurchaseIntentListener Configuration Tests
+    func testDoesntSetPurchasesOrchestratorStoreKit2PurchaseIntentListenerIfSK1IsEnabled() {
+        self.systemInfo = MockSystemInfo(finishTransactions: false,
+                                         storeKitVersion: .storeKit1)
+
+        self.setupPurchases()
+
+        expect(self.purchasesOrchestrator._storeKit2PurchaseIntentListener).to(beNil())
+    }
+
+    func testSetsPurchasesOrchestratorStoreKit2PurchaseIntentListenerIfSK2IsEnabled() {
+        self.systemInfo = MockSystemInfo(finishTransactions: false,
+                                         storeKitVersion: .storeKit2)
+
+        self.setupPurchases()
+
+        #if os(watchOS) || os(tvOS) || os(visionOS)
+        expect(self.purchasesOrchestrator._storeKit2PurchaseIntentListener).to(beNil())
+        #else
+        if #available(iOS 16.4, macOS 14.4, *) {
+            expect(self.purchasesOrchestrator._storeKit2PurchaseIntentListener).toEventuallyNot(beNil())
+        } else {
+            expect(self.purchasesOrchestrator._storeKit2PurchaseIntentListener).to(beNil())
+        }
+        #endif
+    }
+
+    func testNoCustomerInfoFetchInUIPreviewModeOnDidBecomeActive() {
+        self.systemInfo = MockSystemInfo(finishTransactions: true,
+                                         uiPreviewMode: true,
+                                         storeKitVersion: self.storeKitVersion,
+                                         clock: self.clock)
+        self.setupPurchases()
+
+        self.deviceCache.stubbedIsCustomerInfoCacheStale = true
+
+        self.notificationCenter.fireNotifications()
+        expect(self.backend.getCustomerInfoCallCount).toAlways(equal(0))
+    }
+
+  private static func create(
+      purchasesAreCompletedBy: PurchasesAreCompletedBy,
+      dangerousSettings: DangerousSettings = .init()
+  ) -> Purchases {
         return Purchases.configure(
             with: .init(withAPIKey: "")
                 .with(purchasesAreCompletedBy: purchasesAreCompletedBy, storeKitVersion: .storeKit1)
+                .with(dangerousSettings: dangerousSettings)
         )
     }
 

@@ -39,24 +39,25 @@ class BackendPaywallEventTests: BaseBackendTests {
         expect(self.httpClient.calls).to(beEmpty())
     }
 
-    func testPostPaywallEventsWithOneEvent() {
-        let event: PaywallStoredEvent = .init(event: .impression(Self.eventCreation1,
-                                                                 Self.eventData1), userID: Self.userID)
+    func testPostPaywallEventsWithOneEvent() throws {
+        let event = PaywallEvent.impression(Self.eventCreation1, Self.eventData1)
+        let storedEvent: StoredEvent = try Self.createStoredEvent(from: event)
 
         let error = waitUntilValue { completion in
-            self.internalAPI.postPaywallEvents(events: [event], completion: completion)
+            self.internalAPI.postPaywallEvents(events: [storedEvent], completion: completion)
         }
 
         expect(error).to(beNil())
     }
 
-    func testPostPaywallEventsWithMultipleEvents() {
-        let event1: PaywallStoredEvent = .init(event: .impression(Self.eventCreation1,
-                                                                  Self.eventData1), userID: Self.userID)
-        let event2: PaywallStoredEvent = .init(event: .close(Self.eventCreation2, Self.eventData2), userID: Self.userID)
+    func testPostPaywallEventsWithMultipleEvents() throws {
+        let event1 = PaywallEvent.impression(Self.eventCreation1, Self.eventData1)
+        let storedEvent1: StoredEvent = try Self.createStoredEvent(from: event1)
+        let event2 = PaywallEvent.close(Self.eventCreation2, Self.eventData2)
+        let storedEvent2: StoredEvent = try Self.createStoredEvent(from: event2)
 
         let error = waitUntilValue { completion in
-            self.internalAPI.postPaywallEvents(events: [event1, event2],
+            self.internalAPI.postPaywallEvents(events: [storedEvent1, storedEvent2],
                                                completion: completion)
         }
 
@@ -97,5 +98,13 @@ private extension BackendPaywallEventTests {
         localeIdentifier: "en_US",
         darkMode: false
     )
+
+    static func createStoredEvent(from event: PaywallEvent) throws -> StoredEvent {
+        return try XCTUnwrap(.init(event: event,
+                                   userID: Self.userID,
+                                   feature: .paywalls,
+                                   appSessionID: UUID(),
+                                   eventDiscriminator: "impression"))
+    }
 
 }

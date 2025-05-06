@@ -24,6 +24,7 @@ class MockIdentityManager: IdentityManager {
         self.mockAppUserID = mockAppUserID
 
         super.init(deviceCache: mockDeviceCache,
+                   systemInfo: mockSystemInfo,
                    backend: mockBackend,
                    customerInfoManager: MockCustomerInfoManager(
                     offlineEntitlementsManager: MockOfflineEntitlementsManager(),
@@ -88,3 +89,5 @@ class MockIdentityManager: IdentityManager {
     }
 
 }
+
+extension MockIdentityManager: @unchecked Sendable {}

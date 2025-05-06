@@ -200,8 +200,7 @@ enum LinTemplateConstants {
 struct LinTemplateView_Previews: PreviewProvider {
     
     static let previewsData: [(id: Int, data: Offering, mode: PaywallViewMode)] = [
-        (id: 1, data: TestData.offeringWithLinTemplate5Paywall, mode: .fullScreen),
-        (id: 2, data: TestData.offeringWithLinTemplate7Paywall, mode: .fullScreen)
+        (id: 1, data: TestData.offeringWithLinTemplate5Paywall, mode: .fullScreen)
     ]
 
     static var previews: some View {

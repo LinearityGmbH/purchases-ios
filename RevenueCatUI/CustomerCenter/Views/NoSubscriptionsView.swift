@@ -13,8 +13,6 @@
 //  Created by Andrés Boedo on 5/3/24.
 //
 
-#if CUSTOMER_CENTER_ENABLED
-
 import RevenueCat
 import SwiftUI
 
@@ -26,33 +24,35 @@ import SwiftUI
 @available(watchOS, unavailable)
 struct NoSubscriptionsView: View {
 
-    // swiftlint:disable:next todo
-    // TODO: build screen using this configuration
     let configuration: CustomerCenterConfigData
+    let actionWrapper: CustomerCenterActionWrapper
 
-    @Environment(\.dismiss)
-    var dismiss
+    @Environment(\.appearance)
+    private var appearance: CustomerCenterConfigData.Appearance
 
     @Environment(\.localization)
     private var localization: CustomerCenterConfigData.Localization
-    @Environment(\.appearance)
-    private var appearance: CustomerCenterConfigData.Appearance
+
     @Environment(\.colorScheme)
     private var colorScheme
+
     @State
     private var showRestoreAlert: Bool = false
 
-    init(configuration: CustomerCenterConfigData) {
+    init(configuration: CustomerCenterConfigData,
+         actionWrapper: CustomerCenterActionWrapper) {
         self.configuration = configuration
+        self.actionWrapper = actionWrapper
     }
 
     var body: some View {
-        let fallbackDescription = "We can try checking your Apple account for any previous purchases"
+        let fallbackDescription = localization[.tryCheckRestore]
+        let fallbackTitle = localization[.noSubscriptionsFound]
 
         List {
             Section {
                 CompatibilityContentUnavailableView(
-                    self.configuration.screens[.noActive]?.title ?? "No subscriptions found",
+                    self.configuration.screens[.noActive]?.title ?? fallbackTitle,
                     systemImage: "exclamationmark.triangle.fill",
                     description:
                         Text(self.configuration.screens[.noActive]?.subtitle ?? fallbackDescription)
@@ -60,23 +60,18 @@ struct NoSubscriptionsView: View {
             }
 
             Section {
-                Button(localization.commonLocalizedString(for: .restorePurchases)) {
+                Button(localization[.restorePurchases]) {
                     showRestoreAlert = true
                 }
-                .restorePurchasesAlert(isPresented: $showRestoreAlert)
-            } header: {
-                let subtitle = localization.commonLocalizedString(for: .tryCheckRestore)
-                Text(subtitle)
-                    .textCase(nil)
             }
 
         }
-        .toolbar {
-            ToolbarItem(placement: .compatibleTopBarTrailing) {
-                DismissCircleButton {
-                    dismiss()
-                }
-            }
+        .dismissCircleButtonToolbarIfNeeded()
+        .overlay {
+            RestorePurchasesAlert(
+                isPresented: $showRestoreAlert,
+                actionWrapper: actionWrapper
+            )
         }
     }
 
@@ -91,12 +86,11 @@ struct NoSubscriptionsView: View {
 struct NoSubscriptionsView_Previews: PreviewProvider {
 
     static var previews: some View {
-        NoSubscriptionsView(configuration: CustomerCenterConfigTestData.customerCenterData)
+        NoSubscriptionsView(configuration: CustomerCenterConfigTestData.customerCenterData,
+                            actionWrapper: CustomerCenterActionWrapper())
     }
 
 }
-
-#endif
 
 #endif
 

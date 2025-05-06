@@ -25,6 +25,7 @@ import AppKit
 
 class SystemInfo {
 
+    // swiftlint:disable:next force_unwrapping
     static let appleSubscriptionsURL = URL(string: "https://apps.apple.com/account/subscriptions")!
 
     static var forceUniversalAppStore: Bool {
@@ -46,6 +47,11 @@ class SystemInfo {
         set { self._finishTransactions.value = newValue }
     }
 
+    var isAppBackgroundedState: Bool {
+        get { self._isAppBackgroundedState.value }
+        set { self._isAppBackgroundedState.value = newValue }
+    }
+
     var bundle: Bundle { return self._bundle.value }
 
     var observerMode: Bool { return !self.finishTransactions }
@@ -53,6 +59,7 @@ class SystemInfo {
     private let sandboxEnvironmentDetector: SandboxEnvironmentDetector
     private let storefrontProvider: StorefrontProviderType
     private let _finishTransactions: Atomic<Bool>
+    private let _isAppBackgroundedState: Atomic<Bool>
     private let _bundle: Atomic<Bundle>
 
     private static let _forceUniversalAppStore: Atomic<Bool> = false
@@ -66,6 +73,14 @@ class SystemInfo {
         return self._isSandbox
     }
 
+    var isDebugBuild: Bool {
+#if DEBUG
+        return true
+#else
+        return false
+#endif
+    }
+
     var storefront: StorefrontType? {
         return self.storefrontProvider.currentStorefront
     }
@@ -75,7 +90,7 @@ class SystemInfo {
     }
 
     static var frameworkVersion: String {
-        return "5.3.0"
+        return "5.22.2"
     }
 
     static var systemVersion: String {
@@ -96,6 +111,19 @@ class SystemInfo {
 
     static var platformHeader: String {
         return Self.forceUniversalAppStore ? "iOS" : self.platformHeaderConstant
+    }
+
+    static var deviceVersion: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+
+        return identifier
     }
 
     var identifierForVendor: String? {
@@ -127,6 +155,8 @@ class SystemInfo {
         }
     }
 
+    static let appSessionID = UUID()
+
     init(platformInfo: Purchases.PlatformInfo?,
          finishTransactions: Bool,
          operationDispatcher: OperationDispatcher = .default,
@@ -136,6 +166,7 @@ class SystemInfo {
          storeKitVersion: StoreKitVersion = .default,
          responseVerificationMode: Signing.ResponseVerificationMode = .default,
          dangerousSettings: DangerousSettings? = nil,
+         isAppBackgrounded: Bool? = nil,
          clock: ClockType = Clock.default,
          preferredLocalesProvider: PreferredLocalesProviderType = PreferredLocalesProvider.default) {
         self.platformFlavor = platformInfo?.flavor ?? "native"
@@ -143,6 +174,7 @@ class SystemInfo {
         self._bundle = .init(bundle)
 
         self._finishTransactions = .init(finishTransactions)
+        self._isAppBackgroundedState = .init(isAppBackgrounded ?? false)
         self.operationDispatcher = operationDispatcher
         self.storeKitVersion = storeKitVersion
         self.sandboxEnvironmentDetector = sandboxEnvironmentDetector
@@ -151,27 +183,29 @@ class SystemInfo {
         self.dangerousSettings = dangerousSettings ?? DangerousSettings()
         self.clock = clock
         self.preferredLocalesProvider = preferredLocalesProvider
-    }
 
-    /// Asynchronous API if caller can't ensure that it's invoked in the `@MainActor`
-    /// - Seealso: `isApplicationBackgrounded`
-    func isApplicationBackgrounded(completion: @escaping @Sendable (Bool) -> Void) {
-        self.operationDispatcher.dispatchOnMainActor {
-            completion(self.isApplicationBackgrounded)
+        if isAppBackgrounded == nil {
+            self.isApplicationBackgrounded { isAppBackgrounded in
+                self.isAppBackgroundedState = isAppBackgrounded
+            }
         }
     }
 
-    /// Synchronous API for callers in `@MainActor`.
-    /// - Seealso: `isApplicationBackgrounded(completion:)`
-    @MainActor
-    var isApplicationBackgrounded: Bool {
-    #if os(iOS) || os(tvOS) || VISION_OS
-        return self.isApplicationBackgroundedIOSAndTVOS
-    #elseif os(macOS)
-        return false
-    #elseif os(watchOS)
-        return self.isApplicationBackgroundedWatchOS
-    #endif
+    var supportsOfflineEntitlements: Bool {
+        !self.observerMode && !self.dangerousSettings.customEntitlementComputation
+    }
+
+    /// Asynchronous API to check if app is backgrounded at a specific moment.
+    func isApplicationBackgrounded(completion: @escaping @Sendable (Bool) -> Void) {
+        self.operationDispatcher.dispatchOnMainActor {
+            var isApplicationBackgrounded: Bool = false
+            #if os(iOS) || os(tvOS) || VISION_OS
+            isApplicationBackgrounded = self.isApplicationBackgroundedIOSAndTVOS
+            #elseif os(watchOS)
+            isApplicationBackgrounded = self.isApplicationBackgroundedWatchOS
+            #endif
+            completion(isApplicationBackgrounded)
+        }
     }
 
     #if targetEnvironment(simulator)
@@ -182,6 +216,22 @@ class SystemInfo {
 
     func isOperatingSystemAtLeast(_ version: OperatingSystemVersion) -> Bool {
         return ProcessInfo.processInfo.isOperatingSystemAtLeast(version)
+    }
+
+    /// Checks for exposure to https://github.com/RevenueCat/purchases-ios/issues/4954
+    func isSubjectToKnownIssue_18_4_sim() -> Bool {
+        let firstOSVersionWithBug = OperatingSystemVersion(majorVersion: 18,
+                                                           minorVersion: 4,
+                                                           patchVersion: 0)
+
+        // Conservative estimate. No Simulator iOS fix version currently known (as at 2025-04-15).
+        let firstOSVersionWithFix = OperatingSystemVersion(majorVersion: 18,
+                                                           minorVersion: 5,
+                                                           patchVersion: 0)
+
+        return SystemInfo.isRunningInSimulator
+            && self.isOperatingSystemAtLeast(firstOSVersionWithBug)
+            && !self.isOperatingSystemAtLeast(firstOSVersionWithFix)
     }
 
     #if os(iOS) || os(tvOS) || VISION_OS

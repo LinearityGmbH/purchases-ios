@@ -53,11 +53,30 @@ enum Strings {
     case no_price_round_price_string_incompatible
     case no_price_round_formatter_failed
 
+    case invalid_color_string(String)
+    case paywall_view_model_construction_failed(Error)
+    case paywall_contains_no_localization_data
+    case paywall_could_not_find_localization(String)
+    case paywall_could_not_find_package(String)
+    case paywall_could_not_find_default_package
+    case paywall_could_not_find_any_packages
+    case paywall_invalid_url(String)
+    case no_in_app_browser_tvos
+    case failed_to_open_url_external_browser(String)
+    case successfully_opened_url_external_browser(String)
+    case failed_to_open_url_deep_link(String)
+    case successfully_opened_url_deep_link(String)
+
     // Customer Center
     case could_not_find_subscription_information
-    case could_not_offer_for_active_subscriptions
+    case could_not_offer_for_any_active_subscriptions
+    case could_not_offer_for_active_subscriptions(String, String)
     case error_fetching_promotional_offer(Error)
     case promo_offer_not_loaded
+    case could_not_determine_type_of_custom_url
+    case active_product_is_not_apple_loading_without_product_information(Store)
+    case could_not_find_product_loading_without_product_information(String)
+    case promo_offer_not_eligible_for_product(String, String)
 
 }
 
@@ -154,6 +173,38 @@ extension Strings: CustomStringConvertible {
         case .no_price_round_formatter_failed:
             return "Could not round price because formatter failed to round price."
 
+        case .paywall_view_model_construction_failed(let error):
+            return "Paywall view model construction failed: \(error)\n" +
+            "Will use fallback paywall."
+
+        case .paywall_could_not_find_localization(let string):
+            return "Could not find paywall localization data for \(string)"
+
+        case .paywall_contains_no_localization_data:
+            return "Paywall contains no localization data."
+
+        case .paywall_could_not_find_package(let identifier):
+            return "Could not find package \(identifier) for paywall. This package will not show in the paywall. " +
+            "This could be caused by a package that doesn't have a product on this platform or the product might not " +
+            " be available for this region."
+
+        case .paywall_could_not_find_default_package:
+            return "Could not find default package for paywall. Using first package instead. " +
+            "This package will not show in the paywall. This could be caused by a package that doesn't have a " +
+            "product on this platform or the product might not be available for this region."
+
+        case .paywall_could_not_find_any_packages:
+            return "Could not find any packages for the paywall"
+
+        case .paywall_invalid_url(let urlLid):
+            return "No valid URL is configured for \(urlLid)"
+
+        case .no_in_app_browser_tvos:
+            return "Opening URL in external browser, as tvOS does not support in-app browsers."
+
+        case .invalid_color_string(let colorString):
+            return "Invalid hex color string: \(colorString)"
+
         case .could_not_find_subscription_information:
             return "Could not find information for an active subscription"
 
@@ -163,9 +214,39 @@ extension Strings: CustomStringConvertible {
         case .promo_offer_not_loaded:
             return "Promotional offer details not loaded"
 
-        case .could_not_offer_for_active_subscriptions:
-            return "Could not find offer for any active subscription"
+        case .could_not_offer_for_any_active_subscriptions:
+            return "Could not find offer with id for any active subscription"
 
+        case .could_not_offer_for_active_subscriptions(let discount, let subscription):
+            return "Could not find offer with id \(discount) for active subscription \(subscription)"
+
+        case .could_not_determine_type_of_custom_url:
+            return "Could not determine the type of custom URL, the URL will be opened externally."
+
+        case .active_product_is_not_apple_loading_without_product_information(let store):
+            return "Active product for user is not an Apple subscription (\(store))." +
+            " Loading without product information."
+
+        case .could_not_find_product_loading_without_product_information(let product):
+            return "Could not find product with id \(product). Loading without product information."
+
+        case let .promo_offer_not_eligible_for_product(promoOfferId, productId):
+            return """
+                User not eligible for promo with id '\(promoOfferId)'. Check eligibility configuration in the dashboard,
+                and make sure the user has an active/expired subscription for the product with id '\(productId)'."
+            """
+
+        case .failed_to_open_url_external_browser(let url):
+            return "Failed to open URL in external browser: \(url)"
+
+        case .successfully_opened_url_external_browser(let url):
+            return "Successfully opened URL in external browser: \(url)"
+
+        case .failed_to_open_url_deep_link(let url):
+            return "Failed to open URL as deep link: \(url)"
+
+        case .successfully_opened_url_deep_link(let url):
+            return "Successfully opened URL as deep link: \(url)"
         }
     }
 

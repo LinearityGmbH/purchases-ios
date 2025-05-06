@@ -32,8 +32,8 @@ class PaywallFooterTests: TestCase {
     func testPresentWithPurchaseStarted() throws {
         var packageBeingPurchased: Package?
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -52,8 +52,8 @@ class PaywallFooterTests: TestCase {
     func testPresentWithPurchaseHandler() throws {
         var customerInfo: CustomerInfo?
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -72,8 +72,8 @@ class PaywallFooterTests: TestCase {
     func testPresentWithPurchaseFailureHandler() throws {
         var error: NSError?
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -92,8 +92,8 @@ class PaywallFooterTests: TestCase {
     func testPresentWithRestoreStarted() throws {
         var started = false
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -112,8 +112,8 @@ class PaywallFooterTests: TestCase {
     func testPresentWithRestoreHandler() throws {
         var customerInfo: CustomerInfo?
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -134,8 +134,8 @@ class PaywallFooterTests: TestCase {
     func testPresentWithRestoreFailureHandler() throws {
         var error: NSError?
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -161,8 +161,8 @@ class PaywallFooterTests: TestCase {
             return (success: true, error: nil)
         })
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),
@@ -185,8 +185,8 @@ class PaywallFooterTests: TestCase {
             return (success: true, error: nil)
         })
 
-        try Text("")
-            .paywallFooter(
+        _ = try Text("")
+            .originalTemplatePaywallFooter(
                 offering: Self.offering,
                 customerInfo: TestData.customerInfo,
                 introEligibility: .producing(eligibility: .eligible),

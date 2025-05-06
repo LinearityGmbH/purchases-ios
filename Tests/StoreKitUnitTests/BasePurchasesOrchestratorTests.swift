@@ -42,7 +42,23 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
     var mockBeginRefundRequestHelper: MockBeginRefundRequestHelper!
     var mockOfferingsManager: MockOfferingsManager!
     var mockStoreMessagesHelper: MockStoreMessagesHelper!
+    var mockWinBackOfferEligibilityCalculator: MockWinBackOfferEligibilityCalculator!
     var mockTransactionFetcher: MockStoreKit2TransactionFetcher!
+    private var paywallEventsManager: PaywallEventsManagerType!
+    var webPurchaseRedemptionHelper: MockWebPurchaseRedemptionHelper!
+    var mockDiagnosticsTracker: DiagnosticsTrackerType!
+
+    static let eventTimestamp1: Date = .init(timeIntervalSince1970: 1694029328)
+    static let eventTimestamp2: Date = .init(timeIntervalSince1970: 1694022321)
+    var mockDateProvider = MockDateProvider(stubbedNow: eventTimestamp1,
+                                            subsequentNows: eventTimestamp2)
+
+    @available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
+    var mockPaywallEventsManager: MockPaywallEventsManager {
+        get throws {
+            return try XCTUnwrap(self.paywallEventsManager as? MockPaywallEventsManager)
+        }
+    }
 
     var orchestrator: PurchasesOrchestrator!
 
@@ -55,7 +71,8 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
 
         self.setUpSystemInfo()
 
-        self.productsManager = MockProductsManager(systemInfo: self.systemInfo,
+        self.productsManager = MockProductsManager(diagnosticsTracker: nil,
+                                                   systemInfo: self.systemInfo,
                                                    requestTimeout: Configuration.storeKitRequestTimeoutDefault)
         self.purchasedProductsFetcher = .init()
         self.operationDispatcher = MockOperationDispatcher()
@@ -65,13 +82,21 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
         self.deviceCache = MockDeviceCache(sandboxEnvironmentDetector: self.systemInfo)
         self.backend = MockBackend()
         self.offerings = try XCTUnwrap(self.backend.offerings as? MockOfferingsAPI)
+        if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) {
+            self.paywallEventsManager = MockPaywallEventsManager()
+            self.mockDiagnosticsTracker = MockDiagnosticsTracker()
+        } else {
+            self.paywallEventsManager = nil
+            self.mockDiagnosticsTracker = nil
+        }
 
         self.mockOfferingsManager = MockOfferingsManager(deviceCache: self.deviceCache,
                                                          operationDispatcher: self.operationDispatcher,
                                                          systemInfo: self.systemInfo,
                                                          backend: self.backend,
                                                          offeringsFactory: OfferingsFactory(),
-                                                         productsManager: self.productsManager)
+                                                         productsManager: self.productsManager,
+                                                         diagnosticsTracker: self.mockDiagnosticsTracker)
         self.setUpStoreKit1Wrapper()
 
         self.customerInfoManager = MockCustomerInfoManager(
@@ -100,24 +125,17 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
                                                                          customerInfoManager: self.customerInfoManager,
                                                                          currentUserProvider: self.currentUserProvider)
         self.mockStoreMessagesHelper = .init()
+        self.mockWinBackOfferEligibilityCalculator = MockWinBackOfferEligibilityCalculator()
         self.mockTransactionFetcher = MockStoreKit2TransactionFetcher()
         self.notificationCenter = MockNotificationCenter()
+        let identityManager = MockIdentityManager(mockAppUserID: "test-user-id",
+                                                  mockDeviceCache: self.deviceCache)
+        self.webPurchaseRedemptionHelper = MockWebPurchaseRedemptionHelper()
         self.setUpStoreKit1Wrapper()
         self.setUpAttribution()
         self.setUpOrchestrator()
         self.setUpStoreKit2Listener()
 
-    }
-
-    fileprivate func setUpDiagnosticSynchronizer() {
-        if #available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *) {
-            self.orchestrator._diagnosticsSynchronizer = MockDiagnosticsSynchronizer()
-        }
-    }
-
-    @available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *)
-    var mockDiagnosticsSynchronizer: MockDiagnosticsSynchronizer? {
-        return self.orchestrator.diagnosticsSynchronizer as? MockDiagnosticsSynchronizer
     }
 
     func setUpStoreKit2Listener() {
@@ -155,7 +173,8 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
                                                   currentUserProvider: self.currentUserProvider,
                                                   backend: self.backend,
                                                   attributionFetcher: self.attributionFetcher,
-                                                  subscriberAttributesManager: self.subscriberAttributesManager)
+                                                  subscriberAttributesManager: self.subscriberAttributesManager,
+                                                  systemInfo: self.systemInfo)
 
         self.attribution = Attribution(subscriberAttributesManager: self.subscriberAttributesManager,
                                        currentUserProvider: MockCurrentUserProvider(mockAppUserID: Self.mockUserID),
@@ -164,24 +183,29 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
     }
 
     func setUpOrchestrator() {
-        self.orchestrator = PurchasesOrchestrator(productsManager: self.productsManager,
-                                                  paymentQueueWrapper: self.paymentQueueWrapper,
-                                                  systemInfo: self.systemInfo,
-                                                  subscriberAttributes: self.attribution,
-                                                  operationDispatcher: self.operationDispatcher,
-                                                  receiptFetcher: self.receiptFetcher,
-                                                  receiptParser: self.receiptParser,
-                                                  transactionFetcher: self.mockTransactionFetcher,
-                                                  customerInfoManager: self.customerInfoManager,
-                                                  backend: self.backend,
-                                                  transactionPoster: self.transactionPoster,
-                                                  currentUserProvider: self.currentUserProvider,
-                                                  transactionsManager: self.transactionsManager,
-                                                  deviceCache: self.deviceCache,
-                                                  offeringsManager: self.mockOfferingsManager,
-                                                  manageSubscriptionsHelper: self.mockManageSubsHelper,
-                                                  beginRefundRequestHelper: self.mockBeginRefundRequestHelper,
-                                                  storeMessagesHelper: self.mockStoreMessagesHelper)
+        self.orchestrator = PurchasesOrchestrator(
+            productsManager: self.productsManager,
+            paymentQueueWrapper: self.paymentQueueWrapper,
+            systemInfo: self.systemInfo,
+            subscriberAttributes: self.attribution,
+            operationDispatcher: self.operationDispatcher,
+            receiptFetcher: self.receiptFetcher,
+            receiptParser: self.receiptParser,
+            transactionFetcher: self.mockTransactionFetcher,
+            customerInfoManager: self.customerInfoManager,
+            backend: self.backend,
+            transactionPoster: self.transactionPoster,
+            currentUserProvider: self.currentUserProvider,
+            transactionsManager: self.transactionsManager,
+            deviceCache: self.deviceCache,
+            offeringsManager: self.mockOfferingsManager,
+            manageSubscriptionsHelper: self.mockManageSubsHelper,
+            beginRefundRequestHelper: self.mockBeginRefundRequestHelper,
+            storeMessagesHelper: self.mockStoreMessagesHelper,
+            diagnosticsTracker: self.mockDiagnosticsTracker,
+            winBackOfferEligibilityCalculator: self.mockWinBackOfferEligibilityCalculator,
+            paywallEventsManager: self.paywallEventsManager,
+            webPurchaseRedemptionHelper: self.webPurchaseRedemptionHelper)
         self.storeKit1Wrapper.delegate = self.orchestrator
     }
 
@@ -190,7 +214,8 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
         storeKit2TransactionListener: StoreKit2TransactionListenerType,
         storeKit2StorefrontListener: StoreKit2StorefrontListener,
         storeKit2ObserverModePurchaseDetector: StoreKit2ObserverModePurchaseDetectorType,
-        diagnosticsSynchronizer: DiagnosticsSynchronizerType? = nil
+        diagnosticsSynchronizer: DiagnosticsSynchronizerType? = nil,
+        diagnosticsTracker: DiagnosticsTrackerType? = nil
     ) {
         self.orchestrator = PurchasesOrchestrator(
             productsManager: self.productsManager,
@@ -214,7 +239,12 @@ class BasePurchasesOrchestratorTests: StoreKitConfigTestCase {
             storeKit2StorefrontListener: storeKit2StorefrontListener,
             storeKit2ObserverModePurchaseDetector: storeKit2ObserverModePurchaseDetector,
             storeMessagesHelper: self.mockStoreMessagesHelper,
-            diagnosticsSynchronizer: diagnosticsSynchronizer
+            diagnosticsSynchronizer: diagnosticsSynchronizer,
+            diagnosticsTracker: diagnosticsTracker,
+            winBackOfferEligibilityCalculator: self.mockWinBackOfferEligibilityCalculator,
+            paywallEventsManager: self.paywallEventsManager,
+            webPurchaseRedemptionHelper: self.webPurchaseRedemptionHelper,
+            dateProvider: self.mockDateProvider
         )
         self.storeKit1Wrapper.delegate = self.orchestrator
     }

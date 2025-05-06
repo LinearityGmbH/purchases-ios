@@ -50,24 +50,30 @@ protocol ProductsManagerType: Sendable {
 class ProductsManager: NSObject, ProductsManagerType {
 
     private let productsFetcherSK1: ProductsFetcherSK1
+    private let diagnosticsTracker: DiagnosticsTrackerType?
     private let systemInfo: SystemInfo
+    private let dateProvider: DateProvider
 
     private let _productsFetcherSK2: (any Sendable)?
 
     @available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *)
     private var productsFetcherSK2: ProductsFetcherSK2 {
-        // swiftlint:disable:next force_cast
+        // swiftlint:disable:next force_cast force_unwrapping
         return self._productsFetcherSK2! as! ProductsFetcherSK2
     }
 
     init(
         productsRequestFactory: ProductsRequestFactory = ProductsRequestFactory(),
+        diagnosticsTracker: DiagnosticsTrackerType?,
         systemInfo: SystemInfo,
-        requestTimeout: TimeInterval
+        requestTimeout: TimeInterval,
+        dateProvider: DateProvider = DateProvider()
     ) {
         self.productsFetcherSK1 = ProductsFetcherSK1(productsRequestFactory: productsRequestFactory,
                                                      requestTimeout: requestTimeout)
+        self.diagnosticsTracker = diagnosticsTracker
         self.systemInfo = systemInfo
+        self.dateProvider = dateProvider
 
         if #available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *) {
             self._productsFetcherSK2 = ProductsFetcherSK2()
@@ -77,13 +83,26 @@ class ProductsManager: NSObject, ProductsManagerType {
     }
 
     func products(withIdentifiers identifiers: Set<String>, completion: @escaping Completion) {
+        let startTime = self.dateProvider.now()
         if #available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *),
            self.systemInfo.storeKitVersion.isStoreKit2EnabledAndAvailable {
             self.sk2Products(withIdentifiers: identifiers) { result in
+                let notFoundProducts = identifiers.subtracting(result.value?.map(\.productIdentifier) ?? [])
+                self.trackProductsRequestIfNeeded(startTime,
+                                                  requestedProductIds: identifiers,
+                                                  notFoundProductIds: notFoundProducts,
+                                                  storeKitVersion: .storeKit2,
+                                                  error: result.error)
                 completion(result.map { Set($0.map(StoreProduct.from(product:))) })
             }
         } else {
             self.sk1Products(withIdentifiers: identifiers) { result in
+                let notFoundProducts = identifiers.subtracting(result.value?.map(\.productIdentifier) ?? [])
+                self.trackProductsRequestIfNeeded(startTime,
+                                                  requestedProductIds: identifiers,
+                                                  notFoundProductIds: notFoundProducts,
+                                                  storeKitVersion: .storeKit1,
+                                                  error: result.error)
                 completion(result.map { Set($0.map(StoreProduct.from(product:))) })
             }
         }
@@ -126,6 +145,30 @@ private extension ProductsManager {
         return self.productsFetcherSK1.products(withIdentifiers: identifiers, completion: completion)
     }
 
+    func trackProductsRequestIfNeeded(_ startTime: Date,
+                                      requestedProductIds: Set<String>,
+                                      notFoundProductIds: Set<String>,
+                                      storeKitVersion: StoreKitVersion,
+                                      error: PurchasesError?) {
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
+           let diagnosticsTracker = self.diagnosticsTracker {
+            let responseTime = self.dateProvider.now().timeIntervalSince(startTime)
+            let errorMessage = (error?.userInfo[NSUnderlyingErrorKey] as? Error)?.localizedDescription
+                ?? error?.localizedDescription
+            let errorCode = error?.errorCode
+            let storeKitErrorDescription = StoreKitErrorUtils.extractStoreKitErrorDescription(from: error)
+            diagnosticsTracker.trackProductsRequest(wasSuccessful: error == nil,
+                                                    storeKitVersion: storeKitVersion,
+                                                    errorMessage: errorMessage,
+                                                    errorCode: errorCode,
+                                                    storeKitErrorDescription: storeKitErrorDescription,
+                                                    storefront: self.systemInfo.storefront?.countryCode,
+                                                    requestedProductIds: requestedProductIds,
+                                                    notFoundProductIds: notFoundProductIds,
+                                                    responseTime: responseTime)
+        }
+    }
+
 }
 
 // MARK: - ProductsManagerType async
@@ -140,6 +183,8 @@ extension ProductsManagerType {
     }
 
     /// `async` overload for `sk2Products(withIdentifiers:)`
+    ///
+    /// - Throws: `PurchasesError`.
     @available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *)
     func sk2Products(withIdentifiers identifiers: Set<String>) async throws -> Set<SK2StoreProduct> {
         return try await Async.call { completion in

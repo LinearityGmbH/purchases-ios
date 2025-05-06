@@ -13,8 +13,6 @@
 //  Created by Cesar de la Vega on 17/6/24.
 //
 
-#if CUSTOMER_CENTER_ENABLED
-
 import Foundation
 import RevenueCat
 
@@ -25,56 +23,119 @@ import RevenueCat
 @available(tvOS, unavailable)
 @available(watchOS, unavailable)
 @MainActor
-class FeedbackSurveyViewModel: ObservableObject {
+final class FeedbackSurveyViewModel: ObservableObject {
 
     var feedbackSurveyData: FeedbackSurveyData
 
     @Published
-    var loadingState: String?
+    var loadingOption: String?
+
     @Published
     var promotionalOfferData: PromotionalOfferData?
 
-    private var purchasesProvider: CustomerCenterPurchasesType
+    private(set) var purchasesProvider: CustomerCenterPurchasesType
     private let loadPromotionalOfferUseCase: LoadPromotionalOfferUseCaseType
+    private let actionWrapper: CustomerCenterActionWrapper
 
-    convenience init(feedbackSurveyData: FeedbackSurveyData) {
+    convenience init(feedbackSurveyData: FeedbackSurveyData,
+                     purchasesProvider: CustomerCenterPurchasesType,
+                     actionWrapper: CustomerCenterActionWrapper) {
         self.init(feedbackSurveyData: feedbackSurveyData,
-                  purchasesProvider: CustomerCenterPurchases(),
-                  loadPromotionalOfferUseCase: LoadPromotionalOfferUseCase())
+                  purchasesProvider: purchasesProvider,
+                  loadPromotionalOfferUseCase: LoadPromotionalOfferUseCase(purchasesProvider: purchasesProvider),
+                  actionWrapper: actionWrapper)
     }
 
     init(feedbackSurveyData: FeedbackSurveyData,
          purchasesProvider: CustomerCenterPurchasesType,
-         loadPromotionalOfferUseCase: LoadPromotionalOfferUseCaseType) {
+         loadPromotionalOfferUseCase: LoadPromotionalOfferUseCaseType,
+         actionWrapper: CustomerCenterActionWrapper) {
         self.feedbackSurveyData = feedbackSurveyData
         self.purchasesProvider = purchasesProvider
         self.loadPromotionalOfferUseCase = loadPromotionalOfferUseCase
+        self.actionWrapper = actionWrapper
     }
 
-    func handleAction(for option: CustomerCenterConfigData.HelpPath.FeedbackSurvey.Option) async {
+    func handleAction(
+        for option: CustomerCenterConfigData.HelpPath.FeedbackSurvey.Option,
+        darkMode: Bool,
+        displayMode: CustomerCenterPresentationMode,
+        locale: Locale = .current,
+        dismissView: () -> Void
+    ) async {
+        trackSurveyAnswerSubmitted(option: option, darkMode: darkMode, displayMode: displayMode, locale: locale)
+
+        self.actionWrapper.handleAction(.feedbackSurveyCompleted(option.id))
+
         if let promotionalOffer = option.promotionalOffer,
            promotionalOffer.eligible {
-            self.loadingState = option.id
+            self.loadingOption = option.id
             let result = await loadPromotionalOfferUseCase.execute(promoOfferDetails: promotionalOffer)
             switch result {
             case .success(let promotionalOfferData):
                 self.promotionalOfferData = promotionalOfferData
             case .failure:
                 self.feedbackSurveyData.onOptionSelected()
-                self.loadingState = nil
+                dismissView()
+                self.loadingOption = nil
             }
         } else {
             self.feedbackSurveyData.onOptionSelected()
+            dismissView()
         }
     }
+}
 
-    func handleSheetDismiss() {
-        self.feedbackSurveyData.onOptionSelected()
-        self.loadingState = nil
+// MARK: - Promotional Offer Sheet Dismissal Handling
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+extension FeedbackSurveyViewModel {
+
+    /// Function responsible for handling the user's action on the PromotionalOfferView
+    func handleDismissPromotionalOfferView(
+        _ userAction: PromotionalOfferViewAction,
+        dismissView: () -> Void
+    ) async {
+        // Clear the promotional offer data to dismiss the sheet
+        self.promotionalOfferData = nil
+        self.loadingOption = nil
+
+        if !userAction.shouldTerminateCurrentPathFlow {
+            self.feedbackSurveyData.onOptionSelected()
+        }
+
+        dismissView()
+    }
+}
+
+// MARK: - Events
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS, unavailable)
+@available(tvOS, unavailable)
+@available(watchOS, unavailable)
+private extension FeedbackSurveyViewModel {
+
+    func trackSurveyAnswerSubmitted(option: CustomerCenterConfigData.HelpPath.FeedbackSurvey.Option,
+                                    darkMode: Bool,
+                                    displayMode: CustomerCenterPresentationMode,
+                                    locale: Locale) {
+        let isSandbox = purchasesProvider.isSandbox
+        let surveyOptionData = CustomerCenterAnswerSubmittedEvent.Data(locale: locale,
+                                                                       darkMode: darkMode,
+                                                                       isSandbox: isSandbox,
+                                                                       displayMode: displayMode,
+                                                                       path: feedbackSurveyData.path.type,
+                                                                       url: feedbackSurveyData.path.url,
+                                                                       surveyOptionID: option.id,
+                                                                       additionalContext: nil,
+                                                                       revisionID: 0)
+        let event = CustomerCenterAnswerSubmittedEvent.answerSubmitted(CustomerCenterEventCreationData(),
+                                                                       surveyOptionData)
+        purchasesProvider.track(customerCenterEvent: event)
     }
 
 }
-
-#endif
 
 #endif

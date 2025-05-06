@@ -167,6 +167,7 @@ private extension Offering {
                         serverDescription: self.serverDescription,
                         metadata: self.metadata,
                         paywall: self.paywall,
+                        paywallComponents: self.paywallComponents,
                         availablePackages: updatedPackages
         )
     }

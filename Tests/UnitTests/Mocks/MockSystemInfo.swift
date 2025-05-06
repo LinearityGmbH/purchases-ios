@@ -7,7 +7,7 @@
 //
 
 import Foundation
-@testable import RevenueCat
+@_spi(Internal) @testable import RevenueCat
 
 // Note: this class is implicitly `@unchecked Sendable` through its parent
 // even though it's not actually thread safe.
@@ -15,22 +15,34 @@ class MockSystemInfo: SystemInfo {
 
     var stubbedIsApplicationBackgrounded: Bool?
     var stubbedIsSandbox: Bool?
+    var stubbedIsDebugBuild: Bool?
     var stubbedStorefront: StorefrontType?
 
     convenience init(platformInfo: Purchases.PlatformInfo? = nil,
                      finishTransactions: Bool,
                      customEntitlementsComputation: Bool = false,
+                     uiPreviewMode: Bool = false,
                      storeKitVersion: StoreKitVersion = .default,
+                     responseVerificationMode: Signing.ResponseVerificationMode = .disabled,
                      clock: ClockType = TestClock()) {
         let dangerousSettings = DangerousSettings(
             autoSyncPurchases: true,
-            customEntitlementComputation: customEntitlementsComputation
+            customEntitlementComputation: customEntitlementsComputation,
+            internalSettings: DangerousSettings.Internal.default,
+            uiPreviewMode: uiPreviewMode
         )
         self.init(platformInfo: platformInfo,
                   finishTransactions: finishTransactions,
                   storeKitVersion: storeKitVersion,
+                  responseVerificationMode: responseVerificationMode,
                   dangerousSettings: dangerousSettings,
+                  isAppBackgrounded: false,
                   clock: clock)
+    }
+
+    override var isAppBackgroundedState: Bool {
+        get { stubbedIsApplicationBackgrounded ?? super.isAppBackgroundedState }
+        set { super.isAppBackgroundedState = newValue }
     }
 
     override func isApplicationBackgrounded(completion: @escaping (Bool) -> Void) {
@@ -55,12 +67,18 @@ class MockSystemInfo: SystemInfo {
         return self.stubbedIsSandbox ?? super.isSandbox
     }
 
+    override var isDebugBuild: Bool {
+        return self.stubbedIsDebugBuild ?? super.isDebugBuild
+    }
+
     override var storefront: StorefrontType? {
         return self.stubbedStorefront
     }
 }
 
-extension OperatingSystemVersion: Comparable {
+extension MockSystemInfo: @unchecked Sendable {}
+
+extension RevenueCat.OperatingSystemVersion: Swift.Comparable {
 
     public static func < (lhs: OperatingSystemVersion, rhs: OperatingSystemVersion) -> Bool {
         if lhs.majorVersion == rhs.majorVersion {

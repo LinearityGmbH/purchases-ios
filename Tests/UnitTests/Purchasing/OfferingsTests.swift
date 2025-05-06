@@ -11,7 +11,7 @@ import Nimble
 import StoreKit
 import XCTest
 
-@testable import RevenueCat
+@_spi(Internal) @testable import RevenueCat
 
 class OfferingsTests: TestCase {
 
@@ -60,7 +60,8 @@ class OfferingsTests: TestCase {
                 packages: [
                     .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly"),
                     .init(identifier: "$rc_annual", platformProductIdentifier: "com.myproduct.annual")
-                ])
+                ]),
+            uiConfig: nil
         )
 
         expect(offering).to(beNil())
@@ -85,7 +86,8 @@ class OfferingsTests: TestCase {
                         .init(identifier: "$rc_monthly", platformProductIdentifier: "com.myproduct.monthly"),
                         .init(identifier: "$rc_annual", platformProductIdentifier: "com.myproduct.annual"),
                         .init(identifier: "$rc_six_month", platformProductIdentifier: "com.myproduct.sixMonth")
-                    ])
+                    ]),
+                uiConfig: nil
             )
         )
 
@@ -115,7 +117,8 @@ class OfferingsTests: TestCase {
                           ])
                 ],
                 placements: nil,
-                targeting: nil
+                targeting: nil,
+                uiConfig: nil
             )
         )
 
@@ -150,7 +153,8 @@ class OfferingsTests: TestCase {
                               ])
                     ],
                     placements: nil,
-                    targeting: nil
+                    targeting: nil,
+                    uiConfig: nil
                 )
             )
         )
@@ -207,7 +211,8 @@ class OfferingsTests: TestCase {
                                         "placement_name": "offering_b",
                                         "placement_name_with_nil": nil
                                       ])),
-                    targeting: .init(revision: 1, ruleId: "abc123")
+                    targeting: .init(revision: 1, ruleId: "abc123"),
+                    uiConfig: nil
                 )
             )
         )
@@ -279,7 +284,8 @@ class OfferingsTests: TestCase {
                                         "placement_name": "offering_b",
                                         "placement_name_with_nil": nil
                                       ])),
-                    targeting: nil
+                    targeting: nil,
+                    uiConfig: nil
                 )
             )
         )
@@ -314,7 +320,8 @@ class OfferingsTests: TestCase {
                               ])
                     ],
                     placements: nil,
-                    targeting: .init(revision: 1, ruleId: "abc123")
+                    targeting: .init(revision: 1, ruleId: "abc123"),
+                    uiConfig: nil
                 )
             )
         )
@@ -386,7 +393,8 @@ class OfferingsTests: TestCase {
                               ])
                     ],
                     placements: nil,
-                    targeting: nil
+                    targeting: nil,
+                    uiConfig: nil
                 )
             )
         )
@@ -409,6 +417,18 @@ class OfferingsTests: TestCase {
 
         let wrongMetadataType = offeringA.getMetadataValue(for: "string", default: 5.5)
         expect(wrongMetadataType) == 5.5
+
+        let intWithoutDefault: Int? = offeringA.getMetadataValue(for: "int")
+        expect(intWithoutDefault) == 5
+
+        let doubleWithoutDefault: Double? = offeringA.getMetadataValue(for: "double")
+        expect(doubleWithoutDefault) == 5.5
+
+        let boolWithoutDefault: Bool? = offeringA.getMetadataValue(for: "boolean")
+        expect(boolWithoutDefault) == true
+
+        let stringWithoutDefault: String? = offeringA.getMetadataValue(for: "string")
+        expect(stringWithoutDefault) == "five"
 
         struct Data: Decodable, Equatable {
             var number: Int
@@ -512,13 +532,150 @@ class OfferingsTests: TestCase {
                       ])
             ],
             placements: nil,
-            targeting: nil
+            targeting: nil,
+            uiConfig: nil
         )
         let offerings = try XCTUnwrap(
             self.offeringsFactory.createOfferings(from: storeProductsByID, data: response)
         )
 
         expect(offerings.current).to(beNil())
+    }
+
+    // MARK: - Offering from OfferingResponse.Offering
+
+    func testCreateOfferingWithoutPaywall() throws {
+        let annualProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.yearly_10.99.2_week_intro")
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.monthly_4.99.1_week_intro")
+        let products = [
+            "com.revenuecat.yearly_10.99.2_week_intro": StoreProduct(sk1Product: annualProduct),
+            "com.revenuecat.monthly_4.99.1_week_intro": StoreProduct(sk1Product: monthlyProduct)
+        ]
+
+        let offeringResponse: OfferingsResponse = try BaseHTTPResponseTest.decodeFixture("Offerings")
+        let offeringResponse0 = try XCTUnwrap(offeringResponse.offerings[safe: 0])
+
+        expect(offeringResponse0.identifier) == "default"
+        expect(offeringResponse0.description) == "standard set of packages"
+
+        let uiConfig: UIConfig = try XCTUnwrap(BaseHTTPResponseTest.decodeFixture("UIConfig"))
+
+        let offering = try XCTUnwrap(
+            self.offeringsFactory.createOffering(from: products,
+                                                 offering: offeringResponse0,
+                                                 uiConfig: uiConfig)
+            )
+
+        expect(offering.paywall).to(beNil())
+        expect(offering.paywallComponents).to(beNil())
+        expect(offering.draftPaywallComponents).to(beNil())
+        expect(offering.hasPaywall) == false
+    }
+
+    func testCreateOfferingWithPaywallData() throws {
+        let annualProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.yearly_10.99.2_week_intro")
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.monthly_4.99.1_week_intro")
+        let products = [
+            "com.revenuecat.yearly_10.99.2_week_intro": StoreProduct(sk1Product: annualProduct),
+            "com.revenuecat.monthly_4.99.1_week_intro": StoreProduct(sk1Product: monthlyProduct)
+        ]
+
+        let offeringResponse: OfferingsResponse = try BaseHTTPResponseTest.decodeFixture("Offerings")
+        let offeringResponse0 = try XCTUnwrap(offeringResponse.offerings[safe: 2])
+
+        expect(offeringResponse0.identifier) == "paywall"
+        expect(offeringResponse0.description) == "Offering with paywall"
+
+        let uiConfig: UIConfig = try XCTUnwrap(BaseHTTPResponseTest.decodeFixture("UIConfig"))
+
+        let offering = try XCTUnwrap(
+            self.offeringsFactory.createOffering(from: products,
+                                                 offering: offeringResponse0,
+                                                 uiConfig: uiConfig)
+            )
+
+        expect(offering.paywall).toNot(beNil())
+        expect(offering.paywallComponents).to(beNil())
+        expect(offering.draftPaywallComponents).to(beNil())
+        expect(offering.hasPaywall) == true
+    }
+
+    func testCreateOfferingWithPaywallComponents() throws {
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.monthly_4.99.1_week_intro")
+        let products = [
+            "com.revenuecat.monthly_4.99.1_week_intro": StoreProduct(sk1Product: monthlyProduct)
+        ]
+
+        let offeringResp: OfferingsResponse = try BaseHTTPResponseTest.decodeFixture("OfferingsWithPaywallComponents")
+        let offeringResponse0 = try XCTUnwrap(offeringResp.offerings[safe: 0])
+
+        expect(offeringResponse0.identifier) == "paywall_components"
+        expect(offeringResponse0.description) == "Offering with paywall components"
+
+        let uiConfig: UIConfig = try XCTUnwrap(BaseHTTPResponseTest.decodeFixture("UIConfig"))
+
+        let offering = try XCTUnwrap(
+            self.offeringsFactory.createOffering(from: products,
+                                                 offering: offeringResponse0,
+                                                 uiConfig: uiConfig)
+            )
+
+        expect(offering.paywall).to(beNil())
+        expect(offering.paywallComponents).toNot(beNil())
+        expect(offering.draftPaywallComponents).to(beNil())
+        expect(offering.hasPaywall) == true
+    }
+
+    func testCreateOfferingWithPaywallComponentsAndDraftPaywallComponents() throws {
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.monthly_4.99.1_week_intro")
+        let products = [
+            "com.revenuecat.monthly_4.99.1_week_intro": StoreProduct(sk1Product: monthlyProduct)
+        ]
+
+        let offeringResp: OfferingsResponse = try BaseHTTPResponseTest.decodeFixture("OfferingsWithPaywallComponents")
+        let offeringResponse0 = try XCTUnwrap(offeringResp.offerings[safe: 1])
+
+        expect(offeringResponse0.identifier) == "paywall_components_with_draft"
+        expect(offeringResponse0.description) == "Offering with paywall components + draft paywall"
+
+        let uiConfig: UIConfig = try XCTUnwrap(BaseHTTPResponseTest.decodeFixture("UIConfig"))
+
+        let offering = try XCTUnwrap(
+            self.offeringsFactory.createOffering(from: products,
+                                                 offering: offeringResponse0,
+                                                 uiConfig: uiConfig)
+            )
+
+        expect(offering.paywall).to(beNil())
+        expect(offering.paywallComponents).toNot(beNil())
+        expect(offering.draftPaywallComponents).toNot(beNil())
+        expect(offering.hasPaywall) == true
+    }
+
+    func testCreateOfferingWithOnlyDraftPaywallComponents() throws {
+        let monthlyProduct = MockSK1Product(mockProductIdentifier: "com.revenuecat.monthly_4.99.1_week_intro")
+        let products = [
+            "com.revenuecat.monthly_4.99.1_week_intro": StoreProduct(sk1Product: monthlyProduct)
+        ]
+
+        let offeringResp: OfferingsResponse = try BaseHTTPResponseTest.decodeFixture("OfferingsWithPaywallComponents")
+        let offeringResponse0 = try XCTUnwrap(offeringResp.offerings[safe: 2])
+
+        expect(offeringResponse0.identifier) == "only_draft_paywall_components"
+        expect(offeringResponse0.description) == "Offering with only draft paywall"
+
+        let uiConfig: UIConfig = try XCTUnwrap(BaseHTTPResponseTest.decodeFixture("UIConfig"))
+
+        let offering = try XCTUnwrap(
+            self.offeringsFactory.createOffering(from: products,
+                                                 offering: offeringResponse0,
+                                                 uiConfig: uiConfig)
+            )
+
+        expect(offering.paywall).to(beNil())
+        expect(offering.paywallComponents).to(beNil())
+        expect(offering.draftPaywallComponents).toNot(beNil())
+        expect(offering.hasPaywall) == false
     }
 
 }
@@ -553,7 +710,8 @@ private extension OfferingsTests {
                               ])
                     ],
                     placements: nil,
-                    targeting: nil
+                    targeting: nil,
+                    uiConfig: nil
                 )
             )
         )
