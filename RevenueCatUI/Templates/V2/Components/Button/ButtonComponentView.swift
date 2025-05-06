@@ -202,7 +202,15 @@ struct ButtonComponentView: View {
     }
     
     private func openLinearityPaywallLink(url: URL) {
-        linearityPaywallLinkURL = url
+        if let email = Purchases.shared.attribution.getEmail()?.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+           var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            var items = components.queryItems ?? []
+            items.append(.init(name: "prefilled_email", value: email))
+            components.queryItems = items
+            linearityPaywallLinkURL = components.url ?? url
+        } else {
+            linearityPaywallLinkURL = url
+        }
         showingWebPaywallLinkAlert = true
     }
 

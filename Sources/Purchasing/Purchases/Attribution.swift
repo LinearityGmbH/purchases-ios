@@ -121,6 +121,13 @@ public extension Attribution {
     @objc func setEmail(_ email: String?) {
         self.subscriberAttributesManager.setEmail(email, appUserID: appUserID)
     }
+    
+    @objc func getEmail() -> String? {
+        self.subscriberAttributesManager.currentValueForAttribute(
+            key: ReservedSubscriberAttribute.email.key,
+            appUserID: appUserID
+        )
+    }
 
     /**
      * Subscriber attribute associated with the phone number for the user.

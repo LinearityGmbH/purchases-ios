@@ -260,7 +260,7 @@ extension SubscriberAttributesManager: AttributeSyncing {
 
 }
 
-private extension SubscriberAttributesManager {
+extension SubscriberAttributesManager {
 
     func storeAttributeLocallyIfNeeded(key: String, value: String?, appUserID: String) {
         let currentValue = currentValueForAttribute(key: key, appUserID: appUserID)
