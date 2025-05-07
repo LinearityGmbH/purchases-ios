@@ -61,6 +61,9 @@ struct PackageComponentView: View {
                     variableContext: packageContext.variableContext)
                 )
             }
+#if targetEnvironment(macCatalyst)
+            .buttonStyle(.plain)
+#endif
         } else {
             EmptyView()
         }
