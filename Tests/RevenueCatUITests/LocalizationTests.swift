@@ -432,17 +432,17 @@ class DiscountOtherLanguageLocalizationTests: BaseLocalizationTests {
 
 /// iOS 16 and 17 differ slightly in how Arabic strings are encoded, iOS 16 having an additional RTL marker (U+200F)
 /// This allows comparing strings ignoring those markers.
-func equalIgnoringRTL(_ expectedValue: String?) -> Nimble.Predicate<String> {
+func equalIgnoringRTL(_ expectedValue: String?) -> Nimble.Matcher<String> {
     let escapedValue = stringify(expectedValue?.escapedUnicode)
-    return Predicate.define("equal to <\(escapedValue)> ignoring RTL marks") { actualExpression, msg in
+    return Matcher.define("equal to <\(escapedValue)> ignoring RTL marks") { actualExpression, msg in
         if let actual = try actualExpression.evaluate(), let expected = expectedValue {
-            return PredicateResult(
+            return MatcherResult(
                 bool: actual.removingRTLMarkers == expected.removingRTLMarkers,
                 message: msg.appended(details: "Escaped: <\(actual.escapedUnicode)>")
             )
         }
 
-        return PredicateResult(status: .fail, message: msg)
+        return MatcherResult(status: .fail, message: msg)
     }
 }
 
@@ -463,7 +463,7 @@ private extension BaseLocalizationTests {
         _ value: Int,
         _ unit: SubscriptionPeriod.Unit,
         _ expected: String,
-        file: StaticString = #file,
+        file: FileString = #filePath,
         line: UInt = #line
     ) {
         let result = Localization.localizedDuration(for: SubscriptionPeriod(value: value, unit: unit),
@@ -489,7 +489,7 @@ private extension BaseLocalizationTests {
     func verify(
         _ unit: SubscriptionPeriod.Unit,
         _ expected: String,
-        file: StaticString = #file,
+        file: FileString = #filePath,
         line: UInt = #line
     ) {
         self.verify(.init(1, unit), expected, file: file, line: line)
@@ -498,7 +498,7 @@ private extension BaseLocalizationTests {
     func verify(
         _ period: SubscriptionPeriod,
         _ expected: String,
-        file: StaticString = #file,
+        file: FileString = #filePath,
         line: UInt = #line
     ) {
         let result = Localization.abbreviatedUnitLocalizedString(for: period,
@@ -509,7 +509,7 @@ private extension BaseLocalizationTests {
     func verify(
         _ packageType: PackageType,
         _ expected: String?,
-        file: StaticString = #file,
+        file: FileString = #filePath,
         line: UInt = #line
     ) {
         let result = Localization.localized(packageType: packageType,
@@ -524,7 +524,7 @@ private extension BaseLocalizationTests {
     func verify(
         _ discount: Double,
         _ expected: String,
-        file: StaticString = #file,
+        file: FileString = #filePath,
         line: UInt = #line
     ) {
         let result = Localization.localized(discount: discount,

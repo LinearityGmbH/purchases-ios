@@ -13,7 +13,7 @@
 //  Created by Andrés Boedo on 5/3/24.
 //
 
-import RevenueCat
+@_spi(Internal) import RevenueCat
 import SwiftUI
 
 #if os(iOS)
@@ -95,9 +95,13 @@ public struct CustomerCenterView: View {
     @_spi(Internal) public init(
         uiPreviewPurchaseProvider: CustomerCenterPurchasesType,
         navigationOptions: CustomerCenterNavigationOptions) {
-        self.init(viewModel: CustomerCenterViewModel(uiPreviewPurchaseProvider: uiPreviewPurchaseProvider),
-                  navigationOptions: navigationOptions)
-    }
+            self.init(
+                viewModel: CustomerCenterViewModel(
+                    uiPreviewPurchaseProvider: uiPreviewPurchaseProvider
+                ),
+                navigationOptions: navigationOptions
+            )
+        }
 
     fileprivate init(
         viewModel: CustomerCenterViewModel,
@@ -114,7 +118,6 @@ public struct CustomerCenterView: View {
             .task {
                 await loadInformationIfNeeded()
             }
-            .environmentObject(self.viewModel)
             .onAppear {
 #if DEBUG
                 guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
@@ -157,30 +160,7 @@ private extension CustomerCenterView {
                 }
             }
         }
-        // This is needed because `CustomerCenterViewModel` is isolated to @MainActor
-        // A bigger refactor is needed, but its already throwing a warning.
-        .modifier(self.viewModel.purchasesProvider.manageSubscriptionsSheetViewModifier(isPresented: .init(
-            get: { viewModel.manageSubscriptionsSheet },
-            set: { manage in DispatchQueue.main.async { viewModel.manageSubscriptionsSheet = manage } }
-        )))
         .modifier(CustomerCenterActionViewModifier(actionWrapper: viewModel.actionWrapper))
-        .onCustomerCenterPromotionalOfferSuccess {
-            Task {
-                await viewModel.loadScreen(shouldSync: true)
-            }
-        }
-        .onCustomerCenterShowingManageSubscriptions {
-            Task { @MainActor in
-                viewModel.manageSubscriptionsSheet = true
-            }
-        }
-        .onChangeOf(viewModel.manageSubscriptionsSheet) { manageSubscriptionsSheet in
-            if !manageSubscriptionsSheet {
-                Task {
-                    await viewModel.loadScreen(shouldSync: true)
-                }
-            }
-        }
     }
 
     @ViewBuilder
@@ -202,42 +182,32 @@ private extension CustomerCenterView {
 
     @ViewBuilder
     func destinationContent(configuration: CustomerCenterConfigData) -> some View {
-        if let purchaseInformation = viewModel.purchaseInformation {
-            if purchaseInformation.store == .appStore,
-               let screen = configuration.screens[.management] {
-                if let onUpdateAppClick = viewModel.onUpdateAppClick,
-                    !ignoreAppUpdateWarning && viewModel.shouldShowAppUpdateWarnings {
-                    AppUpdateWarningView(
-                        onUpdateAppClick: onUpdateAppClick,
-                        onContinueAnywayClick: {
-                            withAnimation {
-                                ignoreAppUpdateWarning = true
-                            }
+        if viewModel.hasPurchases,
+           let screen = configuration.screens[.management] {
+            if let onUpdateAppClick = viewModel.onUpdateAppClick,
+               !ignoreAppUpdateWarning
+                && viewModel.shouldShowAppUpdateWarnings {
+                AppUpdateWarningView(
+                    onUpdateAppClick: onUpdateAppClick,
+                    onContinueAnywayClick: {
+                        withAnimation {
+                            ignoreAppUpdateWarning = true
                         }
-                    )
-                } else {
-                    ManageSubscriptionsView(
-                        screen: screen,
-                        purchaseInformation: purchaseInformation,
-                        purchasesProvider: self.viewModel.purchasesProvider,
-                        actionWrapper: self.viewModel.actionWrapper)
-                }
-            } else if let screen = configuration.screens[.management] {
-                WrongPlatformView(screen: screen,
-                                  purchaseInformation: purchaseInformation)
+                    }
+                )
+            } else if viewModel.shouldShowList {
+                listView(screen)
             } else {
-                WrongPlatformView(purchaseInformation: purchaseInformation)
+                singlePurchaseView(screen)
             }
         } else {
             if let screen = configuration.screens[.noActive] {
-                ManageSubscriptionsView(screen: screen,
-                                        purchaseInformation: nil,
-                                        purchasesProvider: self.viewModel.purchasesProvider,
-                                        actionWrapper: self.viewModel.actionWrapper)
+                singlePurchaseView(screen)
             } else {
-                // Fallback with a restore button
-                NoSubscriptionsView(configuration: configuration,
-                                    actionWrapper: self.viewModel.actionWrapper)
+                FallbackNoSubscriptionsView(
+                    customerCenterViewModel: viewModel,
+                    actionWrapper: self.viewModel.actionWrapper
+                )
             }
         }
     }
@@ -249,6 +219,33 @@ private extension CustomerCenterView {
 
         destinationContent(configuration: configuration)
             .applyIf(accentColor != nil, apply: { $0.tint(accentColor) })
+    }
+
+    func listView(_ screen: CustomerCenterConfigData.Screen) -> some View {
+        RelevantPurchasesListView(
+            customerInfoViewModel: viewModel,
+            screen: screen,
+            originalAppUserId: viewModel.originalAppUserId,
+            originalPurchaseDate: viewModel.originalPurchaseDate,
+            shouldShowSeeAllPurchases: viewModel.shouldShowSeeAllPurchases,
+            purchasesProvider: self.viewModel.purchasesProvider,
+            actionWrapper: self.viewModel.actionWrapper
+        )
+        .dismissCircleButtonToolbarIfNeeded()
+    }
+
+    func singlePurchaseView(_ screen: CustomerCenterConfigData.Screen) -> some View {
+        SubscriptionDetailView(
+            customerInfoViewModel: viewModel,
+            screen: screen,
+            purchaseInformation: viewModel.subscriptionsSection.first
+                ?? viewModel.nonSubscriptionsSection.first,
+            showPurchaseHistory: viewModel.shouldShowSeeAllPurchases,
+            allowsMissingPurchaseAction: true,
+            purchasesProvider: self.viewModel.purchasesProvider,
+            actionWrapper: self.viewModel.actionWrapper
+        )
+        .dismissCircleButtonToolbarIfNeeded()
     }
 
     func trackImpression() {
@@ -267,12 +264,14 @@ private extension CustomerCenterView {
 struct CustomerCenterView_Previews: PreviewProvider {
 
     static var previews: some View {
-        let purchaseInformationApple =
-        CustomerCenterConfigTestData.subscriptionInformationMonthlyRenewing
-        let viewModelApple = CustomerCenterViewModel(purchaseInformation: purchaseInformationApple,
-                                                     configuration: CustomerCenterConfigTestData.customerCenterData)
-        CustomerCenterView(viewModel: viewModelApple)
-            .previewDisplayName("Monthly Apple")
+        CustomerCenterView(
+            viewModel: CustomerCenterViewModel(
+                activeSubscriptionPurchases: [.monthlyRenewing],
+                activeNonSubscriptionPurchases: [],
+                configuration: CustomerCenterConfigData.default
+            )
+        )
+        .previewDisplayName("Monthly Apple")
     }
 
 }
