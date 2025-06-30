@@ -124,18 +124,31 @@ struct ButtonComponentView: View {
         switch destination {
         case .customerCenter:
             showCustomerCenter = true
-        case .url(let url, let method),
-                .privacyPolicy(let url, let method),
+        case .privacyPolicy(let url, let method),
                 .terms(let url, let method):
             Browser.navigateTo(url: url,
                                method: method,
                                openURL: self.openURL,
                                inAppBrowserURL: self.$inAppBrowserURL)
+        case .url(let url, let method):
+            openLinearityPaywallLink(url: url, method: method)
         case .unknown:
             break
         case .webPaywallLink(url: let url, method: let method):
             openWebPaywallLink(url: url, method: method)
         }
+    }
+    
+    private func openLinearityPaywallLink(url: URL, method: PaywallComponent.ButtonComponent.URLMethod) {
+        var linearityPaywallLinkURL = url
+        if let email = Purchases.shared.attribution.getEmail()?.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+           var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            var items = components.queryItems ?? []
+            items.append(.init(name: "prefilled_email", value: email))
+            components.queryItems = items
+            linearityPaywallLinkURL = components.url ?? url
+        }
+        openWebPaywallLink(url: linearityPaywallLinkURL, method: method)
     }
 
     private func openWebPaywallLink(url: URL, method: PaywallComponent.ButtonComponent.URLMethod) {
