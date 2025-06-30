@@ -398,9 +398,16 @@ private extension PaywallView {
             return try await Purchases.shared.offerings().current.orThrow(PaywallError.noCurrentOffering)
 
         case let .offeringIdentifier(identifier):
-            return try await Purchases.shared.offerings()
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
                 .offering(identifier: identifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
+            
+        case let .placementIdentifier(placementIdentifier):
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
+                .currentOffering(forPlacement: placementIdentifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier, offerings: offerings))
         }
     }
 
@@ -416,6 +423,7 @@ private extension PaywallViewConfiguration.Content {
         case let .offering(offering): return offering
         case .defaultOffering: return Self.loadCachedCurrentOfferingIfPossible()
         case let .offeringIdentifier(identifier): return Self.loadCachedOfferingIfPossible(identifier: identifier)
+        case let .placementIdentifier(identifier): return Self.loadCachedOfferingIfPossible(placementIdentifier: identifier)
         }
     }
 
@@ -430,6 +438,14 @@ private extension PaywallViewConfiguration.Content {
     private static func loadCachedOfferingIfPossible(identifier: String) -> Offering? {
         if Purchases.isConfigured {
             return Purchases.shared.cachedOfferings?.offering(identifier: identifier)
+        } else {
+            return nil
+        }
+    }
+    
+    private static func loadCachedOfferingIfPossible(placementIdentifier: String) -> Offering? {
+        if Purchases.isConfigured {
+            return Purchases.shared.cachedOfferings?.currentOffering(forPlacement: placementIdentifier)
         } else {
             return nil
         }
@@ -530,7 +546,8 @@ struct LoadedOfferingPaywallView: View {
             .createView(for: self.offering,
                         template: self.template,
                         configuration: configuration,
-                        introEligibility: self.introEligibility)
+                        introEligibility: self.introEligibility
+            )
             .environmentObject(self.introEligibility)
             .environmentObject(self.purchaseHandler)
             .disabled(self.purchaseHandler.actionInProgress)

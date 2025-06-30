@@ -77,7 +77,7 @@ public class PaywallViewController: UIViewController {
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
-            content: .offeringPlacementIdentifier(placementIdentifier),
+            content: .placementIdentifier(placementIdentifier),
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,

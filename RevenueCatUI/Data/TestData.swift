@@ -618,8 +618,8 @@ enum TestData {
             ),
             assetBaseURL: Self.paywallAssetBaseURL
         ),
-        availablePackages: [TestData.monthlyPackage,
-                            TestData.annualPackage]
+        availablePackages: [TestData.monthlyPackage, TestData.annualPackage],
+        webCheckoutUrl: URL(string: "https://revenuecat.com/checkout")!
     )
 
     static let offeringWithTemplate7Paywall = Offering(
