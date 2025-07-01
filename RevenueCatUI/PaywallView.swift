@@ -621,8 +621,27 @@ struct LoadedOfferingPaywallView: View {
                 }
                 onRequestedDismissal()
             } label: {
-                Image(systemName: "xmark")
-                    .foregroundColor(color)
+                ZStack {
+                    Circle()
+                        .fill(
+                            Color(
+                                light: Color.white,
+                                dark: .black
+                            )
+                        )
+                        .frame(width: 30)
+                        .shadow(color: .black.opacity(0.2), radius: 5)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(
+                            Color(
+                                light: Color.black,
+                                dark: .white
+                            )
+                        )
+                }
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
             }
             .disabled(self.purchaseHandler.actionInProgress)
             .opacity(
