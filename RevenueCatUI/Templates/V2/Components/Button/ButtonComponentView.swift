@@ -20,11 +20,10 @@ import SwiftUI
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct ButtonComponentView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.openSheet) private var openSheet
     @State private var inAppBrowserURL: URL?
     @State private var showCustomerCenter = false
     @State private var showingWebPaywallLinkAlert = false
-    @State private var webPaywallLinkURL: URL?
-    @State private var linearityPaywallLinkURL: URL?
 
     @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
@@ -68,32 +67,6 @@ struct ButtonComponentView: View {
                     showActivityIndicatorOverContent: self.showActivityIndicatorOverContent
                 )
             }
-            .alert("Open in web browser?",
-                   isPresented: $showingWebPaywallLinkAlert) {
-                Button("Cancel", role: .cancel) {}
-                Button("Open") {
-                    if let url = webPaywallLinkURL {
-#if os(watchOS)
-                        // watchOS doesn't support openURL with a completion handler, so we're just opening the URL.
-                        openURL(url)
-#else
-                        openURL(url) { success in
-                            if success {
-                                Logger.debug(Strings.successfully_opened_url_external_browser(url.absoluteString))
-                            } else {
-                                Logger.error(Strings.failed_to_open_url_external_browser(url.absoluteString))
-                            }
-                        }
-#endif
-                        onDismiss()
-                    } else if let linearityPaywallLinkURL {
-                        navigateToUrl(url: linearityPaywallLinkURL, method: .externalBrowser)
-                        onDismiss()
-                    }
-                }
-            } message: {
-                Text("You will leave the app and go to the developer’s website.")
-            }
             .applyIf(self.shouldBeDisabled, apply: { view in
                 view
                     .disabled(true)
@@ -122,6 +95,14 @@ struct ButtonComponentView: View {
             onDismiss()
         case .unknown:
             break
+        case .sheet(let sheet):
+            if let sheetStackViewModel = self.viewModel.sheetStackViewModel {
+                let sheetViewModel = SheetViewModel(
+                    sheet: sheet,
+                    sheetStackViewModel: sheetStackViewModel
+                )
+                openSheet(sheetViewModel)
+            }
         }
     }
 
@@ -143,90 +124,49 @@ struct ButtonComponentView: View {
         switch destination {
         case .customerCenter:
             showCustomerCenter = true
-        case .url(let url, let method),
-                .privacyPolicy(let url, let method),
+        case .privacyPolicy(let url, let method),
                 .terms(let url, let method):
-            openLinearityPaywallLink(url: url)
+            Browser.navigateTo(url: url,
+                               method: method,
+                               openURL: self.openURL,
+                               inAppBrowserURL: self.$inAppBrowserURL)
+        case .url(let url, let method):
+            openLinearityPaywallLink(url: url, method: method)
         case .unknown:
             break
         case .webPaywallLink(url: let url, method: let method):
             openWebPaywallLink(url: url, method: method)
         }
     }
-
-    private func navigateToUrl(url: URL, method: PaywallComponent.ButtonComponent.URLMethod) {
-        switch method {
-        case .inAppBrowser:
-#if os(tvOS)
-            // There's no SafariServices on tvOS, so we're falling back to opening in an external browser.
-            Logger.warning(Strings.no_in_app_browser_tvos)
-            openURL(url) { success in
-                if success {
-                    Logger.debug(Strings.successfully_opened_url_external_browser(url.absoluteString))
-                } else {
-                    Logger.error(Strings.failed_to_open_url_external_browser(url.absoluteString))
-                }
-            }
-#else
-            inAppBrowserURL = url
-#endif
-        case .externalBrowser:
-#if os(watchOS)
-            // watchOS doesn't support openURL with a completion handler, so we're just opening the URL.
-            openURL(url)
-#else
-            openURL(url) { success in
-                if success {
-                    Logger.debug(Strings.successfully_opened_url_external_browser(url.absoluteString))
-                } else {
-                    Logger.error(Strings.failed_to_open_url_external_browser(url.absoluteString))
-                }
-            }
-#endif
-        case .deepLink:
-#if os(watchOS)
-            // watchOS doesn't support openURL with a completion handler, so we're just opening the URL.
-            openURL(url)
-#else
-            openURL(url) { success in
-                if success {
-                    Logger.debug(Strings.successfully_opened_url_deep_link(url.absoluteString))
-                } else {
-                    Logger.error(Strings.failed_to_open_url_deep_link(url.absoluteString))
-                }
-            }
-#endif
-        case .unknown:
-            break
-        }
-    }
     
-    private func openLinearityPaywallLink(url: URL) {
+    private func openLinearityPaywallLink(url: URL, method: PaywallComponent.ButtonComponent.URLMethod) {
+        var linearityPaywallLinkURL = url
         if let email = Purchases.shared.attribution.getEmail()?.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
            var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
             var items = components.queryItems ?? []
             items.append(.init(name: "prefilled_email", value: email))
             components.queryItems = items
             linearityPaywallLinkURL = components.url ?? url
-        } else {
-            linearityPaywallLinkURL = url
         }
-        showingWebPaywallLinkAlert = true
+        openWebPaywallLink(url: linearityPaywallLinkURL, method: method)
     }
 
     private func openWebPaywallLink(url: URL, method: PaywallComponent.ButtonComponent.URLMethod) {
-        var url = url.appendingPathComponent(Purchases.shared.appUserID)
-        if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-            var items = components.queryItems ?? []
-            items.append(.init(name: "rc_source", value: "app"))
-            components.queryItems = items
-            url = components.url ?? url
-        }
         Purchases.shared.invalidateCustomerInfoCache()
-        webPaywallLinkURL = url
-        showingWebPaywallLinkAlert = true
+#if os(watchOS)
+        // watchOS doesn't support openURL with a completion handler, so we're just opening the URL.
+        openURL(url)
+#else
+        openURL(url) { success in
+            if success {
+                Logger.debug(Strings.successfully_opened_url_external_browser(url.absoluteString))
+            } else {
+                Logger.error(Strings.failed_to_open_url_external_browser(url.absoluteString))
+            }
+        }
+#endif
+        onDismiss()
     }
-
 }
 
 #if DEBUG
@@ -259,7 +199,12 @@ struct ButtonComponentView_Previews: PreviewProvider {
                             "buttonText": PaywallComponentsData.LocalizationData.string("Do something")
                         ]
                     ),
-                    offering: Offering(identifier: "", serverDescription: "", availablePackages: [])
+                    offering: Offering(
+                        identifier: "",
+                        serverDescription: "",
+                        availablePackages: [],
+                        webCheckoutUrl: nil
+                    )
                 ),
                 onDismiss: { }
             )

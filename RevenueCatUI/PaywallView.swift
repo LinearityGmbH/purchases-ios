@@ -50,20 +50,11 @@ public struct PaywallView: View {
 
     @State
     private var offering: Offering?
-    
-    @State
-    private var paywallDidLoad: Bool = false
 
     @State
     private var customerInfo: CustomerInfo?
     @State
-    private var error: NSError? {
-        didSet {
-            if let error {
-                Logger.warning(Strings.error_load_paywall(error))
-            }
-        }
-    }
+    private var error: NSError?
 
     private var initializationError: NSError?
 
@@ -210,10 +201,6 @@ public struct PaywallView: View {
     // swiftlint:disable:next missing_docs
     public var body: some View {
         self.content
-            .preference(key: PaywallDidLoadPreferenceKey.self,
-                        value: paywallDidLoad)
-            .preference(key: PaywallDidFailLoadingPreferenceKey.self,
-                        value: self.error)
             .displayError(self.$error) {
                 guard let onRequestedDismissal = self.onRequestedDismissal else {
                     self.dismiss()
@@ -241,11 +228,6 @@ public struct PaywallView: View {
                                      checker: self.introEligibility,
                                      purchaseHandler: self.purchaseHandler)
                     .transition(Self.transition)
-                    .onAppear(
-                        perform: {
-                            paywallDidLoad = true
-                        }
-                    )
                 } else {
                     LoadingPaywallView(mode: self.mode,
                                        displayCloseButton: self.displayCloseButton)
@@ -348,7 +330,12 @@ public struct PaywallView: View {
                         }
                         onRequestedDismissal()
                     },
-                    fallbackContent: .paywallV1View(dataForV1DefaultPaywall)
+                    fallbackContent: .paywallV1View(dataForV1DefaultPaywall),
+                    failedToLoadFont: { fontConfig in
+                        if Purchases.isConfigured {
+                            Purchases.shared.failedToLoadFontWithConfig(fontConfig)
+                        }
+                    }
                 )
             }
         } else {
@@ -415,8 +402,8 @@ private extension PaywallView {
             return try offerings
                 .offering(identifier: identifier)
                 .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
-
-        case let .offeringPlacementIdentifier(placementIdentifier):
+            
+        case let .placementIdentifier(placementIdentifier):
             let offerings = try await Purchases.shared.offerings()
             return try offerings
                 .currentOffering(forPlacement: placementIdentifier)
@@ -435,13 +422,30 @@ private extension PaywallViewConfiguration.Content {
         switch self {
         case let .offering(offering): return offering
         case .defaultOffering: return Self.loadCachedCurrentOfferingIfPossible()
-        case .offeringIdentifier, .offeringPlacementIdentifier: return nil
+        case let .offeringIdentifier(identifier): return Self.loadCachedOfferingIfPossible(identifier: identifier)
+        case let .placementIdentifier(identifier): return Self.loadCachedOfferingIfPossible(placementIdentifier: identifier)
         }
     }
 
     private static func loadCachedCurrentOfferingIfPossible() -> Offering? {
         if Purchases.isConfigured {
             return Purchases.shared.cachedOfferings?.current
+        } else {
+            return nil
+        }
+    }
+
+    private static func loadCachedOfferingIfPossible(identifier: String) -> Offering? {
+        if Purchases.isConfigured {
+            return Purchases.shared.cachedOfferings?.offering(identifier: identifier)
+        } else {
+            return nil
+        }
+    }
+    
+    private static func loadCachedOfferingIfPossible(placementIdentifier: String) -> Offering? {
+        if Purchases.isConfigured {
+            return Purchases.shared.cachedOfferings?.currentOffering(forPlacement: placementIdentifier)
         } else {
             return nil
         }
@@ -480,9 +484,6 @@ struct LoadedOfferingPaywallView: View {
 
     @Environment(\.dismiss)
     private var dismiss
-    
-    @State
-    fileprivate(set) var hideCloseButton: Bool = false
 
     init(
         offering: Offering,
@@ -545,8 +546,8 @@ struct LoadedOfferingPaywallView: View {
             .createView(for: self.offering,
                         template: self.template,
                         configuration: configuration,
-                        introEligibility: self.introEligibility,
-                        hideCloseButton: $hideCloseButton)
+                        introEligibility: self.introEligibility
+            )
             .environmentObject(self.introEligibility)
             .environmentObject(self.purchaseHandler)
             .disabled(self.purchaseHandler.actionInProgress)
@@ -566,20 +567,26 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-            let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
-            ZStack {
-                view
-                VStack {
-                    Spacer().frame(height: isIPhone ? 0 : 12)
-                    HStack {
-                        Spacer()
-                        closeButton
-                        Spacer().frame(width: 12)
-                    }
-                    Spacer()
+            NavigationView {
+                // Prevents navigation bar from being showing as translucent
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                    view
+                        .toolbar {
+                            self.makeToolbar(
+                                color: self.getCloseButtonColor(configuration: configuration)
+                            )
+                        }
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                } else {
+                    view
+                        .toolbar {
+                            self.makeToolbar(
+                                color: self.getCloseButtonColor(configuration: configuration)
+                            )
+                        }
                 }
-                .ignoresSafeArea(edges: isIPhone ? [] : .all)
             }
+            .navigationViewStyle(.stack)
         } else {
             view
         }
@@ -595,18 +602,25 @@ struct LoadedOfferingPaywallView: View {
             darkMode: self.colorScheme == .dark
         )
     }
-    
-    @ViewBuilder
-    private var closeButton: some View {
-        Button(
-            action: {
+
+    private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
+        switch configuration {
+        case .success(let configuration):
+            return configuration.colors.closeButtonColor
+        case .failure:
+            return nil
+        }
+    }
+
+    private func makeToolbar(color: Color?) -> some ToolbarContent {
+        ToolbarItem(placement: .destructiveAction) {
+            Button {
                 guard let onRequestedDismissal = self.onRequestedDismissal else {
                     self.dismiss()
                     return
                 }
                 onRequestedDismissal()
-            },
-            label: {
+            } label: {
                 ZStack {
                     Circle()
                         .fill(
@@ -629,27 +643,15 @@ struct LoadedOfferingPaywallView: View {
                 .frame(width: 40, height: 40)
                 .contentShape(Rectangle())
             }
-        )
-#if targetEnvironment(macCatalyst)
-        .buttonStyle(.plain)
-#endif
-        .disabled(self.purchaseHandler.actionInProgress)
-        .hidden(if: self.hideCloseButton)
-        .opacity(
-            self.purchaseHandler.actionInProgress
-            ? Constants.purchaseInProgressButtonOpacity
-            : 1
-        )
-    }
-    
-    private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
-        switch configuration {
-        case .success(let configuration):
-            return configuration.colors.closeButtonColor
-        case .failure:
-            return nil
+            .disabled(self.purchaseHandler.actionInProgress)
+            .opacity(
+                self.purchaseHandler.actionInProgress
+                ? Constants.purchaseInProgressButtonOpacity
+                : 1
+            )
         }
     }
+
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -690,7 +692,6 @@ struct PaywallView_Previews: PreviewProvider {
                         offering: offering,
                         customerInfo: TestData.customerInfo,
                         mode: mode,
-                        displayCloseButton: true, 
                         introEligibility: PreviewHelpers.introEligibilityChecker,
                         purchaseHandler: PreviewHelpers.purchaseHandler
                     )

@@ -42,7 +42,10 @@ fileprivate extension View {
                 .frame(maxWidth: .infinity, alignment: alignment)
         case .fixed(let value):
             self
-                .frame(width: CGFloat(value), alignment: alignment)
+                .frame(width: min(CGFloat(value), UIScreen.main.bounds.width - 40), alignment: alignment)
+        case .relative:
+            // WIP: Maybe handle
+            self
         }
     }
 
@@ -57,6 +60,9 @@ fileprivate extension View {
         case .fixed(let value):
             self
                 .frame(height: CGFloat(value), alignment: alignment)
+        case .relative:
+            // WIP: Maybe handle
+            self
         }
     }
 

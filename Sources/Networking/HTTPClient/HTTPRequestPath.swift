@@ -101,6 +101,12 @@ extension HTTPRequest {
 
     }
 
+    enum WebBillingPath: Hashable {
+
+        case getWebProducts(appUserID: String)
+
+    }
+
 }
 
 extension HTTPRequest.Path: HTTPRequestPath {

@@ -5,34 +5,62 @@ import StoreKit
 
 public struct ContentView: View {
     @State private var presentCustomerCenter = false
+    @State private var pushCustomerCenter = false
+
+    @State private var manageSubscriptions = false
     @State private var actionSheetIsPresented = false
 
     @State private var productToBuy: String?
 
-    public init() {}
+    public init() { }
 
     public var body: some View {
-        VStack {
-            Spacer()
-            Button("Present Customer Center") {
-                presentCustomerCenter = true
+        NavigationStack {
+            VStack {
+                Spacer()
+                Button("Present Customer Center") {
+                    presentCustomerCenter = true
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Push Customer Center") {
+                    pushCustomerCenter = true
+                }
+                .buttonStyle(.borderedProminent)
+
+                Spacer()
             }
-            .buttonStyle(.borderedProminent)
-            Spacer()
-        }
-        .ignoresSafeArea(.all)
-        .presentCustomerCenter(isPresented: $presentCustomerCenter)
-        .safeAreaInset(edge: .bottom, content: {
-            Button("Buy something") {
-                actionSheetIsPresented = true
+            .navigationDestination(isPresented: $pushCustomerCenter, destination: {
+                CustomerCenterView(
+                    navigationOptions: .init(
+                        usesNavigationStack: true,
+                        usesExistingNavigation: true,
+                        shouldShowCloseButton: false
+                    )
+                )
+            })
+            .ignoresSafeArea(.all)
+            .presentCustomerCenter(isPresented: $presentCustomerCenter)
+            .manageSubscriptionsSheet(isPresented: $manageSubscriptions)
+            .confirmationDialog(
+                "Buy something",
+                isPresented: $actionSheetIsPresented
+            ) {
+                buttonsView
             }
-            .buttonStyle(.bordered)
-        })
-        .confirmationDialog(
-            "Buy something",
-            isPresented: $actionSheetIsPresented
-        ) {
-            buttonsView
+            .safeAreaInset(edge: .bottom, content: {
+                HStack {
+                    Button("Buy something") {
+                        actionSheetIsPresented = true
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Manage subscriptions") {
+                        manageSubscriptions = true
+                    }
+                    .buttonStyle(.bordered)
+                }
+            })
         }
     }
 
@@ -43,10 +71,22 @@ public struct ContentView: View {
                 productToBuy = product
 
                 Task {
-                    let product = await Purchases.shared.products([product]).first!
-                    _ = try await Purchases.shared.purchase(product: product)
+                    let fetchedProducts = await Purchases.shared.products([product])
+                    guard let product = fetchedProducts.first else {
+                        print("⚠️ Failed to find product: \(product)")
+                        await MainActor.run {
+                            productToBuy = nil
+                        }
+                        return
+                    }
 
-                    Task { @MainActor in
+                    do {
+                        _ = try await Purchases.shared.purchase(product: product)
+                    } catch {
+                        print("⚠️ Purchase failed: \(error)")
+                    }
+
+                    await MainActor.run {
                         productToBuy = nil
                     }
                 }
@@ -57,11 +97,14 @@ public struct ContentView: View {
     }
 
     static var products: [String] {
-        [
-            "maestro.weekly.tests",
-            "maestro.monthly.tests"
-        ]
-    }
+         [
+             "maestro.weekly.tests.01",
+             "maestro.monthly.tests.02",
+             "maestro.weekly2.tests.01",
+             "maestro.nonconsumable.tests.01",
+             "maestro.consumable.tests.01"
+         ]
+     }
 }
 
 struct ContentView_Previews: PreviewProvider {
