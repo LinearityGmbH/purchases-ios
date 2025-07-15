@@ -567,26 +567,20 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-            NavigationView {
-                // Prevents navigation bar from being showing as translucent
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                    view
-                        .toolbar {
-                            self.makeToolbar(
-                                color: self.getCloseButtonColor(configuration: configuration)
-                            )
-                        }
-                        .toolbarBackground(.hidden, for: .navigationBar)
-                } else {
-                    view
-                        .toolbar {
-                            self.makeToolbar(
-                                color: self.getCloseButtonColor(configuration: configuration)
-                            )
-                        }
+            let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
+            ZStack {
+                view
+                VStack {
+                    Spacer().frame(height: isIPhone ? 0 : 12)
+                    HStack {
+                        Spacer()
+                        closeButton
+                        Spacer().frame(width: 12)
+                    }
+                    Spacer()
                 }
+                .ignoresSafeArea(edges: isIPhone ? [] : .all)
             }
-            .navigationViewStyle(.stack)
         } else {
             view
         }
@@ -602,25 +596,18 @@ struct LoadedOfferingPaywallView: View {
             darkMode: self.colorScheme == .dark
         )
     }
-
-    private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
-        switch configuration {
-        case .success(let configuration):
-            return configuration.colors.closeButtonColor
-        case .failure:
-            return nil
-        }
-    }
-
-    private func makeToolbar(color: Color?) -> some ToolbarContent {
-        ToolbarItem(placement: .destructiveAction) {
-            Button {
+    
+    @ViewBuilder
+    private var closeButton: some View {
+        Button(
+            action: {
                 guard let onRequestedDismissal = self.onRequestedDismissal else {
                     self.dismiss()
                     return
                 }
                 onRequestedDismissal()
-            } label: {
+            },
+            label: {
                 ZStack {
                     Circle()
                         .fill(
@@ -643,15 +630,17 @@ struct LoadedOfferingPaywallView: View {
                 .frame(width: 40, height: 40)
                 .contentShape(Rectangle())
             }
-            .disabled(self.purchaseHandler.actionInProgress)
-            .opacity(
-                self.purchaseHandler.actionInProgress
-                ? Constants.purchaseInProgressButtonOpacity
-                : 1
-            )
-        }
+        )
+#if targetEnvironment(macCatalyst)
+        .buttonStyle(.plain)
+#endif
+        .disabled(self.purchaseHandler.actionInProgress)
+        .opacity(
+            self.purchaseHandler.actionInProgress
+            ? Constants.purchaseInProgressButtonOpacity
+            : 1
+        )
     }
-
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
