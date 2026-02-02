@@ -244,7 +244,8 @@ private extension OfferingsManager {
                 let showSimulatorWarning = self.systemInfo.isSubjectToKnownIssue_18_4_sim()
                 if !showSimulatorWarning {
                     let userInfo = userInfo(for: response)
-                    sendError(Self.createErrorForEmptyResult(result.error), title: "Products empty", userInfo: userInfo)
+                    let error = Self.createErrorForEmptyResult(result.error)
+                    sendError(error, underlyingError: error.underlyingError, title: "Products empty", userInfo: userInfo)
                 }
                 completion(.failure(Self.createErrorForEmptyResult(result.error,
                                                                    showSimulatorWarning: showSimulatorWarning)))
@@ -626,31 +627,35 @@ func userInfo(for response: OfferingsResponse) -> [String: AnyHashable] {
 
 func sendError(
     _ error: Error,
+    underlyingError: Error? = nil,
     title: String,
     userInfo _userInfo: [String: AnyHashable],
-    file: String = #file,
-    function: String = #function,
-    line: UInt = #line
 ) {
     var userInfo = _userInfo
     
     userInfo["error.title"] = title
     
-    userInfo["error.description"] = error.localizedDescription
-    let nsError = error as NSError
-    userInfo["nsError.code"] = nsError.code
-    userInfo["nsError.domain"] = nsError.domain
-    userInfo["nsError.userInfo"] = nsError.userInfo.mapValues {
-        if let anyHashable = $0 as? AnyHashable {
-            return anyHashable
+    func updateUserInfo(_ userInfo: inout [String: AnyHashable], with error: Error, errorSuffix: String = "") {
+        userInfo["error.description" + errorSuffix] = error.localizedDescription
+        let nsError = error as NSError
+        userInfo["nsError.code" + errorSuffix] = nsError.code
+        userInfo["nsError.domain" + errorSuffix] = nsError.domain
+        userInfo["nsError.userInfo" + errorSuffix] = nsError.userInfo.mapValues {
+            if let anyHashable = $0 as? AnyHashable {
+                return anyHashable
+            }
+            return "\($0)"
         }
-        return "\($0)"
+        userInfo["nsError.localizedDescription" + errorSuffix] = nsError.localizedDescription
+        userInfo["nsError.localizedFailureReason" + errorSuffix] = nsError.localizedFailureReason
+        userInfo["nsError.localizedRecoverySuggestion" + errorSuffix] = nsError.localizedRecoverySuggestion
+        userInfo["nsError.localizedRecoveryOptions" + errorSuffix] = nsError.localizedRecoveryOptions
     }
-    userInfo["nsError.localizedDescription"] = nsError.localizedDescription
-    userInfo["nsError.localizedFailureReason"] = nsError.localizedFailureReason
-    userInfo["nsError.localizedRecoverySuggestion"] = nsError.localizedRecoverySuggestion
-    userInfo["nsError.localizedRecoveryOptions"] = nsError.localizedRecoveryOptions
-    
+        
+    updateUserInfo(&userInfo, with: error)
+    if let underlyingError {
+        updateUserInfo(&userInfo, with: underlyingError, errorSuffix: ".underlying")
+    }
     linearityLog("Encountered error with title='\(title)', error: '\(error)', userInfo: '\(userInfo)'")
     
     DispatchQueue.main.async {
