@@ -322,6 +322,11 @@ public class PaywallViewController: UIViewController {
         }
         self.presentationController?.delegate = self
     }
+    
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        delegate?.paywallViewControllerDidAppear?(self)
+    }
 
     public override func viewDidDisappear(_ animated: Bool) {
         if self.isBeingDismissed && !self.isDismissingForExitOffer {
@@ -654,6 +659,19 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     optional func paywallViewController(_ controller: PaywallViewController,
                                         didChangeSizeTo size: CGSize)
 
+    /// Notifies ``PaywallViewController`` did appear.
+    @objc(paywallViewControllerDidAppear:)
+    optional func paywallViewControllerDidAppear(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did load paywall.
+    @objc(paywallViewControllerDidLoadPaywall:)
+    optional func paywallViewControllerDidLoadPaywall(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did fail to load paywall.
+    @objc(paywallViewController:didFailLoadPaywallWithError:)
+    optional func paywallViewController(_ controller: PaywallViewController,
+                                        didFailLoadPaywallWith error: NSError)
+
     /// Notifies that an exit offer paywall is about to be presented.
     /// - Parameters:
     ///   - controller: The original ``PaywallViewController`` that was dismissed.
@@ -663,7 +681,6 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     @objc(paywallViewController:willPresentExitOfferController:)
     optional func paywallViewController(_ controller: PaywallViewController,
                                         willPresentExitOfferController exitOfferController: PaywallViewController)
-
 }
 
 // MARK: - Private
@@ -713,11 +730,19 @@ private extension PaywallViewController {
                 guard let self else { return }
                 self.delegate?.paywallViewController?(self, didFailRestoringWith: error)
             },
-            requestedDismissal: onRequestedDismissal,
             onSizeChange: { [weak self] in
                 guard let self else { return }
                 self.delegate?.paywallViewController?(self, didChangeSizeTo: $0)
-            }
+            },
+            onPaywallDidLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewControllerDidLoadPaywall?(self)
+            },
+            onPaywallDidFailLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewController?(self, didFailLoadPaywallWith: $0)
+            },
+            requestedDismissal: onRequestedDismissal
         )
 
         let controller = UIHostingController(rootView: container)
@@ -745,9 +770,10 @@ private struct PaywallContainerView: View {
     let purchaseFailure: PurchaseFailureHandler
     let restoreStarted: RestoreStartedHandler
     let restoreFailure: PurchaseFailureHandler
-    let requestedDismissal: () -> Void
-
     let onSizeChange: (CGSize) -> Void
+    let onPaywallDidLoad: () -> Void
+    let onPaywallDidFailLoad: (NSError) -> Void
+    let requestedDismissal: () -> Void
 
     var body: some View {
         PaywallView(configuration: self.configuration)
@@ -760,6 +786,8 @@ private struct PaywallContainerView: View {
             .onRestoreCompleted(self.restoreCompleted)
             .onRestoreFailure(self.restoreFailure)
             .onSizeChange(self.onSizeChange)
+            .onPaywallDidLoad(self.onPaywallDidLoad)
+            .onPaywallDidFailLoad(self.onPaywallDidFailLoad)
             .onRequestedDismissal(self.requestedDismissal)
     }
 

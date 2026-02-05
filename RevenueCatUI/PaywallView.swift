@@ -215,6 +215,10 @@ public struct PaywallView: View {
             // If the parent view uses refreshable, it can be inherited by the paywall view
             // and pulling down in the paywall would execute the parent's refreshable action
             .refreshableDisabled()
+            .preference(key: PaywallDidLoadPreferenceKey.self,
+                        value: self.offering != nil && self.customerInfo != nil)
+            .preference(key: PaywallDidFailLoadingPreferenceKey.self,
+                        value: self.error)
     }
 
     @MainActor
