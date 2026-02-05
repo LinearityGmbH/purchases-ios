@@ -1,17 +1,13 @@
-## RevenueCat SDK
-### 🐞 Bugfixes
-* Improve paywall view load time if using offering identifier by using paywall offerings cache (#5319) via Josh Holtz (@joshdholtz)
+## RevenueCatUI SDK
 ### Paywallv2
 #### 🐞 Bugfixes
-* Improve resolution of locale in paywalls components localizations (#5316) via Antonio Pallares (@ajpallares)
-* Fix paywall locale receiving UN M.49 standard localization (#5309) via Antonio Pallares (@ajpallares)
-
-## RevenueCatUI SDK
-### Customer Center
-#### ✨ New Features
-* Dont be explicit on store for paddle, web, rcBilling, external (#5325) via Facundo Menzella (@facumenzella)
+* Make paywall font registration idempotent (#6193) via Facundo Menzella (@facumenzella)
+* fix: fixes video autoplay on first paywall open by removing broken stagedURL.publisher observation (#6114) @erenkulaksiz (#6185) via Facundo Menzella (@facumenzella)
+* [EXTERNAL] fix: listen willResignActiveNotification and didBecomeActiveNotification to autoplay the video (#6116) @erenkulaksiz (#6184) via Facundo Menzella (@facumenzella)
 
 ### 🔄 Other Changes
-* Move the Paywall-Screenshots test plan into the RevenueCatUITestsDev scheme, and add a host application to run them. (#5320) via Chris Lindsay (@chrisvasselli)
-* [AUTOMATIC][Paywalls V2] Updates commit hash of paywall-preview-resources (#5318) via RevenueCat Git Bot (@RCGitBot)
-* Update validation of `testCanGetOfferings` StoreKit integration test (#5313) via Antonio Pallares (@ajpallares)
+* Remove fallback url caching mechanism (#6188) via Toni Rico (@tonidero)
+* RCT Tester app Part 2 - Offerings + User management + Configuration persistence (#6189) via Antonio Pallares (@ajpallares)
+* RCT Tester app Part 1 - Tuist project + App setup (#6187) via Antonio Pallares (@ajpallares)
+* Fix `integration-tests-all` on CI (#6190) via Antonio Pallares (@ajpallares)
+* [Maestro] Improve e2e test stability (#6182) via Antonio Pallares (@ajpallares)

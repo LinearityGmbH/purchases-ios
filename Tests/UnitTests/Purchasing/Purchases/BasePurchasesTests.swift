@@ -33,6 +33,7 @@ class BasePurchasesTests: TestCase {
         self.purchasesDelegate = MockPurchasesDelegate()
 
         self.mockPaymentQueueWrapper = MockPaymentQueueWrapper()
+        self.mockSimulatedStorePurchaseHandler = MockSimulatedStorePurchaseHandler()
 
         self.userDefaults = UserDefaults(suiteName: Self.userDefaultsSuiteName)
         self.clock = TestClock()
@@ -40,13 +41,13 @@ class BasePurchasesTests: TestCase {
                                          storeKitVersion: self.storeKitVersion,
                                          clock: self.clock)
         self.storeKit1Wrapper = MockStoreKit1Wrapper(observerMode: self.systemInfo.observerMode)
-        self.deviceCache = MockDeviceCache(sandboxEnvironmentDetector: self.systemInfo,
+        self.deviceCache = MockDeviceCache(systemInfo: self.systemInfo,
                                            userDefaults: self.userDefaults)
         self.paywallCache = .init()
         if #available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *) {
-            self.paywallEventsManager = MockPaywallEventsManager()
+            self.eventsManager = MockEventsManager()
         } else {
-            self.paywallEventsManager = nil
+            self.eventsManager = nil
         }
         self.requestFetcher = MockRequestFetcher()
         self.purchasedProductsFetcher = .init()
@@ -104,6 +105,7 @@ class BasePurchasesTests: TestCase {
                                        attributionPoster: self.attributionPoster,
                                        systemInfo: self.systemInfo)
         self.mockOfflineEntitlementsManager = MockOfflineEntitlementsManager()
+        self.mockLocalTransactionMetadataStore = MockLocalTransactionMetadataStore()
         self.customerInfoManager = CustomerInfoManager(offlineEntitlementsManager: self.mockOfflineEntitlementsManager,
                                                        operationDispatcher: self.mockOperationDispatcher,
                                                        deviceCache: self.deviceCache,
@@ -127,6 +129,7 @@ class BasePurchasesTests: TestCase {
         self.mockTransactionsManager = MockTransactionsManager(receiptParser: self.mockReceiptParser)
         self.mockStoreMessagesHelper = .init()
         self.mockWinBackOfferEligibilityCalculator = MockWinBackOfferEligibilityCalculator()
+        self.mockVirtualCurrencyManager = MockVirtualCurrencyManager()
         self.webPurchaseRedemptionHelper = .init(backend: self.backend,
                                                  identityManager: self.identityManager,
                                                  customerInfoManager: self.customerInfoManager)
@@ -163,12 +166,13 @@ class BasePurchasesTests: TestCase {
     var backend: MockBackend!
     var storeKit1Wrapper: MockStoreKit1Wrapper!
     var mockPaymentQueueWrapper: MockPaymentQueueWrapper!
+    var mockSimulatedStorePurchaseHandler: MockSimulatedStorePurchaseHandler!
     var notificationCenter: MockNotificationCenter!
     var userDefaults: UserDefaults! = nil
     let offeringsFactory = MockOfferingsFactory()
     var deviceCache: MockDeviceCache!
     var paywallCache: MockPaywallCacheWarming!
-    private var paywallEventsManager: PaywallEventsManagerType?
+    private var eventsManager: EventsManagerType?
     var subscriberAttributesManager: MockSubscriberAttributesManager!
     var attribution: Attribution!
     var identityManager: MockIdentityManager!
@@ -195,6 +199,8 @@ class BasePurchasesTests: TestCase {
     var mockWinBackOfferEligibilityCalculator: MockWinBackOfferEligibilityCalculator!
     var webPurchaseRedemptionHelper: WebPurchaseRedemptionHelper!
     var diagnosticsTracker: DiagnosticsTrackerType?
+    var mockVirtualCurrencyManager: MockVirtualCurrencyManager!
+    var mockLocalTransactionMetadataStore: MockLocalTransactionMetadataStore!
 
     @available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
     var mockDiagnosticsTracker: MockDiagnosticsTracker {
@@ -223,18 +229,22 @@ class BasePurchasesTests: TestCase {
             backend: self.backend,
             paymentQueueWrapper: self.paymentQueueWrapper,
             systemInfo: self.systemInfo,
-            operationDispatcher: self.mockOperationDispatcher
+            operationDispatcher: self.mockOperationDispatcher,
+            localTransactionMetadataStore: self.mockLocalTransactionMetadataStore
         )
     }
 
     @available(iOS 15.0, tvOS 15.0, macOS 12.0, watchOS 8.0, *)
-    var mockPaywallEventsManager: MockPaywallEventsManager {
+    var mockEventsManager: MockEventsManager {
         get throws {
-            return try XCTUnwrap(self.paywallEventsManager as? MockPaywallEventsManager)
+            return try XCTUnwrap(self.eventsManager as? MockEventsManager)
         }
     }
 
-    func setupPurchases(automaticCollection: Bool = false, withDelegate: Bool = true) {
+    func setupPurchases(
+        automaticCollection: Bool = false,
+        withDelegate: Bool = true
+    ) {
         self.identityManager.mockIsAnonymous = false
 
         self.initializePurchasesInstance(
@@ -257,10 +267,14 @@ class BasePurchasesTests: TestCase {
         self.initializePurchasesInstance(appUserId: nil)
     }
 
-    func initializePurchasesInstance(appUserId: String?, withDelegate: Bool = true) {
+    func initializePurchasesInstance(
+        appUserId: String?,
+        withDelegate: Bool = true
+    ) {
         self.purchasesOrchestrator = PurchasesOrchestrator(
             productsManager: self.mockProductsManager,
             paymentQueueWrapper: self.paymentQueueWrapper,
+            simulatedStorePurchaseHandler: self.mockSimulatedStorePurchaseHandler,
             systemInfo: self.systemInfo,
             subscriberAttributes: self.attribution,
             operationDispatcher: self.mockOperationDispatcher,
@@ -279,7 +293,7 @@ class BasePurchasesTests: TestCase {
             storeMessagesHelper: self.mockStoreMessagesHelper,
             diagnosticsTracker: self.diagnosticsTracker,
             winBackOfferEligibilityCalculator: self.mockWinBackOfferEligibilityCalculator,
-            paywallEventsManager: self.paywallEventsManager,
+            eventsManager: self.eventsManager,
             webPurchaseRedemptionHelper: self.webPurchaseRedemptionHelper
         )
         self.trialOrIntroPriceEligibilityChecker = MockTrialOrIntroPriceEligibilityChecker(
@@ -293,6 +307,18 @@ class BasePurchasesTests: TestCase {
             diagnosticsTracker: self.diagnosticsTracker
         )
         self.cachingTrialOrIntroPriceEligibilityChecker = .init(checker: self.trialOrIntroPriceEligibilityChecker)
+        let healthManager = SDKHealthManager(
+            backend: self.backend,
+            identityManager: self.identityManager
+        )
+
+        let transactionMetadataSyncHelper = TransactionMetadataSyncHelper(
+            customerInfoManager: self.customerInfoManager,
+            attribution: self.attribution,
+            currentUserProvider: self.identityManager,
+            operationDispatcher: self.mockOperationDispatcher,
+            transactionPoster: self.transactionPoster
+        )
 
         self.purchases = Purchases(appUserID: appUserId,
                                    requestFetcher: self.requestFetcher,
@@ -311,7 +337,7 @@ class BasePurchasesTests: TestCase {
                                    subscriberAttributes: self.attribution,
                                    operationDispatcher: self.mockOperationDispatcher,
                                    customerInfoManager: self.customerInfoManager,
-                                   paywallEventsManager: self.paywallEventsManager,
+                                   eventsManager: self.eventsManager,
                                    productsManager: self.mockProductsManager,
                                    offeringsManager: self.mockOfferingsManager,
                                    offlineEntitlementsManager: self.mockOfflineEntitlementsManager,
@@ -319,7 +345,10 @@ class BasePurchasesTests: TestCase {
                                    purchasedProductsFetcher: self.mockPurchasedProductsFetcher,
                                    trialOrIntroPriceEligibilityChecker: self.cachingTrialOrIntroPriceEligibilityChecker,
                                    storeMessagesHelper: self.mockStoreMessagesHelper,
-                                   diagnosticsTracker: self.diagnosticsTracker)
+                                   diagnosticsTracker: self.diagnosticsTracker,
+                                   virtualCurrencyManager: self.mockVirtualCurrencyManager,
+                                   healthManager: healthManager,
+                                   transactionMetadataSyncHelper: transactionMetadataSyncHelper)
 
         self.purchasesOrchestrator.delegate = self.purchases
 
@@ -405,7 +434,7 @@ extension BasePurchasesTests {
                 return
             }
 
-            completion(.success(.mockResponse))
+            completion(.success(.mockContents))
         }
 
         var postOfferForSigningCalled = false
@@ -457,7 +486,28 @@ extension BasePurchasesTests {
             }
         }
 
+        var healthReportRequests = [String]()
+        override func healthReportRequest(appUserID: String) async throws -> HealthReport {
+            healthReportRequests += [appUserID]
+
+            return .init(
+                status: .passed,
+                projectId: nil,
+                appId: nil,
+                checks: []
+            )
+        }
+
+        var overrideHealthReportAvailabilityResponse = HealthReportAvailability(reportLogs: true)
+        var healthReportAvailabilityRequests = [String]()
+        override func healthReportAvailabilityRequest(appUserID: String) async throws -> HealthReportAvailability {
+            healthReportAvailabilityRequests.append(appUserID)
+
+            return overrideHealthReportAvailabilityResponse
+        }
+
         var postReceiptDataCalled = false
+        var postReceiptDataCallCount = 0
         var postedReceiptData: EncodedAppleReceipt?
         var postedIsRestore: Bool?
         var postedProductID: String?
@@ -469,18 +519,27 @@ extension BasePurchasesTests {
         var postedDiscounts: [StoreProductDiscount]?
         var postedOfferingIdentifier: String?
         var postedObserverMode: Bool?
-        var postedInitiationSource: ProductRequestData.InitiationSource?
+        var postedInitiationSource: PostReceiptSource.InitiationSource?
         var postReceiptResult: Result<CustomerInfo, BackendError>?
+        var postedAssociatedTransactionIds: [String?] = []
 
         override func post(receipt: EncodedAppleReceipt,
                            productData: ProductRequestData?,
                            transactionData: PurchasedTransactionData,
+                           postReceiptSource: PostReceiptSource,
                            observerMode: Bool,
+                           originalPurchaseCompletedBy: PurchasesAreCompletedBy?,
                            appTransaction: String? = nil,
+                           associatedTransactionId: String? = nil,
+                           sdkOriginated: Bool = false,
+                           appUserID: String,
+                           containsAttributionData: Bool = false,
                            completion: @escaping CustomerAPI.CustomerInfoResponseHandler) {
             self.postReceiptDataCalled = true
+            self.postReceiptDataCallCount += 1
             self.postedReceiptData = receipt
-            self.postedIsRestore = transactionData.source.isRestore
+            self.postedIsRestore = postReceiptSource.isRestore
+            self.postedAssociatedTransactionIds.append(associatedTransactionId)
 
             if let productData = productData {
                 self.postedProductID = productData.productIdentifier
@@ -496,7 +555,7 @@ extension BasePurchasesTests {
 
             self.postedOfferingIdentifier = transactionData.presentedOfferingContext?.offeringIdentifier
             self.postedObserverMode = observerMode
-            self.postedInitiationSource = transactionData.source.initiationSource
+            self.postedInitiationSource = postReceiptSource.initiationSource
 
             completion(self.postReceiptResult ?? .failure(.missingAppUserID()))
         }
@@ -536,6 +595,7 @@ private extension BasePurchasesTests {
     func clearReferences() {
         self.mockOperationDispatcher = nil
         self.mockPaymentQueueWrapper = nil
+        self.mockSimulatedStorePurchaseHandler = nil
         self.requestFetcher = nil
         self.receiptFetcher = nil
         self.mockProductsManager = nil
@@ -565,7 +625,7 @@ private extension BasePurchasesTests {
         self.purchasesOrchestrator = nil
         self.deviceCache = nil
         self.paywallCache = nil
-        self.paywallEventsManager = nil
+        self.eventsManager = nil
         self.webPurchaseRedemptionHelper = nil
         self.purchases = nil
     }

@@ -87,6 +87,20 @@ enum PurchaseStrings {
     case restorepurchases_called_with_allow_sharing_appstore_account_false
     case sk2_observer_mode_error_processing_transaction(Error)
 
+    case unable_to_find_root_view_controller_for_simulated_purchase
+    case invalid_quantity(quantity: Int)
+
+    // Test Store
+    case sync_purchases_simulated_store
+    case restore_purchases_simulated_store
+    case simulating_purchase_success
+
+    // Cached metadata
+    case posting_remaining_cached_metadata(count: Int)
+    case posting_cached_metadata(transactionId: String)
+    case cached_transaction_metadata_sync_already_in_progress
+    case no_cached_transaction_metadata_to_post
+    case finished_posting_cached_metadata
 }
 
 extension PurchaseStrings: LogMessage {
@@ -340,6 +354,36 @@ extension PurchaseStrings: LogMessage {
             "Are you sure you want to do this?"
         case let .sk2_observer_mode_error_processing_transaction(error):
             return "RevenueCat could not process transaction completed by your app: \(error)"
+
+        case .unable_to_find_root_view_controller_for_simulated_purchase:
+            return "Unable to find root view controller to present Test Store purchase alert."
+
+        case let .invalid_quantity(quantity):
+            return "Quantity must be between 1 and 10, but got \(quantity)."
+
+        case .sync_purchases_simulated_store:
+            return "Syncing purchases not available in Test Store. Returning current CustomerInfo."
+
+        case .restore_purchases_simulated_store:
+            return "Restoring purchases not available in Test Store. Returning current CustomerInfo."
+
+        case .simulating_purchase_success:
+            return "[Test Store] Performing test purchase. This purchase won't appear in production."
+
+        case let .posting_remaining_cached_metadata(count):
+            return "Posting \(count) remaining cached transaction metadata entries"
+
+        case let .posting_cached_metadata(transactionId):
+            return "Posting cached metadata for transaction '\(transactionId)'"
+
+        case .cached_transaction_metadata_sync_already_in_progress:
+            return "Cached transaction metadata sync already in progress, skipping"
+
+        case .no_cached_transaction_metadata_to_post:
+            return "No cached transaction metadata to sync"
+
+        case .finished_posting_cached_metadata:
+            return "Finished syncing all cached transaction metadata"
         }
     }
 

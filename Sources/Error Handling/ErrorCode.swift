@@ -64,6 +64,7 @@ import Foundation
     @objc(RCInvalidWebPurchaseToken) case invalidWebPurchaseToken = 39
     @objc(RCPurchaseBelongsToOtherUser) case purchaseBelongsToOtherUser = 40
     @objc(RCExpiredWebPurchaseToken) case expiredWebPurchaseToken = 41
+    @objc(RCTestStoreSimulatedPurchaseError) case testStoreSimulatedPurchaseError = 42
 
     // swiftlint:enable missing_docs
 
@@ -146,7 +147,10 @@ extension ErrorCode: DescribableError {
         case .logOutAnonymousUserError:
             return "LogOut was called but the current user is anonymous."
         case .configurationError:
-            return "There is an issue with your configuration. Check the underlying error for more details."
+            return """
+                   There is an issue with your configuration. Check the underlying error for more details.
+                   More information: https://rev.cat/sdk-troubleshooting
+                   """
         case .unsupportedError:
             return """
                    There was a problem with the operation. Looks like we doesn't support that yet.
@@ -194,6 +198,8 @@ extension ErrorCode: DescribableError {
             return "The web purchase already belongs to other user."
         case .expiredWebPurchaseToken:
             return "The link you provided has expired. A new one will be sent to the email used to make the purchase."
+        case .testStoreSimulatedPurchaseError:
+            return "Purchase failure simulated successfully in Test Store."
         @unknown default:
             return "Something went wrong."
         }
@@ -302,6 +308,8 @@ extension ErrorCode {
             return "ALREADY_REDEEMED_WEB_PURCHASE_TOKEN"
         case .expiredWebPurchaseToken:
             return "EXPIRED_WEB_PURCHASE_TOKEN"
+        case .testStoreSimulatedPurchaseError:
+            return "TEST_STORE_SIMULATED_PURCHASE_ERROR"
         @unknown default:
             return "UNRECOGNIZED_ERROR"
         }

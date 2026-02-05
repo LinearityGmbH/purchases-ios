@@ -15,16 +15,19 @@ import Foundation
 import RevenueCat
 import SwiftUI
 
-#if !os(macOS) && !os(tvOS) // For Paywalls V2
+#if !os(tvOS) // For Paywalls V2
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct ImageComponentView: View {
 
     @EnvironmentObject
+    private var packageContext: PackageContext
+
+    @EnvironmentObject
     private var introOfferEligibilityContext: IntroOfferEligibilityContext
 
     @EnvironmentObject
-    private var packageContext: PackageContext
+    private var paywallPromoOfferCache: PaywallPromoOfferCache
 
     @Environment(\.componentViewState)
     private var componentViewState
@@ -37,7 +40,7 @@ struct ImageComponentView: View {
 
     let viewModel: ImageComponentViewModel
 
-    @State var maxWidth: CGFloat?
+    @State var size: CGSize?
 
     var body: some View {
         viewModel.styles(
@@ -45,61 +48,79 @@ struct ImageComponentView: View {
             condition: self.screenCondition,
             isEligibleForIntroOffer: self.introOfferEligibilityContext.isEligible(
                 package: self.packageContext.package
-            )
+            ),
+            isEligibleForPromoOffer: self.paywallPromoOfferCache.isMostLikelyEligible(
+                for: self.packageContext.package
+            ),
+            colorScheme: colorScheme
         ) { style in
             if style.visible {
-                if let maxWidth = self.maxWidth {
+                let expectedSize = CGSize(
+                    width: self.imageSize(style: style).width,
+                    height: self.imageSize(style: style).height
+                )
+
+                ZStack {
+                    // IMPORTANT: Please keep this... needed to force size
+                    //
+                    // We need the max width of the parent view an image of a fill or
+                    // fixed width doesn't push passed the bounds.
+                    //
+                    // Once we have the size once, we can remove the Color.clear
+                    if self.size == nil {
+                        Color.clear
+                    }
+
                     RemoteImage(
                         url: style.url,
                         lowResUrl: style.lowResUrl,
                         darkUrl: style.darkUrl,
-                        darkLowResUrl: style.darkLowResUrl
+                        darkLowResUrl: style.darkLowResUrl,
+                        // The expectedSize is important
+                        // It renders a clear image if actual image is being fetched
+                        expectedSize: expectedSize
                     ) { (image, size) in
                         self.renderImage(
                             image,
                             size,
-                            maxWidth: self.calculateMaxWidth(parentWidth: maxWidth,
-                                                             style: style),
+                            maxWidth: self.calculateMaxWidth(
+                                parentWidth: self.size?.width ?? 0,
+                                style: style
+                            ),
                             with: style
                         )
                     }
-                    .applyImageWidth(size: style.size)
-                    .applyImageHeight(size: style.size, aspectRatio: self.aspectRatio(style: style))
+                    .applyMediaWidth(size: style.size)
+                    .applyMediaHeight(size: style.size, aspectRatio: self.aspectRatio(style: style))
+                    .applyIfLet(style.colorOverlay, apply: { view, colorOverlay in
+                        view.overlay(
+                            Color.clear
+                                .backgroundStyle(.color(colorOverlay))
+                        )
+                    })
                     .clipped()
                     .padding(style.padding.extend(by: style.border?.width ?? 0))
                     .shape(border: style.border,
                            shape: style.shape)
-                    .shadow(shadow: style.shadow,
-                            shape: style.shape?.toInsettableShape())
+                    .applyIfLet(style.shadow, apply: { view, shadow in
+                        // We need to use the normal shadow modifier and not our custom one for png images
+                        view.shadow(color: shadow.color, radius: shadow.radius, x: shadow.x, y: shadow.y)
+                    })
                     .padding(style.margin)
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .onAppear {
-                                    self.maxWidth = proxy.size.width
-                                }
-                                .onChangeOf(proxy.size.width) { newWidth in
-                                    self.maxWidth = newWidth
-                                }
-                        }
-                    )
-                } else {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear {
-                                self.maxWidth = proxy.size.width
-                            }
-                    }
                 }
+                .id(style.url)
+                .onSizeChange({ size = $0 })
+
             }
         }
     }
 
     private func calculateMaxWidth(parentWidth: CGFloat, style: ImageComponentStyle) -> CGFloat {
         let totalBorderWidth = (style.border?.width ?? 0) * 2
-        return parentWidth - totalBorderWidth
+        let maxWidth = parentWidth - totalBorderWidth
             - style.margin.leading - style.margin.trailing
             - style.padding.leading - style.padding.trailing
+        return max(0, maxWidth)
     }
 
     private func aspectRatio(style: ImageComponentStyle) -> Double {
@@ -133,58 +154,6 @@ struct ImageComponentView: View {
             .frame(maxWidth: maxWidth)
             // WIP: Fix this later when accessibility info is available
             .accessibilityHidden(true)
-            .applyIfLet(style.colorOverlay, apply: { view, colorOverlay in
-                view.overlay(
-                    Color.clear.backgroundStyle(.color(colorOverlay))
-                )
-            })
-    }
-
-}
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-fileprivate extension View {
-
-    @ViewBuilder
-    func applyImageWidth(size: PaywallComponent.Size) -> some View {
-        switch size.width {
-        case .fit:
-            self
-        case .fill:
-            self.frame(maxWidth: .infinity)
-        case .fixed(let value):
-            self.frame(width: Double(value))
-        case .relative:
-            self
-        }
-    }
-
-    @ViewBuilder
-    func applyImageHeight(size: PaywallComponent.Size, aspectRatio: Double) -> some View {
-        switch size.height {
-        case .fit:
-            switch size.width {
-            case .fit:
-                self
-            case .fill:
-                self
-            case .fixed(let value):
-                // This is the only change versus the regular .size() modifier.
-                // When the image has height=fit and fixed width, we manually set a
-                // fixed height according to the aspect ratio.
-                // Otherwise the image would grow vertically to occupy available space.
-                // See "Image streching vertically" preview
-                self.frame(height: Double(value) / aspectRatio)
-            case .relative:
-                self
-            }
-        case .fill:
-            self.frame(maxHeight: .infinity)
-        case .fixed(let value):
-            self.frame(height: Double(value))
-        case .relative:
-            self
-        }
     }
 
 }
@@ -269,7 +238,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                           fitMode: .fill, width: 22, height: 21)
             }.background(.blue)
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Image stretching horizontally beyond bounds")
 
@@ -300,7 +269,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 }.frame(width: 300, height: 300).border(.green)
             }.background(.blue)
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Image streching vertically when height=fit")
 
@@ -337,7 +306,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Fit")
 
@@ -374,7 +343,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Fill")
 
@@ -415,7 +384,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Gradient")
 
@@ -456,7 +425,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Rounded Corner")
 
@@ -494,7 +463,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Circle")
 
@@ -532,7 +501,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Fit with Convex")
 
@@ -570,7 +539,7 @@ struct ImageComponentView_Previews: PreviewProvider {
                 )
             )
         }
-        .previewRequiredEnvironmentProperties()
+        .previewRequiredPaywallsV2Properties()
         .previewLayout(.fixed(width: 400, height: 400))
         .previewDisplayName("Light - Fit with Concave")
     }

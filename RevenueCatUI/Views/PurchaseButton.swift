@@ -22,7 +22,6 @@ struct PurchaseButton: View {
     let colors: PaywallData.Configuration.Colors
     let fonts: PaywallFontProvider
     let mode: PaywallViewMode
-    let actionOverride: (() -> ())?
 
     @EnvironmentObject
     private var introEligibilityViewModel: IntroEligibilityViewModel
@@ -30,20 +29,20 @@ struct PurchaseButton: View {
     private var purchaseHandler: PurchaseHandler
     @Environment(\.isEnabled)
     private var isEnabled
+    @Environment(\.purchaseInitiatedAction)
+    private var purchaseInitiatedAction: PurchaseInitiatedAction?
 
     init(
         packages: TemplateViewConfiguration.PackageConfiguration,
         selectedPackage: TemplateViewConfiguration.Package,
-        configuration: TemplateViewConfiguration,
-        actionOverride: (() -> ())? = nil
+        configuration: TemplateViewConfiguration
     ) {
         self.init(
             packages: packages,
             selectedPackage: selectedPackage,
             colors: configuration.colors,
             fonts: configuration.fonts,
-            mode: configuration.mode,
-            actionOverride: actionOverride
+            mode: configuration.mode
         )
     }
 
@@ -67,15 +66,13 @@ struct PurchaseButton: View {
         selectedPackage: TemplateViewConfiguration.Package,
         colors: PaywallData.Configuration.Colors,
         fonts: PaywallFontProvider,
-        mode: PaywallViewMode,
-        actionOverride: (() -> ())? = nil
+        mode: PaywallViewMode
     ) {
         self.packages = packages
         self.selectedPackage = selectedPackage
         self.colors = colors
         self.fonts = fonts
         self.mode = mode
-        self.actionOverride = actionOverride
     }
 
     var body: some View {
@@ -84,17 +81,28 @@ struct PurchaseButton: View {
 
     private var button: some View {
         AsyncButton {
-            if let actionOverride {
-                actionOverride()
-            } else {
-                guard !self.purchaseHandler.actionInProgress else { return }
-                guard !self.selectedPackage.currentlySubscribed else {
-                    Logger.warning(Strings.product_already_subscribed)
-                    return
-                }
-                
-                _ = try await self.purchaseHandler.purchase(package: self.selectedPackage.content)
+            guard !self.purchaseHandler.actionInProgress else {
+                return
             }
+            guard !self.selectedPackage.currentlySubscribed else {
+                Logger.warning(Strings.product_already_subscribed)
+                return
+            }
+
+            // Check if there's a purchase interceptor
+            if let interceptor = self.purchaseInitiatedAction {
+                // Wait for the interceptor to call resume before proceeding
+                let result = await self.purchaseHandler.withPendingPurchaseContinuation {
+                    await withCheckedContinuation { continuation in
+                        interceptor(self.selectedPackage.content, resume: ResumeAction { shouldProceed in
+                            continuation.resume(returning: shouldProceed)
+                        })
+                    }
+                }
+                guard result else { return }
+            }
+
+            _ = try await self.purchaseHandler.purchase(package: self.selectedPackage.content)
         } label: {
             ConsistentPackageContentView(
                 packages: self.packages.all,
@@ -109,9 +117,6 @@ struct PurchaseButton: View {
             .frame(maxWidth: .infinity)
             #if !os(watchOS)
             .padding()
-            #endif
-            #if targetEnvironment(macCatalyst)
-            .contentShape(Rectangle())
             #endif
             .hidden(if: !self.isEnabled)
             .overlay {
@@ -133,15 +138,14 @@ struct PurchaseButton: View {
             }
         }
         #if targetEnvironment(macCatalyst)
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
         #endif
     }
 
     @ViewBuilder
     private var backgroundView: some View {
-        RoundedRectangle(cornerSize: CGSize(width: 10, height: 10), style: .continuous)
+        Capsule(style: .continuous)
             .foregroundStyle(self.backgroundColor)
-            .frame(height: 45)
     }
 
     private var backgroundColor: some ShapeStyle {
@@ -175,18 +179,16 @@ private extension PurchaseButton {
 // MARK: -
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct PurchaseButtonLabel: View {
+private struct PurchaseButtonLabel: View {
 
     let package: TemplateViewConfiguration.Package
     let colors: PaywallData.Configuration.Colors
     let introEligibility: IntroEligibilityStatus?
-    var customTitle: String? = nil
 
     var body: some View {
         IntroEligibilityStateView(
             display: .callToAction,
             localization: self.package.localization,
-            customText: customTitle,
             introEligibility: self.introEligibility,
             foregroundColor: self.colors.callToActionForegroundColor
         )

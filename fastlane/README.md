@@ -27,20 +27,12 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane prepare_for_carthage
 ```
 
-Removes the Examples directory before building with Carthage to prevent unnecessary or problematic scheme resolution (e.g., Magic Weather SwiftUI.xcodeproj)
+Removes some directories before building with Carthage to prevent unnecessary or problematic scheme resolution (e.g., Magic Weather SwiftUI.xcodeproj or v3LoadShedderIntegration.xcodeproj). Also removes v3LoadShedderIntegration and v4LoadShedderIntegration directories to prevent xcodebuild from timing out when scanning for projects.
 
 ### load_spm_dependencies
 
 ```sh
 [bundle exec] fastlane load_spm_dependencies
-```
-
-
-
-### send_slack_load_shedder_integration_test_v3
-
-```sh
-[bundle exec] fastlane send_slack_load_shedder_integration_test_v3
 ```
 
 
@@ -122,6 +114,14 @@ Records screenshots for paywalls
 
 Build the Paywalls Test app for Emerge Snapshots
 
+### ios build_paywalls_tester_for_emerge_ios
+
+```sh
+[bundle exec] fastlane ios build_paywalls_tester_for_emerge_ios
+```
+
+
+
 ### ios test_ios
 
 ```sh
@@ -186,6 +186,14 @@ macOS build
 
 visionOS build
 
+### ios build_and_upload_emerge_binary_size_analysis
+
+```sh
+[bundle exec] fastlane ios build_and_upload_emerge_binary_size_analysis
+```
+
+Build BinarySizeTest app and upload to Emerge
+
 ### ios archive
 
 ```sh
@@ -209,6 +217,14 @@ archive all platforms
 ```
 
 run API Tests
+
+### ios run_maestro_e2e_tests
+
+```sh
+[bundle exec] fastlane ios run_maestro_e2e_tests
+```
+
+run_maestro_e2e_tests
 
 ### ios replace_api_key_integration_tests
 
@@ -257,6 +273,14 @@ Tag current branch with current version number
 ```
 
 Trigger bump
+
+### ios trigger_bump_sdk_in_rc_mobile_app
+
+```sh
+[bundle exec] fastlane ios trigger_bump_sdk_in_rc_mobile_app
+```
+
+Trigger bump SDK in RC mobile app
 
 ### ios generate_snapshots_RC
 
@@ -314,13 +338,13 @@ Creates RevenueCat-Swift.h for a new release
 
 Run BackendIntegrationTests
 
-### ios v3_loadshedder_integration_tests
+### ios loadshedder_integration_tests_in_old_major
 
 ```sh
-[bundle exec] fastlane ios v3_loadshedder_integration_tests
+[bundle exec] fastlane ios loadshedder_integration_tests_in_old_major
 ```
 
-Run LoadShedder tests
+Run LoadShedder tests in old major
 
 ### ios update_swift_package_commit
 
@@ -377,6 +401,22 @@ Clones or updates snapshots repo
 ```
 
 Clones or updates paywall-preview-resources repo
+
+### ios generate_swiftinterface
+
+```sh
+[bundle exec] fastlane ios generate_swiftinterface
+```
+
+Generate Swift interface files for API change detection
+
+### ios check_api_changes
+
+```sh
+[bundle exec] fastlane ios check_api_changes
+```
+
+Check API changes and report results
 
 ### ios update_snapshots_repo
 

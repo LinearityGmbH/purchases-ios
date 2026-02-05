@@ -24,6 +24,7 @@ import Foundation
     @_spi(Internal) public let appearance: Appearance
     @_spi(Internal) public let localization: Localization
     @_spi(Internal) public let support: Support
+    @_spi(Internal) public let changePlans: [ChangePlan]
     @_spi(Internal) public let lastPublishedAppVersion: String?
     @_spi(Internal) public let productId: UInt?
 
@@ -32,6 +33,7 @@ import Foundation
         appearance: Appearance,
         localization: Localization,
         support: Support,
+        changePlans: [ChangePlan],
         lastPublishedAppVersion: String?,
         productId: UInt?
     ) {
@@ -39,6 +41,7 @@ import Foundation
         self.appearance = appearance
         self.localization = localization
         self.support = support
+        self.changePlans = changePlans
         self.lastPublishedAppVersion = lastPublishedAppVersion
         self.productId = productId
     }
@@ -55,6 +58,7 @@ import Foundation
 
         @_spi(Internal) public enum CommonLocalizedString: String, Equatable {
 
+            case buySubscrition = "buy_subscription"
             case copy = "copy"
             case noThanks = "no_thanks"
             case noSubscriptionsFound = "no_subscriptions_found"
@@ -135,18 +139,25 @@ import Foundation
             case transactionID = "transaction_id"
             case answerYes = "yes"
             case answerNo = "no"
-            case storeAppStore = "store_app_store"
-            case storeMacAppStore = "store_mac_app_store"
-            case storePlayStore = "store_google_play_store"
-            case storeStripe = "store_stripe"
-            case storePromotional = "store_promotional"
-            case storeAmazon = "store_amazon_store"
+            case storeAppStore = "app_store"
+            case storeMacAppStore = "mac_app_store"
+            case storePlayStore = "google_play_store"
+            case testStore = "test_store"
+            case galaxyStore = "galaxy_store"
+            case storeStripe = "stripe"
+            case storePromotional = "promotional"
+            case storeAmazon = "amazon_store"
             case cardStorePromotional = "card_store_promotional"
-            case storeExternal = "store_external"
-            case storeUnknownStore = "store_unknown"
+            case storeExternal = "external_store"
+            case storeUnknownStore = "unknown_store"
             case storePaddle = "store_paddle"
             case storeWeb = "store_web"
+            case typeSubscription = "type_subscription"
+            case typeOneTimePurchase = "type_one_time_purchase"
             case debugHeaderTitle = "Debug"
+            case seeAllVirtualCurrencies = "see_all_virtual_currencies"
+            case virtualCurrencyBalancesScreenHeader = "virtual_currency_balances_screen_header"
+            case noVirtualCurrencyBalancesFound = "no_virtual_currency_balances_found"
             case youMayHaveDuplicatedSubscriptionsTitle = "you_may_have_duplicated_subscriptions_title"
             case youMayHaveDuplicatedSubscriptionsSubtitle = "you_may_have_duplicated_subscriptions_subtitle"
             case pricePaid = "price_paid"
@@ -156,16 +167,31 @@ import Foundation
             case priceAfterwards = "price_afterwards"
             case freeTrialUntilDate = "free_trial_until_date"
             case priceExpiresOnDateWithoutChanges = "price_expires_on_date_without_changes"
+            case badgeLifetime = "badge_lifetime"
             case badgeCancelled = "badge_cancelled"
             case badgeTrialCancelled = "badge_free_trial_cancelled"
-            case badgeFreeTrial = "free_trial"
+            case badgeFreeTrial = "badge_free_trial"
             case refundSuccess = "refund_success"
             case actionsSectionTitle = "actions_section_title"
             case subscriptionsSectionTitle = "subscriptions_section_title"
             case purchasesSectionTitle = "purchases_section_title"
+            case supportTicketCreate = "support_ticket_create"
+            case email = "email"
+            case enterEmail = "enter_email"
+            case description = "description"
+            case sent = "sent"
+            case supportTicketFailed = "support_ticket_failed"
+            case submitTicket = "submit_ticket"
+            case characterCount = "character_count"
+            case promoOfferButtonRegularPrice = "ios_promo_offer_button_regular_price"
+            case promoOfferButtonFreeTrial = "ios_promo_offer_button_free_trial"
+            case promoOfferButtonRecurringDiscount = "ios_promo_offer_button_recurring_discount"
+            case promoOfferButtonUpfrontPayment = "ios_promo_offer_button_upfront_payment"
 
             @_spi(Internal) public var defaultValue: String {
                 switch self {
+                case .buySubscrition:
+                    return "Subscribe"
                 case .copy:
                     return "Copy"
                 case .noThanks:
@@ -352,8 +378,18 @@ import Foundation
                     return "Paddle"
                 case .storeWeb:
                     return "Web"
+                case .typeSubscription:
+                    return "Subscription"
+                case .typeOneTimePurchase:
+                    return "One-time Purchase"
                 case .debugHeaderTitle:
                     return "Debug"
+                case .virtualCurrencyBalancesScreenHeader:
+                    return "In-App Currencies"
+                case .seeAllVirtualCurrencies:
+                    return "See all in-app currencies"
+                case .noVirtualCurrencyBalancesFound:
+                    return "It doesn't look like you've purchased any in-app currencies."
                 case .youMayHaveDuplicatedSubscriptionsTitle:
                     return "You may have duplicated subscriptions"
                 case .youMayHaveDuplicatedSubscriptionsSubtitle:
@@ -373,6 +409,8 @@ import Foundation
                     return "Free trial until {{ date }}."
                 case .priceExpiresOnDateWithoutChanges:
                      return "{{ price }}. Expires on {{ date }} without changes."
+                case .badgeLifetime:
+                    return "Lifetime"
                 case .badgeCancelled:
                     return "Cancelled"
                 case .badgeFreeTrial:
@@ -387,6 +425,34 @@ import Foundation
                     return "Subscriptions"
                 case .purchasesSectionTitle:
                     return "Purchases"
+                case .testStore:
+                    return "Test Store"
+                case .galaxyStore:
+                    return "Galaxy Store"
+                case .supportTicketCreate:
+                    return "Create a support ticket"
+                case .email:
+                    return "Email"
+                case .enterEmail:
+                    return "Enter your email"
+                case .description:
+                    return "Description"
+                case .sent:
+                    return "Message sent"
+                case .supportTicketFailed:
+                    return "Failed to send, please try again."
+                case .submitTicket:
+                    return "Submit ticket"
+                case .characterCount:
+                    return "{{ count }} characters"
+                case .promoOfferButtonRegularPrice:
+                    return "then {{ price }}"
+                case .promoOfferButtonFreeTrial:
+                    return "{{ duration }} for free"
+                case .promoOfferButtonRecurringDiscount:
+                    return "{{ price }} during {{ duration }}"
+                case .promoOfferButtonUpfrontPayment:
+                    return "{{ duration }} for {{ price }}"
                 }
             }
         }
@@ -405,6 +471,7 @@ import Foundation
         @_spi(Internal) public let type: PathType
         @_spi(Internal) public let detail: PathDetail?
         @_spi(Internal) public let refundWindowDuration: RefundWindowDuration?
+        @_spi(Internal) public let customActionIdentifier: String?
 
         @_spi(Internal) public init(
             id: String,
@@ -413,7 +480,8 @@ import Foundation
             openMethod: OpenMethod? = nil,
             type: PathType,
             detail: PathDetail?,
-            refundWindowDuration: RefundWindowDuration? = nil
+            refundWindowDuration: RefundWindowDuration? = nil,
+            customActionIdentifier: String? = nil
         ) {
             self.id = id
             self.title = title
@@ -422,6 +490,7 @@ import Foundation
             self.type = type
             self.detail = detail
             self.refundWindowDuration = refundWindowDuration
+            self.customActionIdentifier = customActionIdentifier
         }
 
         @_spi(Internal) public enum PathDetail: Equatable {
@@ -443,6 +512,7 @@ import Foundation
             case changePlans = "CHANGE_PLANS"
             case cancel = "CANCEL"
             case customUrl = "CUSTOM_URL"
+            case customAction = "CUSTOM_ACTION"
             case unknown
 
             init(from rawValue: String) {
@@ -457,6 +527,8 @@ import Foundation
                     self = .cancel
                 case "CUSTOM_URL":
                     self = .customUrl
+                case "CUSTOM_ACTION":
+                    self = .customAction
                 default:
                     self = .unknown
                 }
@@ -610,12 +682,20 @@ import Foundation
         @_spi(Internal) public let title: String
         @_spi(Internal) public let subtitle: String?
         @_spi(Internal) public let paths: [HelpPath]
+        @_spi(Internal) public let offering: ScreenOffering?
 
-        @_spi(Internal) public init(type: ScreenType, title: String, subtitle: String?, paths: [HelpPath]) {
+        @_spi(Internal) public init(
+            type: ScreenType,
+            title: String,
+            subtitle: String?,
+            paths: [HelpPath],
+            offering: ScreenOffering?
+        ) {
             self.type = type
             self.title = title
             self.subtitle = subtitle
             self.paths = paths
+            self.offering = offering
         }
 
         @_spi(Internal) public enum ScreenType: String, Equatable {
@@ -642,22 +722,152 @@ import Foundation
         @_spi(Internal) public let email: String
         @_spi(Internal) public let shouldWarnCustomerToUpdate: Bool
         @_spi(Internal) public let displayPurchaseHistoryLink: Bool
+        @_spi(Internal) public let displayUserDetailsSection: Bool
+        @_spi(Internal) public let displayVirtualCurrencies: Bool
         @_spi(Internal) public let shouldWarnCustomersAboutMultipleSubscriptions: Bool
+        @_spi(Internal) public let supportTickets: SupportTickets?
 
         @_spi(Internal) public init(
             email: String,
             shouldWarnCustomerToUpdate: Bool,
             displayPurchaseHistoryLink: Bool,
-            shouldWarnCustomersAboutMultipleSubscriptions: Bool
+            displayUserDetailsSection: Bool,
+            displayVirtualCurrencies: Bool,
+            shouldWarnCustomersAboutMultipleSubscriptions: Bool,
+            supportTickets: SupportTickets? = nil
         ) {
             self.email = email
             self.shouldWarnCustomerToUpdate = shouldWarnCustomerToUpdate
             self.displayPurchaseHistoryLink = displayPurchaseHistoryLink
+            self.displayUserDetailsSection = displayUserDetailsSection
+            self.displayVirtualCurrencies = displayVirtualCurrencies
             self.shouldWarnCustomersAboutMultipleSubscriptions = shouldWarnCustomersAboutMultipleSubscriptions
+            self.supportTickets = supportTickets
+        }
+
+        @_spi(Internal) public struct SupportTickets: Equatable {
+            @_spi(Internal) public let allowCreation: Bool
+            @_spi(Internal) public let customerType: CustomerType
+            @_spi(Internal) public let customerDetails: CustomerDetails?
+
+            @_spi(Internal) public init(
+                allowCreation: Bool,
+                customerType: CustomerType,
+                customerDetails: CustomerDetails? = nil
+            ) {
+                self.allowCreation = allowCreation
+                self.customerType = customerType
+                self.customerDetails = customerDetails
+            }
+
+            @_spi(Internal) public enum CustomerType: String, Equatable {
+                case active
+                case notActive = "not_active"
+                case all
+                case none
+            }
+
+            @_spi(Internal) public struct CustomerDetails: Equatable {
+                @_spi(Internal) public let activeEntitlements: Bool
+                @_spi(Internal) public let appUserId: Bool
+                @_spi(Internal) public let attConsent: Bool
+                @_spi(Internal) public let country: Bool
+                @_spi(Internal) public let deviceVersion: Bool
+                @_spi(Internal) public let email: Bool
+                @_spi(Internal) public let facebookAnonId: Bool
+                @_spi(Internal) public let idfa: Bool
+                @_spi(Internal) public let idfv: Bool
+                @_spi(Internal) public let ipAddress: Bool
+                @_spi(Internal) public let lastOpened: Bool
+                @_spi(Internal) public let lastSeenAppVersion: Bool
+                @_spi(Internal) public let totalSpent: Bool
+                @_spi(Internal) public let userSince: Bool
+
+                @_spi(Internal) public init(
+                    activeEntitlements: Bool = false,
+                    appUserId: Bool = false,
+                    attConsent: Bool = false,
+                    country: Bool = false,
+                    deviceVersion: Bool = false,
+                    email: Bool = false,
+                    facebookAnonId: Bool = false,
+                    idfa: Bool = false,
+                    idfv: Bool = false,
+                    ipAddress: Bool = false,
+                    lastOpened: Bool = false,
+                    lastSeenAppVersion: Bool = false,
+                    totalSpent: Bool = false,
+                    userSince: Bool = false
+                ) {
+                    self.activeEntitlements = activeEntitlements
+                    self.appUserId = appUserId
+                    self.attConsent = attConsent
+                    self.country = country
+                    self.deviceVersion = deviceVersion
+                    self.email = email
+                    self.facebookAnonId = facebookAnonId
+                    self.idfa = idfa
+                    self.idfv = idfv
+                    self.ipAddress = ipAddress
+                    self.lastOpened = lastOpened
+                    self.lastSeenAppVersion = lastSeenAppVersion
+                    self.totalSpent = totalSpent
+                    self.userSince = userSince
+                }
+            }
         }
 
     }
 
+    @_spi(Internal) public struct ChangePlan: Equatable {
+        @_spi(Internal) public let groupId: String
+        @_spi(Internal) public let groupName: String
+        @_spi(Internal) public let products: [ChangePlanProduct]
+
+        @_spi(Internal) public init(
+            groupId: String,
+            groupName: String,
+            products: [ChangePlanProduct]
+        ) {
+            self.groupId = groupId
+            self.groupName = groupName
+            self.products = products
+        }
+    }
+
+    @_spi(Internal) public struct ChangePlanProduct: Equatable {
+        @_spi(Internal) public let productId: String
+        @_spi(Internal) public let selected: Bool
+
+        @_spi(Internal) public init(
+            productId: String,
+            selected: Bool
+        ) {
+            self.productId = productId
+            self.selected = selected
+        }
+    }
+
+    @_spi(Internal) public struct ScreenOffering: Equatable {
+        @_spi(Internal) public let type: OfferingType
+        @_spi(Internal) public let offeringId: String?
+        @_spi(Internal) public let buttonText: String?
+
+        @_spi(Internal) public init(
+            type: OfferingType,
+            offeringId: String?,
+            buttonText: String?
+        ) {
+            self.type = type
+            self.offeringId = offeringId
+            self.buttonText = buttonText
+        }
+
+        @_spi(Internal) public enum OfferingType: String, Equatable {
+            case current = "CURRENT"
+            case specific = "SPECIFIC"
+        }
+    }
 }
 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -674,6 +884,11 @@ extension CustomerCenterConfigData {
         self.support = Support(from: response.customerCenter.support)
         self.lastPublishedAppVersion = response.lastPublishedAppVersion
         self.productId = response.itunesTrackId
+        self.changePlans = response.customerCenter.changePlans.map {
+            .init(groupId: $0.groupId, groupName: $0.groupName, products: $0.products.map {
+                .init(productId: $0.productId, selected: $0.selected)
+            })
+        }
     }
 
 }
@@ -686,6 +901,23 @@ extension CustomerCenterConfigData.Screen {
         self.title = response.title
         self.subtitle = response.subtitle
         self.paths = response.paths.compactMap { CustomerCenterConfigData.HelpPath(from: $0) }
+        self.offering = response.offering.map { offering in
+            switch offering.type {
+            case CustomerCenterConfigData.ScreenOffering.OfferingType.specific.rawValue:
+                return CustomerCenterConfigData.ScreenOffering(
+                    type: .specific,
+                    offeringId: offering.offeringId,
+                    buttonText: offering.buttonText
+                )
+
+            default:
+                return CustomerCenterConfigData.ScreenOffering(
+                    type: .current,
+                    offeringId: nil,
+                    buttonText: offering.buttonText
+                )
+            }
+        }
     }
 
 }
@@ -753,6 +985,8 @@ extension CustomerCenterConfigData.HelpPath {
         } else {
             self.refundWindowDuration = nil
         }
+
+        self.customActionIdentifier = response.actionIdentifier
     }
 }
 
@@ -809,8 +1043,42 @@ extension CustomerCenterConfigData.Support {
         self.email = response.email
         self.shouldWarnCustomerToUpdate = response.shouldWarnCustomerToUpdate ?? true
         self.displayPurchaseHistoryLink = response.displayPurchaseHistoryLink ?? false
+        self.displayUserDetailsSection = response.displayUserDetailsSection ?? true
+        self.displayVirtualCurrencies = response.displayVirtualCurrencies ?? false
         self.shouldWarnCustomersAboutMultipleSubscriptions = response.shouldWarnCustomersAboutMultipleSubscriptions
             ?? false
+        self.supportTickets = response.supportTickets.map { SupportTickets(from: $0) }
+    }
+
+}
+
+extension CustomerCenterConfigData.Support.SupportTickets {
+
+    init(from response: CustomerCenterConfigResponse.Support.SupportTickets) {
+        self.allowCreation = response.allowCreation
+        self.customerType = CustomerType(rawValue: response.customerType) ?? .none
+        self.customerDetails = response.customerDetails.map { CustomerDetails(from: $0) }
+    }
+
+}
+
+extension CustomerCenterConfigData.Support.SupportTickets.CustomerDetails {
+
+    init(from response: CustomerCenterConfigResponse.Support.SupportTickets.CustomerDetails) {
+        self.activeEntitlements = response.activeEntitlements ?? false
+        self.appUserId = response.appUserId ?? false
+        self.attConsent = response.attConsent ?? false
+        self.country = response.country ?? false
+        self.deviceVersion = response.deviceVersion ?? false
+        self.email = response.email ?? false
+        self.facebookAnonId = response.facebookAnonId ?? false
+        self.idfa = response.idfa ?? false
+        self.idfv = response.idfv ?? false
+        self.ipAddress = response.ipAddress ?? false
+        self.lastOpened = response.lastOpened ?? false
+        self.lastSeenAppVersion = response.lastSeenAppVersion ?? false
+        self.totalSpent = response.totalSpent ?? false
+        self.userSince = response.userSince ?? false
     }
 
 }
