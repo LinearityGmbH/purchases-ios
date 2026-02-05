@@ -14,6 +14,7 @@
 import Foundation
 import StoreKit
 
+public let OfferingsErrorNotification = Notification.Name(rawValue: "Linearity.OfferingsError")
 // swiftlint:disable file_length
 
 class OfferingsManager {
@@ -231,9 +232,9 @@ private extension OfferingsManager {
         let productIdentifiers = contents.response.productIdentifiers
 
         guard !productIdentifiers.isEmpty else {
-            let errorMessage = Strings.offering.configuration_error_no_products_for_offering(
-                apiKeyValidationResult: self.systemInfo.apiKeyValidationResult
-            ).description
+            let errorMessage = Strings.offering.configuration_error_no_products_for_offering(apiKeyValidationResult: .legacy).description
+            let userInfo = userInfo(for: contents.response)
+            sendError(Error.configurationError(errorMessage, underlyingError: nil), title: "No product identifiers configured for offering", userInfo: userInfo)
             completion(.failure(.configurationError(errorMessage, underlyingError: nil)))
             return
         }
@@ -245,6 +246,11 @@ private extension OfferingsManager {
                 // Check if empty products is likely caused by https://github.com/RevenueCat/purchases-ios/issues/4954
                 // There is a widely reported bug in the iOS 18.4 Simulator affecting some HTTP requests
                 let showSimulatorWarning = self.systemInfo.isSubjectToKnownIssue_18_4_sim()
+                if !showSimulatorWarning {
+                    let userInfo = userInfo(for: contents.response)
+                    let error = Self.createErrorForEmptyResult(result.error)
+                    sendError(error, underlyingError: error.underlyingError, title: "Products empty", userInfo: userInfo)
+                }
                 completion(.failure(Self.createErrorForEmptyResult(result.error,
                                                                    showSimulatorWarning: showSimulatorWarning)))
                 return
@@ -255,6 +261,15 @@ private extension OfferingsManager {
             let missingProductIDs = self.getMissingProductIDs(productIDsFromStore: Set(productsByID.keys),
                                                               productIDsFromBackend: productIdentifiers)
             if !missingProductIDs.isEmpty {
+                var userInfo = userInfo(for: contents.response)
+                userInfo["missingProductIDs"] = Array(missingProductIDs)
+                sendError(
+                    GenericError(title: Strings.offering.cannot_find_product_configuration_error(
+                        identifiers: missingProductIDs
+                    ).description),
+                    title: "Missing product IDs configuration error",
+                    userInfo: userInfo
+                )
                 switch fetchPolicy {
                 case .ignoreNotFoundProducts:
                     Logger.appleWarning(
@@ -274,6 +289,14 @@ private extension OfferingsManager {
                                                         requestedProductIds: productIdentifiers,
                                                         notFoundProductIds: missingProductIDs)))
             } else {
+                let userInfo = userInfo(for: contents.response)
+                sendError(
+                    GenericError(title: Strings.offering.cannot_find_product_configuration_error(
+                        identifiers: missingProductIDs
+                    ).description),
+                    title: "No offerings found",
+                    userInfo: userInfo
+                )
                 completion(.failure(.noOfferingsFound()))
             }
         }
@@ -588,6 +611,88 @@ extension OfferingsManager.Error: CustomNSError {
         }
     }
 
+}
+
+func userInfo(for response: OfferingsResponse) -> [String: AnyHashable] {
+    var userInfo: [String: AnyHashable] = [
+        "response.currentOfferingId": response.currentOfferingId ?? "<nil>",
+    ]
+    
+    let offerings = response.offerings.map { offering in
+        var dictionary: [String: AnyHashable] = [
+            "identifier": offering.identifier,
+            "description": offering.description,
+        ]
+        let packages = offering.packages.map { package in
+            return [
+                "identifier": package.identifier,
+                "platformProductIdentifier": package.platformProductIdentifier,
+            ]
+        }
+        dictionary["packages"] = packages
+        return dictionary
+    }
+    userInfo["response.offerings"] = offerings
+    return userInfo
+}
+
+func sendError(
+    _ error: Error,
+    underlyingError: Error? = nil,
+    title: String,
+    userInfo _userInfo: [String: AnyHashable],
+) {
+    var userInfo = _userInfo
+    
+    userInfo["error.title"] = title
+    
+    func updateUserInfo(_ userInfo: inout [String: AnyHashable], with error: Error, errorSuffix: String = "") {
+        userInfo["error.description" + errorSuffix] = error.localizedDescription
+        let nsError = error as NSError
+        userInfo["nsError.code" + errorSuffix] = nsError.code
+        userInfo["nsError.domain" + errorSuffix] = nsError.domain
+        userInfo["nsError.userInfo" + errorSuffix] = nsError.userInfo.mapValues {
+            if let anyHashable = $0 as? AnyHashable {
+                return anyHashable
+            }
+            return "\($0)"
+        }
+        userInfo["nsError.localizedDescription" + errorSuffix] = nsError.localizedDescription
+        userInfo["nsError.localizedFailureReason" + errorSuffix] = nsError.localizedFailureReason
+        userInfo["nsError.localizedRecoverySuggestion" + errorSuffix] = nsError.localizedRecoverySuggestion
+        userInfo["nsError.localizedRecoveryOptions" + errorSuffix] = nsError.localizedRecoveryOptions
+    }
+
+    updateUserInfo(&userInfo, with: error)
+    if let underlyingError {
+        updateUserInfo(&userInfo, with: underlyingError, errorSuffix: ".underlying")
+    }
+    linearityLog("Encountered error with title='\(title)', error: '\(error)', userInfo: '\(userInfo)'")
+    
+    DispatchQueue.main.async {
+        let notification = Notification(name: OfferingsErrorNotification, object: nil, userInfo: userInfo)
+        NotificationCenter.default.post(notification)
+    }
+}
+
+func linearityLog(_ message: String) {
+    Logger.error("[LIN] \(message)")
+}
+
+class GenericError: NSError, @unchecked Sendable {
+    var title: String = ""
+    init(title: String) {
+        self.title = title
+        super.init(domain: "Linearity.RevenueCat.GenericError", code: 42)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override var localizedDescription: String {
+        return title
+    }
 }
 
 struct OfferingsResultData {
