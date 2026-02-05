@@ -439,6 +439,12 @@ private extension PaywallView {
             }
 
             return offering
+            
+        case let .placementIdentifier(identifier):
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
+                .currentOffering(forPlacement: identifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
         }
     }
 
@@ -465,6 +471,8 @@ private extension PaywallViewConfiguration.Content {
             }
 
             return offering
+        case let .placementIdentifier(identifier):
+            return Self.loadCachedOfferingIfPossible(placement: identifier)
         }
     }
 
@@ -484,6 +492,13 @@ private extension PaywallViewConfiguration.Content {
         }
     }
 
+    private static func loadCachedOfferingIfPossible(placement: String) -> Offering? {
+        if Purchases.isConfigured {
+            return Purchases.shared.cachedOfferings?.currentOffering(forPlacement: placement)
+        } else {
+            return nil
+        }
+    }
 }
 
 // MARK: -

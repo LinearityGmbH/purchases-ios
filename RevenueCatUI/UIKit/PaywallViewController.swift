@@ -134,11 +134,12 @@ public class PaywallViewController: UIViewController {
     /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall
-    @objc
     public convenience init(
         offering: Offering? = nil,
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -146,6 +147,27 @@ public class PaywallViewController: UIViewController {
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
+            dismissRequestedHandler: dismissRequestedHandler
+        )
+    }
+    
+    public convenience init(
+        placementIdentifier: String,
+        displayCloseButton: Bool = false,
+        shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
+    ) {
+        self.init(
+            content: .placementIdentifier(placementIdentifier),
+            fonts: DefaultPaywallFontProvider(),
+            displayCloseButton: displayCloseButton,
+            shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -155,11 +177,11 @@ public class PaywallViewController: UIViewController {
     /// `Offerings.current` will be used by default.
     /// - Parameter fonts: A ``PaywallFontProvider``.
     /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
+    /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC.
     /// - Parameter performPurchase: Closure to perform a purchase action. Only used when `Purchases`
     /// has been configured with `.with(purchasesAreCompletedBy: .myApp)`.
     /// - Parameter performRestore: Closure to perform a restore action. Only used when `Purchases`
     /// has been configured with `.with(purchasesAreCompletedBy: .myApp)`.
-    /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC.
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall.
     public convenience init(
@@ -189,12 +211,13 @@ public class PaywallViewController: UIViewController {
     /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall
-    @available(*, deprecated, message: "use init with Offering instead")
     public convenience init(
         offeringIdentifier: String,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -202,8 +225,8 @@ public class PaywallViewController: UIViewController {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
-            performPurchase: nil,
-            performRestore: nil,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
