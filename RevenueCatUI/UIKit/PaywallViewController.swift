@@ -126,7 +126,9 @@ public class PaywallViewController: UIViewController {
     private var purchaseHandler: PurchaseHandler {
         return configuration.purchaseHandler
     }
-
+    
+    public private(set) var hasMadeAPurchase = false
+    
     /// Initialize a `PaywallViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// `Offerings.current` will be used by default.
@@ -331,7 +333,7 @@ public class PaywallViewController: UIViewController {
     public override func viewDidDisappear(_ animated: Bool) {
         if self.isBeingDismissed && !self.isDismissingForExitOffer {
             self.delegate?.paywallViewControllerWasDismissed?(self)
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
         }
         super.viewDidDisappear(animated)
     }
@@ -415,7 +417,7 @@ public class PaywallViewController: UIViewController {
     private func handleDismissalRequest() {
         // If purchased, dismiss immediately without showing exit offer
         guard !self.purchaseHandler.hasPurchasedInSession else {
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
             self.dismissPaywall()
             return
         }
@@ -424,7 +426,7 @@ public class PaywallViewController: UIViewController {
         if let exitOffering = self.exitOfferOffering, !self.isShowingExitOffer {
             self.presentExitOffer(for: exitOffering)
         } else {
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
             self.dismissPaywall()
         }
     }
@@ -447,7 +449,7 @@ public class PaywallViewController: UIViewController {
         // Capture the presenting view controller and other needed state before dismissing
         guard let presenter = self.presentingViewController else {
             // No presenter, just dismiss normally
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
             self.dismissPaywall()
             return
         }
@@ -527,6 +529,11 @@ public class PaywallViewController: UIViewController {
             ])
         }
     }
+    
+    private func resetPurchaseHandler() {
+        hasMadeAPurchase = purchaseHandler.hasPurchasedInSession
+        purchaseHandler.resetForNewSession()
+    }
 
 }
 
@@ -578,7 +585,7 @@ extension PaywallViewController: UIAdaptivePresentationControllerDelegate {
     // swiftlint:disable:next missing_docs
     public func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
         // Dismissal is happening (we allowed it) - clean up
-        self.purchaseHandler.resetForNewSession()
+        self.resetPurchaseHandler()
 
         // Forward to original delegate (with safety check to prevent recursion)
         if let originalDelegate = self.originalPresentationControllerDelegate, originalDelegate !== self {
