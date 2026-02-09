@@ -91,8 +91,14 @@ final class CustomerAPI {
     func post(receipt: EncodedAppleReceipt,
               productData: ProductRequestData?,
               transactionData: PurchasedTransactionData,
+              postReceiptSource: PostReceiptSource,
               observerMode: Bool,
+              originalPurchaseCompletedBy: PurchasesAreCompletedBy?,
               appTransaction: String?,
+              associatedTransactionId: String?,
+              sdkOriginated: Bool = false,
+              appUserID: String,
+              containsAttributionData: Bool,
               completion: @escaping CustomerAPI.CustomerInfoResponseHandler) {
         var subscriberAttributesToPost: SubscriberAttribute.Dictionary?
 
@@ -101,20 +107,27 @@ final class CustomerAPI {
             let attributionStatus = self.attributionFetcher.authorizationStatus
             let consentStatus = SubscriberAttribute(attribute: ReservedSubscriberAttribute.consentStatus,
                                                     value: attributionStatus.description,
-                                                    dateProvider: self.backendConfig.dateProvider)
+                                                    dateProvider: self.backendConfig.dateProvider,
+                                                    ignoreTimeInCacheIdentity: true)
             subscriberAttributesToPost?[consentStatus.key] = consentStatus
         }
 
         let config = NetworkOperation.UserSpecificConfiguration(httpClient: self.backendConfig.httpClient,
-                                                                appUserID: transactionData.appUserID)
+                                                                appUserID: appUserID)
 
         let postData = PostReceiptDataOperation.PostData(
             transactionData: transactionData.withAttributesToPost(subscriberAttributesToPost),
+            postReceiptSource: postReceiptSource,
+            appUserID: appUserID,
             productData: productData,
             receipt: receipt,
             observerMode: observerMode,
+            purchaseCompletedBy: originalPurchaseCompletedBy,
             testReceiptIdentifier: self.backendConfig.systemInfo.testReceiptIdentifier,
-            appTransaction: appTransaction
+            appTransaction: appTransaction,
+            transactionId: associatedTransactionId,
+            containsAttributionData: containsAttributionData,
+            sdkOriginated: sdkOriginated
         )
         let factory = PostReceiptDataOperation.createFactory(
             configuration: config,

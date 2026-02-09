@@ -8,10 +8,11 @@
 //      https://opensource.org/licenses/MIT
 //
 //  PurchaseHandler.swift
-//  
+//
 //  Created by Nacho Soto on 7/13/23.
 
-import RevenueCat
+import Combine
+@_spi(Internal) import RevenueCat
 import StoreKit
 import SwiftUI
 
@@ -22,20 +23,36 @@ final class PurchaseHandler: ObservableObject {
 
     enum ActionType {
 
+        /// This is a pre-purchase or redeem code step where consuming applications can perform work
+        case pendingPurchaseContinuation
         case purchase
         case restore
 
     }
 
+    private var cancellables: Set<AnyCancellable> = Set()
+
     private let purchases: PaywallPurchasesType
 
-    /// Where responsibiliy for completing purchases lies
+    /// Where responsibility for completing purchases lies
     var purchasesAreCompletedBy: PurchasesAreCompletedBy {
         purchases.purchasesAreCompletedBy
     }
 
+    var subscriptionHistoryTracker: SubscriptionHistoryTracker {
+        purchases.subscriptionHistoryTracker
+    }
+
     /// `false` if this `PurchaseHandler` is not backend by a configured `Purchases`instance.
     let isConfigured: Bool
+
+    var preferredLocales: [Locale] {
+        return purchases.preferredLocales.map(Locale.init)
+    }
+
+    var preferredLocaleOverride: Locale? {
+        return purchases.preferredLocaleOverride.map(Locale.init)
+    }
 
     /// Whether a purchase is currently in progress
     @Published
@@ -50,11 +67,22 @@ final class PurchaseHandler: ObservableObject {
         return actionTypeInProgress != nil
     }
 
-    /// Whether a purchase was successfully completed.
+    /// The result of a purchase completed in the current session.
+    /// This is reset when a new paywall session starts, allowing us to track
+    /// whether a purchase happened during this specific paywall presentation.
+    /// More extensible than a boolean - gives access to full result data for
+    /// potential future exit offer triggers (e.g., based on specific products).
     @Published
-    fileprivate(set) var purchased: Bool = false
+    fileprivate(set) var sessionPurchaseResult: PurchaseResultData?
 
-    /// When `purchased` becomes `true`, this will include the `CustomerInfo` 
+    /// Whether a purchase was successfully completed in the current session.
+    /// Convenience property for checking if we should skip exit offers.
+    var hasPurchasedInSession: Bool {
+        guard let result = sessionPurchaseResult else { return false }
+        return !result.userCancelled
+    }
+
+    /// When a purchase completes, this will include the `CustomerInfo`
     /// associated to it IF RevenueCat is making the purchase.
     @Published
     fileprivate(set) var purchaseResult: PurchaseResultData?
@@ -75,7 +103,7 @@ final class PurchaseHandler: ObservableObject {
 
     /// Set manually by `setRestored(:_)` once the user is notified that restoring was successful..
     @Published
-    fileprivate(set) var restoredCustomerInfo: CustomerInfo?
+    fileprivate(set) var restoredCustomerInfo: RestoreResult?
 
     /// Error produced during a purchase.
     @Published
@@ -87,25 +115,46 @@ final class PurchaseHandler: ObservableObject {
 
     private var eventData: PaywallEvent.Data?
 
+    /// Whether the close event has already been tracked for the current session.
+    /// Used to prevent duplicate close tracking from both dismiss handlers and onDisappear.
+    private var hasTrackedClose: Bool = false
+
     convenience init(purchases: Purchases = .shared,
                      performPurchase: PerformPurchase? = nil,
-                     performRestore: PerformRestore? = nil) {
+                     performRestore: PerformRestore? = nil,
+                     purchaseResultPublisher: AnyPublisher<PurchaseResultData, Never> = NotificationCenter
+                         .default
+                         .purchaseCompletedPublisher()
+    ) {
         self.init(isConfigured: true,
                   purchases: purchases,
                   performPurchase: performPurchase,
-                  performRestore: performRestore)
+                  performRestore: performRestore,
+                  purchaseResultPublisher: purchaseResultPublisher
+        )
     }
 
     init(
         isConfigured: Bool = true,
         purchases: PaywallPurchasesType,
         performPurchase: PerformPurchase? = nil,
-        performRestore: PerformRestore? = nil
+        performRestore: PerformRestore? = nil,
+        purchaseResultPublisher: AnyPublisher<PurchaseResultData, Never> = NotificationCenter
+            .default
+            .purchaseCompletedPublisher()
     ) {
         self.isConfigured = isConfigured
         self.purchases = purchases
         self.performPurchase = performPurchase
         self.performRestore = performRestore
+
+        purchaseResultPublisher
+            .removeDuplicates(by: PurchaseResultComparator.compare)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] result in
+                self?.setResult(result)
+            }
+            .store(in: &cancellables)
     }
 
     /// Returns a new instance of `PurchaseHandler` using `Purchases.shared` if `Purchases`
@@ -141,6 +190,50 @@ final class PurchaseHandler: ObservableObject {
                                                        performRestore: performRestore)
     }
 
+    private func setResult(_ result: PurchaseResultData) {
+        guard !PurchaseResultComparator.compare(purchaseResult, result) else {
+            return
+        }
+        self.purchaseResult = result
+    }
+
+    deinit {
+        cancellables.removeAll()
+    }
+
+    /// Resets purchase state for a new paywall session.
+    ///
+    /// This is called when a paywall appears to ensure we track purchases for the current session only.
+    /// We reset both `sessionPurchaseResult` (used for exit offer logic) and `purchaseResult`
+    /// (used for `onPurchaseCompleted` preference) to avoid stale values triggering handlers.
+    func resetForNewSession() {
+        self.sessionPurchaseResult = nil
+        self.purchaseResult = nil
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension PurchaseHandler {
+    func withPendingPurchaseContinuation<T>(_ continuation: () async throws -> T) async rethrows -> T {
+        await MainActor.run {
+            startAction(.pendingPurchaseContinuation)
+        }
+        let result = try await continuation()
+        await MainActor.run {
+            if actionTypeInProgress == .pendingPurchaseContinuation {
+                self.actionTypeInProgress = nil
+            }
+        }
+        return result
+    }
+
+#if !ENABLE_CUSTOM_ENTITLEMENT_COMPUTATION
+    func invalidateCustomerInfoCache() {
+        self.purchases.invalidateCustomerInfoCache()
+    }
+#endif
+
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -150,16 +243,21 @@ extension PurchaseHandler {
 
     @MainActor
     func purchase(package: Package) async throws {
+        try await purchase(package: package, promotionalOffer: nil)
+    }
+
+    @MainActor
+    func purchase(package: Package, promotionalOffer: PromotionalOffer?) async throws {
         switch self.purchases.purchasesAreCompletedBy {
         case .revenueCat:
-            try await performPurchase(package: package)
+            try await performPurchase(package: package, promotionalOffer: promotionalOffer)
         case .myApp:
-            try await performExternalPurchaseLogic(package: package)
+            try await performExternalPurchaseLogic(package: package, promotionalOffer: promotionalOffer)
         }
     }
 
     @MainActor
-    func performPurchase(package: Package) async throws {
+    func performPurchase(package: Package, promotionalOffer: PromotionalOffer?) async throws {
         Logger.debug(Strings.executing_purchase_logic)
         self.packageBeingPurchased = package
         self.purchaseResult = nil
@@ -171,29 +269,41 @@ extension PurchaseHandler {
         }
 
         self.startAction(.purchase)
+        self.trackPurchaseInitiated(package: package)
 
         do {
-            let result = try await self.purchases.purchase(package: package)
-            self.purchaseResult = result
+            let result: PurchaseResultData
+
+            if let promotionalOffer {
+                result = try await self.purchases.purchase(package: package, promotionalOffer: promotionalOffer)
+            } else {
+                result = try await self.purchases.purchase(package: package)
+            }
 
             if result.userCancelled {
                 self.trackCancelledPurchase()
             } else {
+                // Set sessionPurchaseResult BEFORE setResult so that handleMainPaywallDismiss
+                // sees the correct state when the sheet dismisses
                 withAnimation(Constants.defaultAnimation) {
-                    self.purchased = true
+                    self.sessionPurchaseResult = result
                 }
             }
 
+            self.setResult(result)
+
         } catch {
+            self.trackPurchaseError(package: package, error: error)
             self.purchaseError = error
             throw error
         }
     }
 
     @MainActor
-    func performExternalPurchaseLogic(package: Package) async throws {
+    func performExternalPurchaseLogic(package: Package, promotionalOffer: PromotionalOffer?) async throws {
         Logger.debug(Strings.executing_external_purchase_logic)
 
+        // WIP: Handle promotionalOffer in performPurchase
         guard let externalPurchaseMethod = self.performPurchase else {
             throw PaywallError.performPurchaseAndRestoreHandlersNotDefined(missingBlocks: "performPurchase is")
         }
@@ -208,6 +318,7 @@ extension PurchaseHandler {
         }
 
         self.startAction(.purchase)
+        self.trackPurchaseInitiated(package: package)
 
         let result = await externalPurchaseMethod(package)
 
@@ -216,6 +327,7 @@ extension PurchaseHandler {
         }
 
         if let error = result.error {
+            self.trackPurchaseError(package: package, error: error)
             self.purchaseError = error
             throw error
         }
@@ -224,14 +336,15 @@ extension PurchaseHandler {
                                              customerInfo: try await self.purchases.customerInfo(),
                                             userCancelled: result.userCancelled)
 
-        self.purchaseResult = resultInfo
-
         if !result.userCancelled && result.error == nil {
-
+            // Set sessionPurchaseResult BEFORE setResult so that handleMainPaywallDismiss
+            // sees the correct state when the sheet dismisses
             withAnimation(Constants.defaultAnimation) {
-                self.purchased = true
+                self.sessionPurchaseResult = resultInfo
             }
         }
+
+        self.setResult(resultInfo)
 
     }
 
@@ -304,31 +417,43 @@ extension PurchaseHandler {
         let customerInfo = try await self.purchases.customerInfo()
 
         // This is done by `RestorePurchasesButton` when using RevenueCat logic.
-        self.setRestored(customerInfo)
+        self.setRestored(customerInfo, success: result.success)
 
         return (info: customerInfo, result.success)
     }
 
     @MainActor
-    func setRestored(_ customerInfo: CustomerInfo) {
-        self.restoredCustomerInfo = customerInfo
+    func setRestored(_ customerInfo: CustomerInfo, success: Bool) {
+        self.restoredCustomerInfo = .init(customerInfo: customerInfo, success: success)
     }
 
     func trackPaywallImpression(_ eventData: PaywallEvent.Data) {
+        // Auto-track close for previous session if it wasn't tracked yet (within same app session).
+        // This handles edge cases where onDisappear or deinit didn't fire (SwiftUI bugs, lifecycle issues).
+        // Note: Does not recover close events across app restarts - those are permanently lost.
+        if self.eventData != nil && !self.hasTrackedClose {
+            self.trackPaywallClose()
+        }
+
         self.eventData = eventData
+        self.hasTrackedClose = false
         self.track(.impression(.init(), eventData))
     }
 
     /// - Returns: whether the event was tracked
     @discardableResult
     func trackPaywallClose() -> Bool {
-        guard let data = self.eventData else {
-            Logger.warning(Strings.attempted_to_track_event_with_missing_data)
+        guard let data = self.eventData, !self.hasTrackedClose else {
+            if self.eventData == nil {
+                Logger.debug("Attempted to track paywall close but eventData is nil")
+            } else if self.hasTrackedClose {
+                Logger.debug("Attempted to track paywall close but close was already tracked")
+            }
             return false
         }
 
         self.track(.close(.init(), data))
-        self.eventData = nil
+        self.hasTrackedClose = true
         return true
     }
 
@@ -344,9 +469,82 @@ extension PurchaseHandler {
         return true
     }
 
+    /// Tracks a purchase initiated event.
+    /// - Parameters:
+    ///   - package: The package being purchased
+    /// - Returns: whether the event was tracked
+    @discardableResult
+    func trackPurchaseInitiated(package: Package) -> Bool {
+        guard let data = self.eventData else {
+            Logger.warning(Strings.attempted_to_track_event_with_missing_data)
+            return false
+        }
+
+        let purchaseData = data.withPurchaseInfo(
+            packageId: package.identifier,
+            productId: package.storeProduct.productIdentifier,
+            errorCode: nil,
+            errorMessage: nil
+        )
+        self.track(.purchaseInitiated(.init(), purchaseData))
+        return true
+    }
+
+    /// Tracks a purchase error event.
+    /// - Parameters:
+    ///   - package: The package that was being purchased
+    ///   - error: The error that occurred
+    /// - Returns: whether the event was tracked
+    @discardableResult
+    func trackPurchaseError(package: Package, error: Error) -> Bool {
+        guard let data = self.eventData else {
+            Logger.warning(Strings.attempted_to_track_event_with_missing_data)
+            return false
+        }
+
+        let nsError = error as NSError
+        let purchaseData = data.withPurchaseInfo(
+            packageId: package.identifier,
+            productId: package.storeProduct.productIdentifier,
+            errorCode: nsError.code,
+            errorMessage: error.localizedDescription
+        )
+        self.track(.purchaseError(.init(), purchaseData))
+        return true
+    }
+
+    /// Tracks an exit offer event and clears the pending exit offer flag.
+    /// - Parameters:
+    ///   - exitOfferType: The type of exit offer
+    ///   - exitOfferingIdentifier: The offering identifier of the exit offer
+    /// - Returns: whether the event was tracked
+    @discardableResult
+    func trackExitOffer(exitOfferType: ExitOfferType, exitOfferingIdentifier: String) -> Bool {
+        guard let data = self.eventData else {
+            Logger.warning(Strings.attempted_to_track_event_with_missing_data)
+            return false
+        }
+
+        let exitOfferData = PaywallEvent.ExitOfferData(
+            exitOfferType: exitOfferType,
+            exitOfferingIdentifier: exitOfferingIdentifier
+        )
+        self.track(.exitOffer(.init(), data, exitOfferData))
+        return true
+    }
+
     private func startAction(_ type: PurchaseHandler.ActionType) {
         withAnimation(Constants.fastAnimation) {
             self.actionTypeInProgress = type
+        }
+    }
+
+    struct RestoreResult: Equatable {
+        let customerInfo: CustomerInfo
+        let success: Bool
+
+        static func == (lhs: RestoreResult, rhs: RestoreResult) -> Bool {
+            return lhs.success == rhs.success && lhs.customerInfo === rhs.customerInfo
         }
     }
 
@@ -401,6 +599,14 @@ private final class NotConfiguredPurchases: PaywallPurchasesType {
 
     let customerInfo: CustomerInfo?
 
+    var preferredLocales: [String] { Locale.preferredLanguages }
+
+    var preferredLocaleOverride: String? { nil }
+
+    var subscriptionHistoryTracker: RevenueCat.SubscriptionHistoryTracker {
+        SubscriptionHistoryTracker()
+    }
+
     init(customerInfo: CustomerInfo? = nil, purchasesAreCompletedBy: PurchasesAreCompletedBy) {
         self.customerInfo = customerInfo
         self.purchasesAreCompletedBy = purchasesAreCompletedBy
@@ -415,13 +621,21 @@ private final class NotConfiguredPurchases: PaywallPurchasesType {
         throw ErrorCode.configurationError
     }
 
+    func purchase(package: Package, promotionalOffer: PromotionalOffer) async throws -> PurchaseResultData {
+        throw ErrorCode.configurationError
+    }
+
     func restorePurchases() async throws -> CustomerInfo {
         throw ErrorCode.configurationError
     }
 
     func track(paywallEvent: PaywallEvent) async {}
 
-#if !os(macOS) && !os(tvOS)
+#if !ENABLE_CUSTOM_ENTITLEMENT_COMPUTATION
+    func invalidateCustomerInfoCache() {}
+#endif
+
+#if !os(tvOS)
 
     func failedToLoadFontWithConfig(_ fontConfig: UIConfig.FontsConfig) {}
 
@@ -484,9 +698,9 @@ struct PurchasedResultPreferenceKey: PreferenceKey {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct RestoredCustomerInfoPreferenceKey: PreferenceKey {
 
-    static var defaultValue: CustomerInfo?
+    static var defaultValue: PurchaseHandler.RestoreResult?
 
-    static func reduce(value: inout CustomerInfo?, nextValue: () -> CustomerInfo?) {
+    static func reduce(value: inout PurchaseHandler.RestoreResult?, nextValue: () -> PurchaseHandler.RestoreResult?) {
         value = nextValue()
     }
 
@@ -526,6 +740,34 @@ extension EnvironmentValues {
     var onRequestedDismissal: (() -> Void)? {
         get { self[RequestedDismissalKey.self] }
         set { self[RequestedDismissalKey.self] = newValue }
+    }
+}
+
+/// `EnvironmentKey` for storing the purchase initiated interceptor action.
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct PurchaseInitiatedActionKey: EnvironmentKey {
+    static let defaultValue: PurchaseInitiatedAction? = nil
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension EnvironmentValues {
+    var purchaseInitiatedAction: PurchaseInitiatedAction? {
+        get { self[PurchaseInitiatedActionKey.self] }
+        set { self[PurchaseInitiatedActionKey.self] = newValue }
+    }
+}
+
+/// `EnvironmentKey` for storing the offer code redemption initiated interceptor action.
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct OfferCodeRedemptionInitiatedActionKey: EnvironmentKey {
+    static let defaultValue: OfferCodeRedemptionInitiatedAction? = nil
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension EnvironmentValues {
+    var offerCodeRedemptionInitiatedAction: OfferCodeRedemptionInitiatedAction? {
+        get { self[OfferCodeRedemptionInitiatedActionKey.self] }
+        set { self[OfferCodeRedemptionInitiatedActionKey.self] = newValue }
     }
 }
 

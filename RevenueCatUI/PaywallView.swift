@@ -14,14 +14,13 @@
 @_spi(Internal) import RevenueCat
 import SwiftUI
 
-#if !os(macOS) && !os(tvOS)
+#if !os(tvOS)
 
 /// A SwiftUI view for displaying the paywall for an `Offering`.
 ///
 /// ### Related Articles
 /// [Documentation](https://rev.cat/paywalls)
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-@available(macOS, unavailable, message: "RevenueCatUI does not support macOS yet")
 @available(tvOS, unavailable, message: "RevenueCatUI does not support tvOS yet")
 // swiftlint:disable:next type_body_length
 public struct PaywallView: View {
@@ -32,8 +31,6 @@ public struct PaywallView: View {
     private let displayCloseButton: Bool
     private let paywallViewOwnsPurchaseHandler: Bool
     private let useDraftPaywall: Bool
-
-    private var locale: Locale
 
     @StateObject
     private var internalPurchaseHandler: PurchaseHandler
@@ -56,6 +53,9 @@ public struct PaywallView: View {
     @State
     private var error: NSError?
 
+//    @StateObject
+//    private var defaultPaywallPromoOfferCache = PaywallPromoOfferCache()
+
     private var initializationError: NSError?
 
     @Environment(\.onRequestedDismissal)
@@ -63,6 +63,9 @@ public struct PaywallView: View {
 
     @Environment(\.dismiss)
     private var dismiss
+
+    @Environment(\.colorScheme)
+    private var colorScheme
 
     /// Create a view to display the paywall in `Offerings.current`.
     ///
@@ -122,16 +125,19 @@ public struct PaywallView: View {
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
         useDraftPaywall: Bool,
+        introEligibility: TrialOrIntroEligibilityChecker? = nil,
         performPurchase: PerformPurchase? = nil,
         performRestore: PerformRestore? = nil
     ) {
         let purchaseHandler = PurchaseHandler.default(performPurchase: performPurchase, performRestore: performRestore)
+
         self.init(
             configuration: .init(
                 offering: offering,
                 fonts: fonts,
                 displayCloseButton: displayCloseButton,
                 useDraftPaywall: useDraftPaywall,
+                introEligibility: introEligibility,
                 purchaseHandler: purchaseHandler
             )
         )
@@ -165,8 +171,6 @@ public struct PaywallView: View {
         self.useDraftPaywall = configuration.useDraftPaywall
 
         self.initializationError = Self.checkForConfigurationConsistency(purchaseHandler: configuration.purchaseHandler)
-
-        self.locale = configuration.locale
     }
 
     private static func checkForConfigurationConsistency(purchaseHandler: PurchaseHandler) -> NSError? {
@@ -211,6 +215,10 @@ public struct PaywallView: View {
             // If the parent view uses refreshable, it can be inherited by the paywall view
             // and pulling down in the paywall would execute the parent's refreshable action
             .refreshableDisabled()
+            .preference(key: PaywallDidLoadPreferenceKey.self,
+                        value: self.offering != nil && self.customerInfo != nil)
+            .preference(key: PaywallDidFailLoadingPreferenceKey.self,
+                        value: self.error)
     }
 
     @MainActor
@@ -229,6 +237,9 @@ public struct PaywallView: View {
                                      purchaseHandler: self.purchaseHandler)
                     .transition(Self.transition)
                 } else {
+                    #if os(macOS)
+                    DebugErrorView("Legacy paywalls are unsupported on macOS.", releaseBehavior: .errorView)
+                    #else
                     LoadingPaywallView(mode: self.mode,
                                        displayCloseButton: self.displayCloseButton)
                         .transition(Self.transition)
@@ -249,6 +260,7 @@ public struct PaywallView: View {
                                 self.error = error
                             }
                         }
+                    #endif
                 }
             } else {
                 DebugErrorView("Purchases has not been configured.", releaseBehavior: .fatalError)
@@ -264,6 +276,14 @@ public struct PaywallView: View {
         }
     }
 
+//    var paywallPromoOfferCache: PaywallPromoOfferCache {
+//        if Purchases.isConfigured, let cache = Purchases.shared.paywallPromoOfferCache as? PaywallPromoOfferCache {
+//            return cache
+//        } else {
+//            return self.defaultPaywallPromoOfferCache
+//        }
+//    }
+
     @ViewBuilder
     // swiftlint:disable:next function_body_length function_parameter_count
     private func paywallView(
@@ -275,18 +295,22 @@ public struct PaywallView: View {
         purchaseHandler: PurchaseHandler
     ) -> some View {
 
-        let showZeroDecimalPlacePrices = self.showZeroDecimalPlacePrices(
-            countries: offering.paywall?.zeroDecimalPlaceCountries
-        )
-
         if let paywallComponents = useDraftPaywall ? offering.draftPaywallComponents : offering.paywallComponents {
+            // For V2 paywalls, prefer zeroDecimalPlaceCountries from paywallComponents
+            let zeroDecimalPlaceCountries = paywallComponents.data.zeroDecimalPlaceCountries
+            let showZeroDecimalPlacePrices = self.showZeroDecimalPlacePrices(
+                countries: zeroDecimalPlaceCountries.isEmpty
+                    ? offering.paywall?.zeroDecimalPlaceCountries
+                    : zeroDecimalPlaceCountries
+            )
 
             // For fallback view or footer
             let paywall: PaywallData = .createDefault(with: offering.availablePackages,
-                                                      locale: self.locale)
+                                                      locale: purchaseHandler.preferredLocaleOverride ?? .current)
 
             switch self.mode {
             // Show the default/fallback paywall for Paywalls V2 footer views
+            #if !os(macOS)
             case .footer, .condensedFooter:
                 LoadedOfferingPaywallView(
                     offering: offering,
@@ -298,9 +322,10 @@ public struct PaywallView: View {
                     displayCloseButton: self.displayCloseButton,
                     introEligibility: checker,
                     purchaseHandler: purchaseHandler,
-                    locale: locale,
+                    locale: purchaseHandler.preferredLocaleOverride ?? .current,
                     showZeroDecimalPlacePrices: showZeroDecimalPlacePrices
                 )
+            #endif
             // Show the actually V2 paywall for full screen
             case .fullScreen:
                 let dataForV1DefaultPaywall = DataForV1DefaultPaywall(
@@ -313,7 +338,7 @@ public struct PaywallView: View {
                     displayCloseButton: self.displayCloseButton,
                     introEligibility: checker,
                     purchaseHandler: purchaseHandler,
-                    locale: self.locale,
+                    locale: purchaseHandler.preferredLocaleOverride ?? .current,
                     showZeroDecimalPlacePrices: showZeroDecimalPlacePrices
                 )
 
@@ -335,12 +360,22 @@ public struct PaywallView: View {
                         if Purchases.isConfigured {
                             Purchases.shared.failedToLoadFontWithConfig(fontConfig)
                         }
-                    }
+                    },
+                    colorScheme: colorScheme
                 )
             }
         } else {
+            #if os(macOS)
+            DebugErrorView("Legacy paywalls are unsupported on macOS.", releaseBehavior: .errorView)
+            #else
+            // For V1 paywalls, use zeroDecimalPlaceCountries from PaywallData
+            let showZeroDecimalPlacePrices = self.showZeroDecimalPlacePrices(
+                countries: offering.paywall?.zeroDecimalPlaceCountries
+            )
 
-            let (paywall, displayedLocale, template, error) = offering.validatedPaywall(locale: self.locale)
+            let (paywall, displayedLocale, template, error) = offering.validatedPaywall(
+                locale: purchaseHandler.preferredLocaleOverride ?? .current
+            )
 
             let paywallView = LoadedOfferingPaywallView(
                 offering: offering,
@@ -367,6 +402,7 @@ public struct PaywallView: View {
             } else {
                 paywallView
             }
+            #endif
         }
     }
 
@@ -377,7 +413,6 @@ public struct PaywallView: View {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-@available(macOS, unavailable)
 @available(tvOS, unavailable)
 private extension PaywallView {
 
@@ -397,17 +432,23 @@ private extension PaywallView {
         case .defaultOffering:
             return try await Purchases.shared.offerings().current.orThrow(PaywallError.noCurrentOffering)
 
-        case let .offeringIdentifier(identifier):
+        case let .offeringIdentifier(identifier, presentedOfferingContext):
             let offerings = try await Purchases.shared.offerings()
-            return try offerings
+            let offering = try offerings
                 .offering(identifier: identifier)
                 .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
+
+            if let presentedOfferingContext {
+                return offering.withPresentedOfferingContext(presentedOfferingContext)
+            }
+
+            return offering
             
-        case let .placementIdentifier(placementIdentifier):
+        case let .placementIdentifier(identifier):
             let offerings = try await Purchases.shared.offerings()
             return try offerings
-                .currentOffering(forPlacement: placementIdentifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: placementIdentifier, offerings: offerings))
+                .currentOffering(forPlacement: identifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
         }
     }
 
@@ -420,10 +461,22 @@ private extension PaywallViewConfiguration.Content {
 
     func extractInitialOffering() -> Offering? {
         switch self {
-        case let .offering(offering): return offering
-        case .defaultOffering: return Self.loadCachedCurrentOfferingIfPossible()
-        case let .offeringIdentifier(identifier): return Self.loadCachedOfferingIfPossible(identifier: identifier)
-        case let .placementIdentifier(identifier): return Self.loadCachedOfferingIfPossible(placementIdentifier: identifier)
+        case let .offering(offering):
+            return offering
+        case .defaultOffering:
+            return Self.loadCachedCurrentOfferingIfPossible()
+        case let .offeringIdentifier(identifier, presentedOfferingContext):
+            let offering = Self.loadCachedOfferingIfPossible(
+                identifier: identifier
+            )
+
+            if let presentedOfferingContext {
+                return offering?.withPresentedOfferingContext(presentedOfferingContext)
+            }
+
+            return offering
+        case let .placementIdentifier(identifier):
+            return Self.loadCachedOfferingIfPossible(placement: identifier)
         }
     }
 
@@ -442,21 +495,20 @@ private extension PaywallViewConfiguration.Content {
             return nil
         }
     }
-    
-    private static func loadCachedOfferingIfPossible(placementIdentifier: String) -> Offering? {
+
+    private static func loadCachedOfferingIfPossible(placement: String) -> Offering? {
         if Purchases.isConfigured {
-            return Purchases.shared.cachedOfferings?.currentOffering(forPlacement: placementIdentifier)
+            return Purchases.shared.cachedOfferings?.currentOffering(forPlacement: placement)
         } else {
             return nil
         }
     }
-
 }
 
 // MARK: -
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-@available(macOS, unavailable)
+@available(macOS, unavailable, message: "Legacy paywalls are unavailable on macOS")
 @available(tvOS, unavailable)
 struct LoadedOfferingPaywallView: View {
 
@@ -546,15 +598,14 @@ struct LoadedOfferingPaywallView: View {
             .createView(for: self.offering,
                         template: self.template,
                         configuration: configuration,
-                        introEligibility: self.introEligibility
-            )
+                        introEligibility: self.introEligibility)
             .environmentObject(self.introEligibility)
             .environmentObject(self.purchaseHandler)
             .disabled(self.purchaseHandler.actionInProgress)
             .onAppear { self.purchaseHandler.trackPaywallImpression(self.createEventData()) }
             .onDisappear { self.purchaseHandler.trackPaywallClose() }
-            .onChangeOf(self.purchaseHandler.purchased) { purchased in
-                if purchased {
+            .onChangeOf(self.purchaseHandler.hasPurchasedInSession) { hasPurchased in
+                if hasPurchased {
                     guard let onRequestedDismissal = self.onRequestedDismissal else {
                         if self.mode.isFullScreen {
                             Logger.debug(Strings.dismissing_paywall)
@@ -567,20 +618,26 @@ struct LoadedOfferingPaywallView: View {
             }
 
         if self.displayCloseButton {
-            let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
-            ZStack {
-                view
-                VStack {
-                    Spacer().frame(height: isIPhone ? 0 : 12)
-                    HStack {
-                        Spacer()
-                        closeButton
-                        Spacer().frame(width: 12)
-                    }
-                    Spacer()
+            NavigationView {
+                // Prevents navigation bar from being showing as translucent
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                    view
+                        .toolbar {
+                            self.makeToolbar(
+                                color: self.getCloseButtonColor(configuration: configuration)
+                            )
+                        }
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                } else {
+                    view
+                        .toolbar {
+                            self.makeToolbar(
+                                color: self.getCloseButtonColor(configuration: configuration)
+                            )
+                        }
                 }
-                .ignoresSafeArea(edges: isIPhone ? [] : .all)
             }
+            .navigationViewStyle(.stack)
         } else {
             view
         }
@@ -596,51 +653,37 @@ struct LoadedOfferingPaywallView: View {
             darkMode: self.colorScheme == .dark
         )
     }
-    
-    @ViewBuilder
-    private var closeButton: some View {
-        Button(
-            action: {
+
+    private func getCloseButtonColor(configuration: Result<TemplateViewConfiguration, Error>) -> Color? {
+        switch configuration {
+        case .success(let configuration):
+            return configuration.colors.closeButtonColor
+        case .failure:
+            return nil
+        }
+    }
+
+    private func makeToolbar(color: Color?) -> some ToolbarContent {
+        ToolbarItem(placement: .destructiveAction) {
+            Button {
                 guard let onRequestedDismissal = self.onRequestedDismissal else {
                     self.dismiss()
                     return
                 }
                 onRequestedDismissal()
-            },
-            label: {
-                ZStack {
-                    Circle()
-                        .fill(
-                            Color(
-                                light: Color.white,
-                                dark: .black
-                            )
-                        )
-                        .frame(width: 30)
-                        .shadow(color: .black.opacity(0.2), radius: 5)
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(
-                            Color(
-                                light: Color.black,
-                                dark: .white
-                            )
-                        )
-                }
-                .frame(width: 40, height: 40)
-                .contentShape(Rectangle())
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundColor(color)
             }
-        )
-#if targetEnvironment(macCatalyst)
-        .buttonStyle(.plain)
-#endif
-        .disabled(self.purchaseHandler.actionInProgress)
-        .opacity(
-            self.purchaseHandler.actionInProgress
-            ? Constants.purchaseInProgressButtonOpacity
-            : 1
-        )
+            .disabled(self.purchaseHandler.actionInProgress)
+            .opacity(
+                self.purchaseHandler.actionInProgress
+                ? Constants.purchaseInProgressButtonOpacity
+                : 1
+            )
+        }
     }
+
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)

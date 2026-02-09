@@ -29,6 +29,7 @@ id<RCPurchasesDelegate> delegate;
 NSString *appUserID;
 BOOL isAnonymous;
 NSString *storeFrontCountryCode;
+NSLocale *storeFrontLocale;
 RCWebPurchaseRedemption *webPurchaseRedemptionLink;
 NSURL *url;
 
@@ -73,6 +74,9 @@ NSURL *url;
     appUserID = [p appUserID];
     isAnonymous = [p isAnonymous];
     storeFrontCountryCode = [p storeFrontCountryCode];
+    if (@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)) {
+        storeFrontLocale = [p storeFrontLocale];
+    }
 
     RCCustomerInfo *pi = nil;
     RCStoreProduct *storeProduct = nil;
@@ -203,11 +207,28 @@ NSURL *url;
 
     }];
 
+    [p getVirtualCurrenciesWithCompletion: ^(RCVirtualCurrencies * _Nullable virtualCurrencies, NSError * _Nullable error) {
+
+    }];
+
+    [p invalidateVirtualCurrenciesCache];
+
+    RCVirtualCurrencies * _Nullable __unused virtualCurrencies = p.cachedVirtualCurrencies;
+
+    if (@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)) {
+        [p recordPurchaseForProductID:@"product_id" completion:^(RCStoreTransaction * _Nullable transaction, NSError * _Nullable error) { }];
+    }
+
 #if (TARGET_OS_IPHONE || TARGET_OS_MACCATALYST) && !TARGET_OS_TV && !TARGET_OS_WATCH
     if (@available(iOS 15.0, *)) {
         [p beginRefundRequestForProduct:@"1234" completion:^(RCRefundRequestStatus s, NSError * _Nullable e) { }];
         [p beginRefundRequestForEntitlement:@"" completion:^(RCRefundRequestStatus s, NSError * _Nullable e) { }];
         [p beginRefundRequestForActiveEntitlementWithCompletion:^(RCRefundRequestStatus s, NSError * _Nullable e) { }];
+    }
+
+    if (@available(iOS 16.0, *)) {
+        [p showStoreMessagesWithCompletion:^{ }];
+        [p showStoreMessagesForTypes:[NSSet setWithObject:@(RCStoreMessageTypeBillingIssue)] completion:^{ }];
     }
 
     if (@available(iOS 13.4, *)) {

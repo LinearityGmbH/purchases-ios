@@ -34,6 +34,7 @@ enum Strings {
 
     case image_starting_request(URL)
     case image_result(Result<(), ImageLoader.Error>)
+    case image_failed_to_load(URL, Error)
 
     case restoring_purchases
     case restored_purchases
@@ -68,6 +69,7 @@ enum Strings {
     case successfully_opened_url_deep_link(String)
     case no_selected_package_found
     case no_web_checkout_url_found
+    case variable_requires_package(variableName: String)
 
     // Customer Center
     case could_not_find_subscription_information
@@ -75,6 +77,10 @@ enum Strings {
     case could_not_offer_for_active_subscriptions(String, String)
     case error_fetching_promotional_offer(Error)
     case promo_offer_not_loaded
+    case purchasing_promotional_offer(String, String)
+    case promo_offer_purchase_cancelled(String, String)
+    case promo_offer_purchase_succeeded(String, String, String)
+    case promo_offer_purchase_failed(String, String, Error)
     case could_not_determine_type_of_custom_url
     case active_product_is_not_apple_loading_without_product_information(Store)
     case could_not_find_product_loading_without_product_information(String)
@@ -82,6 +88,29 @@ enum Strings {
     case could_not_find_target_product(String, String)
     case could_not_find_discount_for_target_product(String, String)
 
+    // UIConfigProvider
+    case localizationNotFound(identifier: String)
+    case fontMappingNotFound(name: String)
+    case customFontFailedToLoad(fontName: String)
+    case googleFontsNotSupported
+
+    // Custom Variables
+    case paywall_custom_variable_not_found(variableName: String)
+    case paywall_custom_variable_invalid_number(value: String)
+    case paywall_custom_variable_unknown_type(type: String)
+    case paywall_variable_looks_like_custom(variableName: String)
+    case paywall_custom_variable_invalid_key(key: String)
+
+    // Video
+    case video_failed_to_set_audio_session_category(Error)
+
+    // Exit Offers
+    case errorFetchingOfferings(Error)
+    case exitOfferNotFound(String)
+    case exitOfferSameAsCurrent
+    case prefetchedExitOffer(String)
+    case presentingExitOffer(String)
+    case errorLoadingExitOffer(Error)
 }
 
 extension Strings: CustomStringConvertible {
@@ -130,6 +159,9 @@ extension Strings: CustomStringConvertible {
             case let .failure(error):
                 return "Failed loading image: \(error)"
             }
+
+        case let .image_failed_to_load(url, error):
+            return "Failed to load image from '\(url)': \(error)"
 
         case .restoring_purchases:
             return "Restoring purchases"
@@ -218,6 +250,19 @@ extension Strings: CustomStringConvertible {
         case .promo_offer_not_loaded:
             return "Promotional offer details not loaded"
 
+        case let .purchasing_promotional_offer(productId, offerId):
+            return "Attempting promotional offer purchase for product '\(productId)' with offer '\(offerId)'."
+
+        case let .promo_offer_purchase_cancelled(productId, offerId):
+            return "Promotional offer purchase cancelled for product '\(productId)' with offer '\(offerId)'."
+
+        case let .promo_offer_purchase_succeeded(productId, offerId, transactionId):
+            return "Promotional offer purchase succeeded for product '\(productId)' with offer '\(offerId)'. " +
+            "Transaction: \(transactionId)"
+
+        case let .promo_offer_purchase_failed(productId, offerId, error):
+            return "Promotional offer purchase failed for product '\(productId)' with offer '\(offerId)': \(error)"
+
         case .could_not_offer_for_any_active_subscriptions:
             return "Could not find offer with id for any active subscription"
 
@@ -264,6 +309,52 @@ extension Strings: CustomStringConvertible {
 
         case .no_web_checkout_url_found:
             return "No web checkout url found."
+
+        case let .variable_requires_package(variableName):
+            return "Paywall variable '\(variableName)' requires a package but none was provided."
+
+        case .localizationNotFound(let identifier):
+            return "Could not find localizations for '\(identifier)'"
+        case .fontMappingNotFound(let name):
+            return "Mapping for '\(name)' could not be found. Falling back to system font."
+        case .customFontFailedToLoad(let fontName):
+            return "Custom font '\(fontName)' could not be loaded. Falling back to system font."
+        case .googleFontsNotSupported:
+            return "Google Fonts are not supported on this platform"
+
+        case .paywall_custom_variable_not_found(let variableName):
+            return "Custom variable '\(variableName)' was not found. " +
+            "Make sure to provide a value using .customPaywallVariables() or set a default in the dashboard."
+
+        case .paywall_custom_variable_invalid_number(let value):
+            return "Custom variable default value '\(value)' could not be parsed as a number. Using as string."
+
+        case .paywall_custom_variable_unknown_type(let type):
+            return "Unknown custom variable type '\(type)'. Using as string."
+
+        case .paywall_variable_looks_like_custom(let variableName):
+            return "Variable '\(variableName)' looks like a custom variable but uses incorrect syntax. " +
+            "Custom variables must use the 'custom.' prefix with a dot, e.g., '{{ custom.variable_name }}'."
+
+        case .paywall_custom_variable_invalid_key(let key):
+            return "Custom variable key '\(key)' is invalid. " +
+            "Keys must start with a letter and contain only letters, numbers, and underscores."
+
+        case .video_failed_to_set_audio_session_category(let error):
+            return "Failed to set audio session category: \(error)"
+
+        case .errorFetchingOfferings(let error):
+            return "Error fetching offerings: \(error)"
+        case .exitOfferNotFound(let offeringId):
+            return "Exit offer offering '\(offeringId)' not found"
+        case .exitOfferSameAsCurrent:
+            return "Exit offer is the same as the current offering, skipping"
+        case .prefetchedExitOffer(let offeringId):
+            return "Prefetched exit offer offering '\(offeringId)'"
+        case .presentingExitOffer(let offeringId):
+            return "Presenting exit offer paywall for offering '\(offeringId)'"
+        case .errorLoadingExitOffer(let error):
+            return "Error loading exit offer: \(error)"
         }
     }
 

@@ -13,7 +13,7 @@
 
 import Foundation
 
-#if DEBUG && swift(>=5.8) && (os(iOS) || os(macOS) || VISION_OS)
+#if DEBUG && (os(iOS) || os(macOS) || VISION_OS)
 
 import SwiftUI
 
@@ -62,8 +62,9 @@ final class DebugViewModel: ObservableObject {
     @MainActor
     func load() async {
         self.configuration = .loaded(.create())
-
+        #if DEBUG && !ENABLE_CUSTOM_ENTITLEMENT_COMPUTATION
         self.diagnosticsResult = .loaded(await PurchasesDiagnostics.default.healthReport())
+        #endif
         self.offerings = await .create { try await Purchases.shared.offerings() }
         #if !ENABLE_CUSTOM_ENTITLEMENT_COMPUTATION
         self.customerInfo = await .create { try await Purchases.shared.customerInfo() }

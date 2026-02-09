@@ -35,6 +35,23 @@ class StoreKit2IntegrationTests: StoreKit1IntegrationTests {
         }
     }
 
+    @available(iOS 15.0, tvOS 15.0, watchOS 8.0, macOS 12.0, *)
+    func testRecordingPurchaseForProductIDThrowsIfPurchasesAreNotCompletedByMyApp() async throws {
+        let manager = ObserverModeManager()
+        _ = try await manager.purchaseProductFromStoreKit2()
+
+        let expectation = self.expectation(description: "Completion called")
+
+        Purchases.shared.recordPurchase(productID: Self.monthlyNoIntroProductID) { transaction, error in
+            expect(transaction).to(beNil())
+            expect(error).toNot(beNil())
+            expect(error).to(matchError(ErrorCode.configurationError))
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
     @available(iOS 16.0, tvOS 16.0, watchOS 9.0, macOS 13.0, *)
     func testOriginalPurchaseDateAvailableAfterPurchase() async throws {
         // In this scenario, the AppTransaction should be posted with the SK2 transaction JWT
@@ -161,6 +178,9 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
 
         self.logger.verifyMessageWasLogged(Strings.offering.vending_offerings_cache_from_memory,
                                            level: .debug)
+        // Verify that offerings from main server have originalSource set to .main
+        // Note: This might be from cache, but cache preserves originalSource
+        expect(receivedOfferings.contents.originalSource) == .main
     }
 
     func testCanPurchasePackage() async throws {
@@ -233,7 +253,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
         expect(nonSubscription.storeTransactionIdentifier) == transaction.transactionIdentifier
         expect(info.allPurchasedProductIdentifiers).to(contain(Self.consumable10Coins))
 
-        self.verifyTransactionWasFinished()
+        self.verifyAnyTransactionWasFinished()
     }
 
     func testCanPurchaseConsumableMultipleTimes() async throws {
@@ -248,7 +268,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
         expect(info.nonSubscriptions.map(\.productIdentifier)) == Array(repeating: Self.consumable10Coins,
                                                                         count: count)
 
-        self.verifyTransactionWasFinished(count: count)
+        self.verifyAnyTransactionWasFinished(count: count)
     }
 
     func testCanPurchaseConsumableWithMultipleUsers() async throws {
@@ -267,7 +287,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
         let info2 = try await self.purchaseConsumablePackage().customerInfo
         verifyPurchase(info2)
 
-        self.verifyTransactionWasFinished(count: 2)
+        self.verifyAnyTransactionWasFinished(count: 2)
     }
 
     func testCanPurchaseNonConsumable() async throws {
@@ -282,7 +302,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
 
         try await self.verifyEntitlementWentThrough(info)
 
-        self.verifyTransactionWasFinished()
+        self.verifyAnyTransactionWasFinished()
     }
 
     func testCanPurchaseNonRenewingSubscription() async throws {
@@ -297,7 +317,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
 
         try await self.verifyEntitlementWentThrough(info)
 
-        self.verifyTransactionWasFinished()
+        self.verifyAnyTransactionWasFinished()
     }
 
     func testCanPurchaseMultipleSubscriptions() async throws {
@@ -464,7 +484,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
 
     func testRenewalsOnASeparateUserDontTransferPurchases() async throws {
         // forceRenewalOfSubscription doesn't work well, so we use this instead
-        setShortestTestSessionTimeRate(self.testSession)
+        setOneSecondIsOneDayTimeRate(self.testSession)
 
         let prefix = UUID().uuidString
         let userID1 = "\(prefix)-user-1"
@@ -498,7 +518,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
 
     func testUserCanMakePurchaseAfterTransferBlocked() async throws {
         // forceRenewalOfSubscription doesn't work well, so we use this instead
-        setShortestTestSessionTimeRate(self.testSession)
+        setOneSecondIsOneDayTimeRate(self.testSession)
 
         let prefix = UUID().uuidString
         let userID1 = "\(prefix)-user-1"
@@ -609,7 +629,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
     }
 
     func testIneligibleForIntroAfterPurchase() async throws {
-        setShortestTestSessionTimeRate(self.testSession)
+        setLongestTestSessionTimeRate(self.testSession)
 
         let product = try await self.shortestDurationProduct
 
@@ -669,7 +689,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
     }
 
     func testIneligibleForIntroAfterPurchaseExpires() async throws {
-        setShortestTestSessionTimeRate(self.testSession)
+        setOneSecondIsOneDayTimeRate(self.testSession)
 
         let product = try await self.shortestDurationProduct
 
@@ -702,7 +722,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
     // MARK: -
 
     func testExpireSubscription() async throws {
-        setShortestTestSessionTimeRate(self.testSession)
+        setOneSecondIsOneDayTimeRate(self.testSession)
 
         let (_, created) = try await self.purchases.logIn(UUID().uuidString)
         expect(created) == true
@@ -736,7 +756,7 @@ class StoreKit1IntegrationTests: BaseStoreKitIntegrationTests {
 
     func testSubscribeAfterExpirationWhileAppIsClosed() async throws {
         // forceRenewalOfSubscription doesn't work well, so we use this instead
-        setShortestTestSessionTimeRate(self.testSession)
+        setOneSecondIsOneDayTimeRate(self.testSession)
 
         func waitForNewPurchaseDate() async {
             // The backend uses the transaction purchase date as a way to disambiguate transactions.

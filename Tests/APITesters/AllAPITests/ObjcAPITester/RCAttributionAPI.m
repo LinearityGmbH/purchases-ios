@@ -38,8 +38,16 @@
     [a setOnesignalUserID: @""];
     [a setCleverTapID: nil];
     [a setCleverTapID: @""];
+    [a setAirbridgeDeviceID:nil];
+    [a setAirbridgeDeviceID:@""];
     [a setKochavaDeviceID:nil];
     [a setKochavaDeviceID:@""];
+    [a setSolarEngineDistinctId: nil];
+    [a setSolarEngineDistinctId: @""];
+    [a setSolarEngineAccountId: nil];
+    [a setSolarEngineAccountId: @""];
+    [a setSolarEngineVisitorId: nil];
+    [a setSolarEngineVisitorId: @""];
     [a setMixpanelDistinctID: nil];
     [a setMixpanelDistinctID: @""];
     [a setFirebaseAppInstanceID: nil];
@@ -48,6 +56,10 @@
     [a setTenjinAnalyticsInstallationID: @""];
     [a setPostHogUserID:nil];
     [a setPostHogUserID:@""];
+    [a setAmplitudeUserID:nil];
+    [a setAmplitudeUserID:@""];
+    [a setAmplitudeDeviceID:nil];
+    [a setAmplitudeDeviceID:@""];
     [a setMediaSource: nil];
     [a setMediaSource: @""];
     [a setCampaign: nil];
@@ -62,6 +74,10 @@
     [a setCreative: @""];
     [a collectDeviceIdentifiers];
     [a enableAdServicesAttributionTokenCollection];
+
+    [a setAppsFlyerConversionData:nil];
+    NSDictionary *dict = @{};
+    [a setAppsFlyerConversionData:dict];
 }
 
 @end

@@ -15,14 +15,15 @@ import Foundation
 @_spi(Internal) import RevenueCat
 import SwiftUI
 
-#if !os(macOS) && !os(tvOS) // For Paywalls V2
+#if !os(tvOS) // For Paywalls V2
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct UIConfigProvider {
+final class UIConfigProvider {
     typealias FailedToLoadFont = (_ fontConfig: UIConfig.FontsConfig) -> Void
 
     private let uiConfig: UIConfig
     private let failedToLoadFont: FailedToLoadFont?
+    private var loggedMessages: Set<LogMessage> = []
 
     init(uiConfig: UIConfig, failedToLoadFont: FailedToLoadFont? = nil) {
         self.uiConfig = uiConfig
@@ -33,13 +34,42 @@ struct UIConfigProvider {
         return self.uiConfig.variableConfig
     }
 
+    /// Returns the default values for custom variables defined in the dashboard.
+    /// Keys are variable names (without the `custom.` prefix), values are typed `CustomVariableValue`.
+    var defaultCustomVariables: [String: CustomVariableValue] {
+        return self.uiConfig.customVariables.compactMapValues { definition in
+            Self.parseCustomVariableValue(type: definition.type, defaultValue: definition.defaultValue)
+        }
+    }
+
+    /// Parses a custom variable definition into a typed `CustomVariableValue`.
+    /// The backend sends types: "string", "number", "boolean" with validated default values.
+    private static func parseCustomVariableValue(type: String, defaultValue: String) -> CustomVariableValue? {
+        switch type {
+        case "string":
+            return .string(defaultValue)
+        case "number":
+            guard let doubleValue = Double(defaultValue) else {
+                Logger.warning(Strings.paywall_custom_variable_invalid_number(value: defaultValue))
+                return .string(defaultValue)
+            }
+            return .number(doubleValue)
+        case "boolean":
+            // Backend validates that defaultValue is exactly "true" or "false"
+            return .bool(defaultValue == "true")
+        default:
+            Logger.warning(Strings.paywall_custom_variable_unknown_type(type: type))
+            return .string(defaultValue)
+        }
+    }
+
     func getColor(for name: String) -> PaywallComponent.ColorScheme? {
         return self.uiConfig.app.colors[name]
     }
 
     func getLocalizations(for locale: Locale) -> [String: String] {
         guard let localizations = self.uiConfig.localizations.findLocale(locale) else {
-            Logger.error("Could not find localizations for '\(locale.identifier)'")
+            self.logMessageIfNeeded(.localizationNotFound(identifier: locale.identifier))
             return [:]
         }
 
@@ -47,10 +77,14 @@ struct UIConfigProvider {
     }
 
     @MainActor
-    func resolveFont(size fontSize: CGFloat, name: String) -> Font? {
+    func resolveFont(
+        size fontSize: CGFloat,
+        name: String,
+        useDynamicType: Bool = true
+    ) -> Font? {
 
         guard let fontsConfig = self.uiConfig.app.fonts[name] else {
-            Logger.warning("Mapping for '\(name)' could not be found. Falling back to system font.")
+            self.logMessageIfNeeded(.fontMappingNotFound(name: name))
             return nil
         }
 
@@ -59,8 +93,7 @@ struct UIConfigProvider {
         case .name:
             fontName = fontsConfig.ios.value
         case .googleFonts:
-            // Not supported on this platform (yet)
-            Logger.warning("Google Fonts are not supported on this platform")
+            self.logMessageIfNeeded(.googleFontsNotSupported)
             return nil
         @unknown default:
             return nil
@@ -68,19 +101,62 @@ struct UIConfigProvider {
 
         // Check if the font name is a generic font (serif, sans-serif, monospace)
         if let genericFont = GenericFont(rawValue: fontName) {
-            return genericFont.makeFont(fontSize: fontSize)
-        }
-
-        guard let customFont = UIFont(name: fontName, size: fontSize) else {
-            Logger.warning("Custom font '\(fontName)' could not be loaded. Falling back to system font.")
+            return genericFont.makeFont(fontSize: fontSize, useDynamicType: useDynamicType)
+        } else if PlatformFont(name: fontName, size: fontSize) != nil {
+            if useDynamicType {
+                // Use relativeTo: to enable proper Dynamic Type support that automatically
+                // scales when the user changes accessibility text size settings.
+                let textStyle = GenericFont.textStyle(for: fontSize)
+                return Font.custom(fontName, size: fontSize, relativeTo: textStyle)
+            } else {
+                return Font.custom(fontName, size: fontSize)
+            }
+        } else {
+            self.logMessageIfNeeded(.customFontFailedToLoad(fontName: fontName))
             self.failedToLoadFont?(fontsConfig)
             return nil
         }
-
-        // Apply dynamic type scaling
-        let uiFont = UIFontMetrics.default.scaledFont(for: customFont)
-        return Font(uiFont)
     }
+}
+
+// MARK: - Log management
+// This section exists to prevent duplicate log messages from being repeatedly emitted,
+// ensuring that identical warnings (like missing font mappings) are only logged once per instance.
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension UIConfigProvider {
+
+    enum LogMessage: Hashable {
+        case localizationNotFound(identifier: String)
+        case fontMappingNotFound(name: String)
+        case customFontFailedToLoad(fontName: String)
+        case googleFontsNotSupported
+    }
+
+    func logMessageIfNeeded(_ message: LogMessage) {
+        guard !self.loggedMessages.contains(message) else { return }
+        self.loggedMessages.insert(message)
+        message.log()
+    }
+
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private extension UIConfigProvider.LogMessage {
+
+    func log() {
+        switch self {
+        case .localizationNotFound(let identifier):
+            Logger.error(Strings.localizationNotFound(identifier: identifier))
+        case .fontMappingNotFound(let name):
+            Logger.warning(Strings.fontMappingNotFound(name: name))
+        case .customFontFailedToLoad(let fontName):
+            Logger.warning(Strings.customFontFailedToLoad(fontName: fontName))
+        case .googleFontsNotSupported:
+            Logger.warning(Strings.googleFontsNotSupported)
+        }
+    }
+
 }
 
 #endif

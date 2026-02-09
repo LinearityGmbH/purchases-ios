@@ -38,7 +38,11 @@ struct SubscriberAttributesView: View {
         case setAppsflyerID
         case setAirshipChannelID
         case setCleverTapID
+        case setAirbridgeDeviceID
         case setKochavaDeviceID
+        case setSolarEngineDistinctId
+        case setSolarEngineAccountId
+        case setSolarEngineVisitorId
         case setMparticleID
         case setOnesignalID
         case setFBAnonymousID
@@ -46,6 +50,8 @@ struct SubscriberAttributesView: View {
         case setFirebaseAppInstanceID
         case setTenjinAnalyticsInstallationID
         case setPostHogUserID
+        case setAmplitudeUserID
+        case setAmplitudeDeviceID
     }
     
     let customerInfo: RevenueCat.CustomerInfo
@@ -145,8 +151,16 @@ struct SubscriberAttributesView: View {
                     Purchases.shared.attribution.setAirshipChannelID(self.otherValue)
                 case .setCleverTapID:
                     Purchases.shared.attribution.setCleverTapID(self.otherValue)
+                case .setAirbridgeDeviceID:
+                    Purchases.shared.attribution.setAirbridgeDeviceID(self.otherValue)
                 case .setKochavaDeviceID:
                     Purchases.shared.attribution.setKochavaDeviceID(self.otherValue)
+                case .setSolarEngineDistinctId:
+                    Purchases.shared.attribution.setSolarEngineDistinctId(self.otherValue)
+                case .setSolarEngineAccountId:
+                    Purchases.shared.attribution.setSolarEngineAccountId(self.otherValue)
+                case .setSolarEngineVisitorId:
+                    Purchases.shared.attribution.setSolarEngineVisitorId(self.otherValue)
                 case .setMparticleID:
                     Purchases.shared.attribution.setMparticleID(self.otherValue)
                 case .setOnesignalID:
@@ -161,6 +175,10 @@ struct SubscriberAttributesView: View {
                     Purchases.shared.attribution.setTenjinAnalyticsInstallationID(self.otherValue)
                 case .setPostHogUserID:
                     Purchases.shared.attribution.setPostHogUserID(self.otherValue)
+                case .setAmplitudeUserID:
+                    Purchases.shared.attribution.setAmplitudeUserID(self.otherValue)
+                case .setAmplitudeDeviceID:
+                    Purchases.shared.attribution.setAmplitudeDeviceID(self.otherValue)
                 }
             }
         }
