@@ -642,6 +642,11 @@ func sendError(
     title: String,
     userInfo _userInfo: [String: AnyHashable],
 ) {
+    guard !shouldSuppressErrorNotification(error: error, underlyingError: underlyingError) else {
+        linearityLog("Suppressed error notification.\nError: '\(error)'.\nUnderlying error: '\(underlyingError, default: "<nil>")'")
+        return
+    }
+
     var userInfo = _userInfo
     
     userInfo["error.title"] = title
@@ -673,6 +678,17 @@ func sendError(
         let notification = Notification(name: OfferingsErrorNotification, object: nil, userInfo: userInfo)
         NotificationCenter.default.post(notification)
     }
+}
+
+func shouldSuppressErrorNotification(
+    error: Error,
+    underlyingError: Error?
+) -> Bool {
+    let nsError = (underlyingError ?? error) as NSError
+    // We are getting a lot of OfferingsErrors reported with the underlying error code indicating a store problem.
+    // These errors happen very often and we cannot do anything about them.
+    // So we filter them out to save our Bugsnag quota, which has run out lots of times because of this error.
+    return nsError.code == ErrorCode.storeProblemError.rawValue
 }
 
 func linearityLog(_ message: String) {
