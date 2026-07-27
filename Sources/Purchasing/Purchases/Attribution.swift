@@ -123,6 +123,13 @@ public extension Attribution {
     @objc func setEmail(_ email: String?) {
         self.subscriberAttributesManager.setEmail(email, appUserID: appUserID)
     }
+    
+    @objc func getEmail() -> String? {
+        self.subscriberAttributesManager.currentValueForAttribute(
+            key: ReservedSubscriberAttribute.email.key,
+            appUserID: appUserID
+        )
+    }
 
     /**
      * Subscriber attribute associated with the phone number for the user.
@@ -606,6 +613,10 @@ extension Attribution {
 
     func unsyncedAttributesByKey(appUserID: String) -> SubscriberAttribute.Dictionary {
         self.subscriberAttributesManager.unsyncedAttributesByKey(appUserID: appUserID)
+    }
+    
+    public var isThereUnsyncedAttributes: Bool {
+        !subscriberAttributesManager.unsyncedAttributesByKeyForAllUsers().isEmpty
     }
 
     var unsyncedAdServicesToken: String? {

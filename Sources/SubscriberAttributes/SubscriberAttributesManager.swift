@@ -342,7 +342,7 @@ extension SubscriberAttributesManager: AttributeSyncing {
 
 }
 
-private extension SubscriberAttributesManager {
+extension SubscriberAttributesManager {
 
     func stringValueForPrimitive(from data: [AnyHashable: Any], forKey key: String) -> String? {
         guard let value = data[key as AnyHashable] else { return nil }
