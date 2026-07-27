@@ -61,10 +61,8 @@ enum Constants {
             return nil
         }
     }
-    
-    static var defaultContentWidth: CGFloat? {
-        return 400
-    }
+
+    static let defaultContentWidth: CGFloat? = 400
 
 }
 

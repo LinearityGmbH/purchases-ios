@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  View+PaywallLoad.swift
 //
 //
 //  Created by Max Stobetskyi on 26/6/2024.

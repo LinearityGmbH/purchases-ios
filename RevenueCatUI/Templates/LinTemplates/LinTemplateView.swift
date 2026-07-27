@@ -15,27 +15,25 @@ import RevenueCat
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinTemplateView: TemplateViewType, IntroEligibilityProvider {
+struct LinTemplateView: TemplateViewType {
     let configuration: TemplateViewConfiguration
     @Environment(\.userInterfaceIdiom)
     var userInterfaceIdiom
     @Environment(\.verticalSizeClass)
     var verticalSizeClass
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
     @EnvironmentObject
     var introEligibilityViewModel: IntroEligibilityViewModel
     @State
     var selectedPackage: TemplateViewConfiguration.Package
-    
+
     init(_ configuration: TemplateViewConfiguration) {
         self._selectedPackage = .init(initialValue: configuration.packages.default)
         self.configuration = configuration
     }
-    
+
     var body: some View {
         LinConfigurableTemplateView(
-            configuration, 
+            configuration,
             selectedPackage: $selectedPackage,
             titleTypeProvider: { [introEligibilityViewModel] package in
                 let isEligibleToIntro = introEligibilityViewModel.allEligibility[package.content] == .eligible
@@ -43,14 +41,13 @@ struct LinTemplateView: TemplateViewType, IntroEligibilityProvider {
                     isEligibleToIntro: isEligibleToIntro,
                     bundle: LinTemplatesResources.linTemplate5Step2Bundle
                 )
-            },
-            horizontalPaddingModifier: DefaultHorizontalPaddingModifier()
+            }
         )
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
+struct LinConfigurableTemplateView: View {
 
     let configuration: TemplateViewConfiguration
 
@@ -60,12 +57,6 @@ struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
     @State
     private var displayingAllPlans: Bool
 
-    @Environment(\.userInterfaceIdiom)
-    var userInterfaceIdiom
-    
-    @Environment(\.horizontalSizeClass)
-    var horizontalSizeClass
-    
     @Environment(\.verticalSizeClass)
     var verticalSizeClass
 
@@ -73,25 +64,18 @@ struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
     var locale
 
     @EnvironmentObject
-    private var introEligibilityViewModel: IntroEligibilityViewModel
-    @EnvironmentObject
     private var purchaseHandler: PurchaseHandler
-    @Environment(\.dismiss)
-    private var dismiss
-    
+
     private let titleTypeProvider: (TemplateViewConfiguration.Package) -> TitleView.TitleType
-    private let horizontalPaddingModifier: HorizontalPadding
-    
+
     init(
         _ configuration: TemplateViewConfiguration,
         selectedPackage: Binding<TemplateViewConfiguration.Package>,
-        titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType,
-        horizontalPaddingModifier: HorizontalPadding
+        titleTypeProvider: @escaping (TemplateViewConfiguration.Package) -> TitleView.TitleType
     ) {
         self._selectedPackage = selectedPackage
         self.configuration = configuration
         self.titleTypeProvider = titleTypeProvider
-        self.horizontalPaddingModifier = horizontalPaddingModifier
         self._displayingAllPlans = .init(initialValue: configuration.mode.displayAllPlansByDefault)
     }
 
@@ -112,8 +96,8 @@ struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
 
             subscribeButton
                 .frame(maxWidth: Constants.defaultContentWidth)
-                .modifier(horizontalPaddingModifier)
-            
+                .defaultHorizontalPadding()
+
             FooterView(configuration: self.configuration.configuration,
                        locale: locale,
                        mode: configuration.mode,
@@ -146,18 +130,18 @@ struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
             }
 
             Group {
-                
+
                 TitleView(
                     type: titleTypeProvider(selectedPackage)
                 )
-                
+
                 LinPaywallView(
                     configuration: configuration,
                     selectedPackage: $selectedPackage
                 )
             }
             .frame(maxWidth: Constants.defaultContentWidth)
-            .modifier(horizontalPaddingModifier)
+            .defaultHorizontalPadding()
         }
         .frame(maxHeight: .infinity)
     }
@@ -168,19 +152,6 @@ struct LinConfigurableTemplateView<HorizontalPadding: ViewModifier>: View {
             selectedPackage: selectedPackage,
             configuration: configuration
         )
-    }
-
-    // MARK: -
-
-    private var introEligibility: [Package: IntroEligibilityStatus] {
-        return self.introEligibilityViewModel.allEligibility
-    }
-
-    private var headerAspectRatio: CGFloat {
-        switch self.userInterfaceIdiom {
-        case .pad: return 3
-        default: return 2
-        }
     }
 }
 
@@ -198,13 +169,13 @@ enum LinTemplateConstants {
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 struct LinTemplateView_Previews: PreviewProvider {
-    
+
     static let previewsData: [(id: Int, data: Offering, mode: PaywallViewMode)] = [
         (id: 1, data: TestData.offeringWithLinTemplate5Paywall, mode: .fullScreen)
     ]
 
     static var previews: some View {
-        ForEach(previewsData, id:\.id) { (_, data, mode) in
+        ForEach(previewsData, id: \.id) { (_, data, mode) in
             PreviewableTemplate(
                 offering: data,
                 mode: mode

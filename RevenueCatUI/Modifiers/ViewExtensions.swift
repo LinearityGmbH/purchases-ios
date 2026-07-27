@@ -252,7 +252,7 @@ extension View {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct DefaultHorizontalPaddingModifier: ViewModifier {
+private struct DefaultHorizontalPaddingModifier: ViewModifier {
 
     @Environment(\.userInterfaceIdiom)
     private var interfaceIdiom
@@ -265,7 +265,7 @@ struct DefaultHorizontalPaddingModifier: ViewModifier {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct DefaultVerticalPaddingModifier: ViewModifier {
+private struct DefaultVerticalPaddingModifier: ViewModifier {
 
     @Environment(\.userInterfaceIdiom)
     private var interfaceIdiom
@@ -275,13 +275,6 @@ struct DefaultVerticalPaddingModifier: ViewModifier {
             .padding(.vertical, Constants.defaultVerticalPaddingLength(self.interfaceIdiom))
     }
 
-}
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-struct NoPaddingModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-    }
 }
 
 // MARK: - scrollableIfNecessary
