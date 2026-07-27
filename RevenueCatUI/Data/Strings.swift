@@ -41,8 +41,6 @@ enum Strings {
     case restore_purchases_with_empty_result
     case setting_restored_customer_info
 
-    case error_load_paywall(NSError)
-
     case executing_purchase_logic
     case executing_external_purchase_logic
     case executing_restore_logic
@@ -174,9 +172,6 @@ extension Strings: CustomStringConvertible {
 
         case .setting_restored_customer_info:
             return "Setting restored customer info"
-        
-        case .error_load_paywall(let error):
-            return "Error loading paywall: \(error)"
 
         case .executing_external_purchase_logic:
             return "Will execute custom StoreKit purchase logic provided by your app. " +
