@@ -73,28 +73,11 @@ extension TemplateViewConfiguration {
             tierNames: [PaywallData.Tier: String]
         )
 
-        var introductoryOfferDaysDuration: Int? {
-            switch self {
-            case .single(let package):
-                return package.content.introductoryOfferDaysDuration
-            case .multiple(let mutliPackage):
-                return mutliPackage.introductoryOfferDaysDuration
-            case let .multiTier(_, allMap, _):
-                return allMap.values.compactMap(\.introductoryOfferDaysDuration).sorted().last
-            }
-        }
     }
 
 }
 
 // MARK: - Properties
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-extension TemplateViewConfiguration.PackageConfiguration.MultiPackage {
-    var introductoryOfferDaysDuration: Int? {
-        all.compactMap(\.content.introductoryOfferDaysDuration).sorted().last
-    }
-}
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension TemplateViewConfiguration.PackageConfiguration {
@@ -148,12 +131,6 @@ extension TemplateViewConfiguration.PackageConfiguration {
         }
     }
 
-    var defaultTier: PaywallData.Tier? {
-        switch self {
-        case .single, .multiple: nil
-        case let .multiTier(firstTier, _, _): firstTier
-        }
-    }
 }
 
 // MARK: - Creation
