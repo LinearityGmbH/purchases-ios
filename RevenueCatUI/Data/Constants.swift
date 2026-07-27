@@ -29,7 +29,7 @@ enum Constants {
 
     static let defaultCornerRadius: CGFloat = 20
     static let defaultPackageCornerRadius: CGFloat = 16
-    static let defaultPackageBorderWidth: CGFloat = 2
+    static let defaultPackageBorderWidth: CGFloat = 1
 
     static let defaultPackageVerticalSpacing: CGFloat = 16
 
@@ -59,6 +59,10 @@ enum Constants {
         } else {
             return nil
         }
+    }
+    
+    static var defaultContentWidth: CGFloat? {
+        return 400
     }
 
 }

@@ -343,6 +343,7 @@ private struct MockVariableProvider: VariableDataProvider {
     var subscriptionDuration: String?
     var normalizedSubscriptionDuration: String?
     var introductoryOfferDuration: String?
+    var introductoryOfferStartingDay: String?
     var introductoryOfferPrice: String = ""
     var relativeDiscount: String?
 
@@ -396,6 +397,10 @@ private struct MockVariableProvider: VariableDataProvider {
 
     func introductoryOfferDuration(_ locale: Locale) -> String? {
         return self.introductoryOfferDuration
+    }
+    
+    func subscriptionStartingDay(_ locale: Locale) -> String? {
+        return self.introductoryOfferStartingDay
     }
 
     func localizedPricePerPeriod(_ locale: Locale) -> String {

@@ -67,10 +67,11 @@ extension PaywallData {
     func createView(for offering: Offering,
                     template: PaywallTemplate,
                     configuration: Result<TemplateViewConfiguration, Error>,
-                    introEligibility: IntroEligibilityViewModel) -> some View {
+                    introEligibility: IntroEligibilityViewModel
+    ) -> some View {
         switch configuration {
         case let .success(configuration):
-            Self.createView(template: template, configuration: configuration)
+            Self.createView(offering: offering, template: template, configuration: configuration)
                 .adaptTemplateView(with: configuration)
                 .task(id: offering) {
                     await introEligibility.computeEligibility(for: configuration.packages)
@@ -115,8 +116,11 @@ extension PaywallData {
     }
 
     @ViewBuilder
-    private static func createView(template: PaywallTemplate,
-                                   configuration: TemplateViewConfiguration) -> some View {
+    private static func createView(
+        offering: Offering,
+        template: PaywallTemplate,
+        configuration: TemplateViewConfiguration
+    ) -> some View {
         #if os(watchOS)
         WatchTemplateView(configuration)
         #else
@@ -130,7 +134,7 @@ extension PaywallData {
         case .template4:
             Template4View(configuration)
         case .template5:
-            Template5View(configuration)
+            LinTemplateView(configuration)
         case .template7:
             Template7View(configuration)
         }
