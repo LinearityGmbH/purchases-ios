@@ -64,6 +64,9 @@ struct TabControlButtonComponentView: View {
             )
             .environment(\.componentViewState, self.selectedState)
         }
+#if targetEnvironment(macCatalyst)
+        .buttonStyle(.plain)
+#endif
 
     }
 

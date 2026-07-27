@@ -118,7 +118,7 @@ extension View {
     @ViewBuilder
     func scrollableIfNecessary(_ axis: Axis = .vertical, enabled: Bool = true) -> some View {
         if enabled {
-            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 ViewThatFits(in: axis.scrollViewAxis) {
                     self
 
@@ -191,7 +191,7 @@ extension View {
         enabled: Bool = true
     ) -> some View {
         if enabled {
-            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.6, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 ViewThatFits(in: axis.scrollViewAxis) {
                     self
 
@@ -265,7 +265,7 @@ struct DefaultHorizontalPaddingModifier: ViewModifier {
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private struct DefaultVerticalPaddingModifier: ViewModifier {
+struct DefaultVerticalPaddingModifier: ViewModifier {
 
     @Environment(\.userInterfaceIdiom)
     private var interfaceIdiom
@@ -275,6 +275,13 @@ private struct DefaultVerticalPaddingModifier: ViewModifier {
             .padding(.vertical, Constants.defaultVerticalPaddingLength(self.interfaceIdiom))
     }
 
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct NoPaddingModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+    }
 }
 
 // MARK: - scrollableIfNecessary

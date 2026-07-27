@@ -467,7 +467,6 @@ private struct OnPurchaseStartedModifier: ViewModifier {
                 }
             }
     }
-
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -575,5 +574,4 @@ private struct RestoreFailureModifier: ViewModifier {
                 }
             }
     }
-
 }
