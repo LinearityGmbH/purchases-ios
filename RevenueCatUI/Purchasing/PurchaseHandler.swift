@@ -410,6 +410,8 @@ extension PurchaseHandler {
                 return offering?.withPresentedOfferingContext(presentedOfferingContext)
             }
             return offering
+        case let .placementIdentifier(identifier):
+            return cachedOfferings?.currentOffering(forPlacement: identifier)
         }
     }
 
@@ -440,6 +442,10 @@ extension PurchaseHandler {
                 identifier: identifier,
                 presentedOfferingContext: presentedOfferingContext
             )
+        case let .placementIdentifier(identifier):
+            return try await self.purchases.offerings()
+                .currentOffering(forPlacement: identifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
         }
 #endif
     }
@@ -504,6 +510,16 @@ extension PurchaseHandler {
 
             return try await self.resolvePaywallViewData(
                 for: resolvedOffering,
+                offerings: offerings,
+                remoteConfigEnabled: remoteConfigEnabled
+            )
+        case let .placementIdentifier(identifier):
+            let offerings = try await self.purchases.offerings()
+            let offering = try offerings
+                .currentOffering(forPlacement: identifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+            return try await self.resolvePaywallViewData(
+                for: offering,
                 offerings: offerings,
                 remoteConfigEnabled: remoteConfigEnabled
             )

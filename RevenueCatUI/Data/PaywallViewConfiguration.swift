@@ -63,6 +63,7 @@ extension PaywallViewConfiguration {
         case defaultOffering
         case offering(Offering)
         case offeringIdentifier(String, presentedOfferingContext: PresentedOfferingContext?)
+        case placementIdentifier(String)
 
     }
 

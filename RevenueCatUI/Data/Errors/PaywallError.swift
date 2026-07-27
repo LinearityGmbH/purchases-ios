@@ -53,7 +53,6 @@ extension PaywallError: CustomNSError, CustomStringConvertible {
 
         case .noCurrentOffering:
             return "The RevenueCat dashboard does not have a current offering configured."
-
         case let .offeringNotFound(identifier):
             return "The RevenueCat dashboard does not have an offering with identifier '\(identifier)'."
         case let .workflowUiConfigUnavailable(workflowId):
