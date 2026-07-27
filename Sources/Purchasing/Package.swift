@@ -100,7 +100,7 @@ import Foundation
     @objc public let packageType: PackageType
     /// The underlying ``storeProduct``
     @objc public let storeProduct: StoreProduct
-    
+
     public var introductoryOfferDaysDuration: Int? {
         guard let subscriptionPeriod = storeProduct.introductoryDiscount?.subscriptionPeriod else {
             return nil

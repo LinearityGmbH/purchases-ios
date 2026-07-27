@@ -126,9 +126,9 @@ public class PaywallViewController: UIViewController {
     private var purchaseHandler: PurchaseHandler {
         return configuration.purchaseHandler
     }
-    
+
     public private(set) var hasMadeAPurchase = false
-    
+
     /// Initialize a `PaywallViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// `Offerings.current` will be used by default.
@@ -154,7 +154,7 @@ public class PaywallViewController: UIViewController {
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
-    
+
     public convenience init(
         placementIdentifier: String,
         displayCloseButton: Bool = false,
@@ -324,7 +324,7 @@ public class PaywallViewController: UIViewController {
         }
         self.presentationController?.delegate = self
     }
-    
+
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         delegate?.paywallViewControllerDidAppear?(self)
@@ -529,7 +529,7 @@ public class PaywallViewController: UIViewController {
             ])
         }
     }
-    
+
     private func resetPurchaseHandler() {
         hasMadeAPurchase = purchaseHandler.hasPurchasedInSession
         purchaseHandler.resetForNewSession()
@@ -669,11 +669,11 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     /// Notifies ``PaywallViewController`` did appear.
     @objc(paywallViewControllerDidAppear:)
     optional func paywallViewControllerDidAppear(_ controller: PaywallViewController)
-    
+
     /// Notifies ``PaywallViewController`` did load paywall.
     @objc(paywallViewControllerDidLoadPaywall:)
     optional func paywallViewControllerDidLoadPaywall(_ controller: PaywallViewController)
-    
+
     /// Notifies ``PaywallViewController`` did fail to load paywall.
     @objc(paywallViewController:didFailLoadPaywallWithError:)
     optional func paywallViewController(_ controller: PaywallViewController,

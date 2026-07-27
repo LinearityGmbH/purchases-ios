@@ -624,7 +624,7 @@ enum TestData {
                             TestData.annualPackage],
         webCheckoutUrl: nil
     )
-    
+
     static let offeringWithLinTemplate5Paywall = Offering(
         identifier: Self.offeringIdentifier,
         serverDescription: "Offering",

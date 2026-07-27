@@ -443,7 +443,7 @@ private extension PaywallView {
             }
 
             return offering
-            
+
         case let .placementIdentifier(identifier):
             let offerings = try await Purchases.shared.offerings()
             return try offerings

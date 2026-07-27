@@ -1,6 +1,6 @@
 //
 //  TitleView.swift
-//  
+//
 //
 //  Created by Guillaume LAURES on 28/06/2024.
 //
@@ -12,11 +12,11 @@ import SwiftUI
 @available(macOS, unavailable)
 @available(tvOS, unavailable)
 struct TitleView: View {
-    
+
     enum TitleType {
         case dynamic(isEligibleToIntro: Bool, bundle: Bundle)
         case fixed(String)
-        
+
         var value: String {
             switch self {
             case let .dynamic(isEligibleToIntro, bundle):
@@ -29,7 +29,7 @@ struct TitleView: View {
                 string
             }
         }
-        
+
         private func localize(_ key: String, value: String, bundle: Bundle) -> String {
             NSLocalizedString(
                 key,
@@ -39,9 +39,9 @@ struct TitleView: View {
             )
         }
     }
-    
+
     let type: TitleType
-    
+
     var body: some View {
         Text(type.value)
             .font(.system(size: 21, weight: .bold))

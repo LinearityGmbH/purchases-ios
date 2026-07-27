@@ -328,7 +328,7 @@ extension SubscriberAttributesManager: AttributeSyncing {
 
 }
 
-extension SubscriberAttributesManager {
+private extension SubscriberAttributesManager {
 
     func stringValueForPrimitive(from data: [AnyHashable: Any], forKey key: String) -> String? {
         guard let value = data[key as AnyHashable] else { return nil }
@@ -377,11 +377,6 @@ extension SubscriberAttributesManager {
         deviceCache.store(subscriberAttribute: subscriberAttribute, appUserID: appUserID)
     }
 
-    func currentValueForAttribute(key: String, appUserID: String) -> String? {
-        let attribute = deviceCache.subscriberAttribute(attributeKey: key, appUserID: appUserID)
-        return attribute?.value
-    }
-
     func setAttributionID(_ attributionID: String?,
                           forNetworkID networkID: ReservedSubscriberAttribute,
                           appUserID: String) {
@@ -389,6 +384,15 @@ extension SubscriberAttributesManager {
             collectDeviceIdentifiers(forAppUserID: appUserID)
         }
         setReservedAttribute(networkID, value: attributionID, appUserID: appUserID)
+    }
+
+}
+
+extension SubscriberAttributesManager {
+
+    func currentValueForAttribute(key: String, appUserID: String) -> String? {
+        let attribute = deviceCache.subscriberAttribute(attributeKey: key, appUserID: appUserID)
+        return attribute?.value
     }
 
 }

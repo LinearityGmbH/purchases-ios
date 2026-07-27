@@ -121,7 +121,7 @@ public extension Attribution {
     @objc func setEmail(_ email: String?) {
         self.subscriberAttributesManager.setEmail(email, appUserID: appUserID)
     }
-    
+
     @objc func getEmail() -> String? {
         self.subscriberAttributesManager.currentValueForAttribute(
             key: ReservedSubscriberAttribute.email.key,
@@ -552,7 +552,7 @@ extension Attribution {
     func unsyncedAttributesByKey(appUserID: String) -> SubscriberAttribute.Dictionary {
         self.subscriberAttributesManager.unsyncedAttributesByKey(appUserID: appUserID)
     }
-    
+
     public var isThereUnsyncedAttributes: Bool {
         !subscriberAttributesManager.unsyncedAttributesByKeyForAllUsers().isEmpty
     }
