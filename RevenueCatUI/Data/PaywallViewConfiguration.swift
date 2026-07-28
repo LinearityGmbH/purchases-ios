@@ -53,6 +53,7 @@ extension PaywallViewConfiguration {
         case defaultOffering
         case offering(Offering)
         case offeringIdentifier(String, presentedOfferingContext: PresentedOfferingContext?)
+        case placementIdentifier(String)
 
     }
 
@@ -103,7 +104,7 @@ extension PaywallViewConfiguration.Content {
         switch self {
         case let .offering(offering):
             return offering
-        case .defaultOffering, .offeringIdentifier:
+        case .defaultOffering, .offeringIdentifier, .placementIdentifier:
             guard Purchases.isConfigured else { return nil }
 
             do {
@@ -112,6 +113,8 @@ extension PaywallViewConfiguration.Content {
                     return try await Purchases.shared.offerings().current
                 case let .offeringIdentifier(identifier, _):
                     return try await Purchases.shared.offerings().offering(identifier: identifier)
+                case let .placementIdentifier(identifier):
+                    return try await Purchases.shared.offerings().currentOffering(forPlacement: identifier)
                 case .offering:
                     fatalError("Already handled above")
                 }
