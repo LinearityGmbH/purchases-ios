@@ -36,6 +36,15 @@ struct App: View {
         self.content
     }
 
+    #if !os(macOS)
+    @ViewBuilder
+    var paywallLoadEvents: some View {
+        Text("")
+            .onPaywallDidLoad {}
+            .onPaywallDidFailLoad { _ in }
+    }
+    #endif
+
     // Note: `body` is implicitly `MainActor`, but this is not on purpose
     // to ensure that these constructors can be called outside of `@MainActor`.
     @ViewBuilder
@@ -832,6 +841,18 @@ struct App: View {
         }
     }
 
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+func errorDisplayConfigurationAPI(error: NSError) {
+    let customError = LocalizedAlertError(
+        errorDescription: "Error",
+        failureReason: "Reason",
+        recoverySuggestion: "Suggestion"
+    )
+
+    ErrorDisplayConfiguration.makeLocalizedError = { _ in customError }
+    let _: LocalizedAlertError = ErrorDisplayConfiguration.makeLocalizedError(error)
 }
 
 private struct CustomFontProvider: PaywallFontProvider {

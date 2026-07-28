@@ -256,6 +256,13 @@ class PackageVariablesTests: TestCase {
         expect(TestData.lifetimePackage.localizedIntroductoryOfferPrice()).to(beNil())
     }
 
+    func testIntroductoryOfferDaysDuration() {
+        expect(TestData.weeklyPackage.introductoryOfferDaysDuration).to(beNil())
+        expect(TestData.monthlyPackage.introductoryOfferDaysDuration) == 7
+        expect(TestData.annualPackage.introductoryOfferDaysDuration) == 14
+        expect(TestData.lifetimePackage.introductoryOfferDaysDuration).to(beNil())
+    }
+
     func testEnglishRelativeDiscount() {
         expect(TestData.weeklyPackage.localizedRelativeDiscount(nil, Self.english)).to(beNil())
         expect(TestData.weeklyPackage.localizedRelativeDiscount(0.372, Self.english)) == "37% off"

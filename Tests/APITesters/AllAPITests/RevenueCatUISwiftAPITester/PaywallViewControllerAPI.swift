@@ -20,9 +20,11 @@ func paywallViewControllerAPI(_ delegate: Delegate,
 
     let controller = PaywallViewController()
     controller.delegate = delegate
+    let _: Bool = controller.hasMadeAPurchase
 
     let _: UIViewController = PaywallViewController(fonts: fontProvider)
     let _: UIViewController = PaywallViewController(offering: offering)
+    let _: UIViewController = PaywallViewController(placementIdentifier: "placement")
     let _: UIViewController = PaywallViewController(offeringIdentifier: "offering")
     let _: UIViewController = PaywallViewController(displayCloseButton: true)
     let _: UIViewController = PaywallViewController(fonts: fontProvider)
@@ -62,6 +64,12 @@ func paywallViewControllerAPI(_ delegate: Delegate,
                                                     shouldBlockTouchEvents: true,
                                                     dismissRequestedHandler: dismissRequestedHandler)
     let _: UIViewController = PaywallViewController(fonts: fontProvider,
+                                                    performPurchase: performPurchase,
+                                                    performRestore: performRestore)
+    let _: UIViewController = PaywallViewController(offering: offering,
+                                                    performPurchase: performPurchase,
+                                                    performRestore: performRestore)
+    let _: UIViewController = PaywallViewController(placementIdentifier: "placement",
                                                     performPurchase: performPurchase,
                                                     performRestore: performRestore)
     let _: UIViewController = PaywallViewController(offering: offering,
@@ -148,6 +156,13 @@ func paywallFooterViewControllerAPI(_ delegate: Delegate,
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, *)
 final class Delegate: PaywallViewControllerDelegate {
+
+    func paywallViewControllerDidAppear(_ controller: PaywallViewController) {}
+
+    func paywallViewControllerDidLoadPaywall(_ controller: PaywallViewController) {}
+
+    func paywallViewController(_ controller: PaywallViewController,
+                               didFailLoadPaywallWith error: NSError) {}
 
     func paywallViewControllerDidStartPurchase(_ controller: PaywallViewController) {}
 
