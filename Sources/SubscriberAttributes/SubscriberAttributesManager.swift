@@ -377,11 +377,6 @@ private extension SubscriberAttributesManager {
         deviceCache.store(subscriberAttribute: subscriberAttribute, appUserID: appUserID)
     }
 
-    func currentValueForAttribute(key: String, appUserID: String) -> String? {
-        let attribute = deviceCache.subscriberAttribute(attributeKey: key, appUserID: appUserID)
-        return attribute?.value
-    }
-
     func setAttributionID(_ attributionID: String?,
                           forNetworkID networkID: ReservedSubscriberAttribute,
                           appUserID: String) {
@@ -389,6 +384,15 @@ private extension SubscriberAttributesManager {
             collectDeviceIdentifiers(forAppUserID: appUserID)
         }
         setReservedAttribute(networkID, value: attributionID, appUserID: appUserID)
+    }
+
+}
+
+extension SubscriberAttributesManager {
+
+    func currentValueForAttribute(key: String, appUserID: String) -> String? {
+        let attribute = deviceCache.subscriberAttribute(attributeKey: key, appUserID: appUserID)
+        return attribute?.value
     }
 
 }

@@ -215,6 +215,10 @@ public struct PaywallView: View {
             // If the parent view uses refreshable, it can be inherited by the paywall view
             // and pulling down in the paywall would execute the parent's refreshable action
             .refreshableDisabled()
+            .preference(key: PaywallDidLoadPreferenceKey.self,
+                        value: self.offering != nil && self.customerInfo != nil)
+            .preference(key: PaywallDidFailLoadingPreferenceKey.self,
+                        value: self.error)
     }
 
     @MainActor
@@ -429,15 +433,22 @@ private extension PaywallView {
             return try await Purchases.shared.offerings().current.orThrow(PaywallError.noCurrentOffering)
 
         case let .offeringIdentifier(identifier, presentedOfferingContext):
-            let offering = try await Purchases.shared.offerings()
+            let offerings = try await Purchases.shared.offerings()
+            let offering = try offerings
                 .offering(identifier: identifier)
-                .orThrow(PaywallError.offeringNotFound(identifier: identifier))
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
 
             if let presentedOfferingContext {
                 return offering.withPresentedOfferingContext(presentedOfferingContext)
             }
 
             return offering
+
+        case let .placementIdentifier(identifier):
+            let offerings = try await Purchases.shared.offerings()
+            return try offerings
+                .currentOffering(forPlacement: identifier)
+                .orThrow(PaywallError.offeringNotFound(identifier: identifier, offerings: offerings))
         }
     }
 
@@ -464,6 +475,8 @@ private extension PaywallViewConfiguration.Content {
             }
 
             return offering
+        case let .placementIdentifier(identifier):
+            return Self.loadCachedOfferingIfPossible(placement: identifier)
         }
     }
 
@@ -483,6 +496,13 @@ private extension PaywallViewConfiguration.Content {
         }
     }
 
+    private static func loadCachedOfferingIfPossible(placement: String) -> Offering? {
+        if Purchases.isConfigured {
+            return Purchases.shared.cachedOfferings?.currentOffering(forPlacement: placement)
+        } else {
+            return nil
+        }
+    }
 }
 
 // MARK: -

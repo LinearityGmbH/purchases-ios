@@ -155,7 +155,6 @@ extension Package: VariableDataProvider {
 
         return Localization.localizedDuration(for: period, locale: locale)
     }
-
     func normalizedSubscriptionDuration(_ locale: Locale) -> String? {
         guard let period = self.storeProduct.subscriptionPeriod else {
             return self.periodNameOrIdentifier(locale)
@@ -187,7 +186,7 @@ extension Package: VariableDataProvider {
     }
 
     func localizedPriceAndPerMonth(_ locale: Locale, showZeroDecimalPlacePrices: Bool = false) -> String {
-        if !self.isSubscription || self.isMonthly {
+        if !self.isSubscription || self.isMonthly || self.packageType == .custom {
             return self.localizedPricePerPeriod(locale, showZeroDecimalPlacePrices: showZeroDecimalPlacePrices)
         } else {
             let unit = Localization.abbreviatedUnitLocalizedString(for: .init(value: 1, unit: .month),

@@ -23,6 +23,7 @@ func checkPackageAPI(pack: Package! = nil) {
     let _: PresentedOfferingContext = pack.presentedOfferingContext
     let _: String = pack.localizedPriceString
     let _: String? = pack.localizedIntroductoryPriceString
+    let _: Int? = pack.introductoryOfferDaysDuration
 }
 
 private func checkCreatePackageAPI(product: StoreProduct) {

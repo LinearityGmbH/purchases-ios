@@ -41,8 +41,13 @@ fileprivate extension View {
             self
                 .frame(maxWidth: .infinity, alignment: alignment)
         case .fixed(let value):
+            #if canImport(UIKit)
+            self
+                .frame(width: min(CGFloat(value), UIScreen.main.bounds.width - 40), alignment: alignment)
+            #else
             self
                 .frame(width: CGFloat(value), alignment: alignment)
+            #endif
         case .relative:
             // WIP: Maybe handle
             self

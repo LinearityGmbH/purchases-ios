@@ -54,7 +54,7 @@ struct FooterView: View {
         )
     }
 
-    fileprivate init(
+    init(
         configuration: PaywallData.Configuration,
         locale: Locale,
         mode: PaywallViewMode,
@@ -163,8 +163,8 @@ struct FooterView: View {
 
     fileprivate var font: Font.TextStyle {
         return self.interfaceIdiom == .pad
-        ? .callout
-        : .footnote
+        ? .caption
+        : .caption2
     }
 
 }
