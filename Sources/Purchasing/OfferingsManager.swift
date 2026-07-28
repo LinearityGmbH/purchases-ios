@@ -281,7 +281,9 @@ private extension OfferingsManager {
         let productIdentifiers = contents.response.productIdentifiers
 
         guard !productIdentifiers.isEmpty else {
-            let errorMessage = Strings.offering.configuration_error_no_products_for_offering(apiKeyValidationResult: .legacy).description
+            let errorMessage = Strings.offering.configuration_error_no_products_for_offering(
+                apiKeyValidationResult: self.systemInfo.apiKeyValidationResult
+            ).description
             let userInfo = userInfo(for: contents.response)
             sendError(Error.configurationError(errorMessage, underlyingError: nil), title: "No product identifiers configured for offering", userInfo: userInfo)
             completion(.failure(.configurationError(errorMessage, underlyingError: nil)))
@@ -298,7 +300,10 @@ private extension OfferingsManager {
                 let showSimulatorWarning = self.systemInfo.isSubjectToKnownIssue_18_4_sim()
                 if !showSimulatorWarning {
                     let userInfo = userInfo(for: contents.response)
-                    let error = Self.createErrorForEmptyResult(result.error)
+                    let error = Self.createErrorForEmptyResult(
+                        result.error,
+                        apiKeyValidationResult: apiKeyValidationResult
+                    )
                     sendError(error, underlyingError: error.underlyingError, title: "Products empty", userInfo: userInfo)
                 }
                 completion(.failure(Self.createErrorForEmptyResult(result.error,
@@ -316,7 +321,8 @@ private extension OfferingsManager {
                 userInfo["missingProductIDs"] = Array(missingProductIDs)
                 sendError(
                     GenericError(title: Strings.offering.cannot_find_product_configuration_error(
-                        identifiers: missingProductIDs
+                        identifiers: missingProductIDs,
+                        apiKeyValidationResult: apiKeyValidationResult
                     ).description),
                     title: "Missing product IDs configuration error",
                     userInfo: userInfo
@@ -349,7 +355,8 @@ private extension OfferingsManager {
                 let userInfo = userInfo(for: contents.response)
                 sendError(
                     GenericError(title: Strings.offering.cannot_find_product_configuration_error(
-                        identifiers: missingProductIDs
+                        identifiers: missingProductIDs,
+                        apiKeyValidationResult: apiKeyValidationResult
                     ).description),
                     title: "No offerings found",
                     userInfo: userInfo
