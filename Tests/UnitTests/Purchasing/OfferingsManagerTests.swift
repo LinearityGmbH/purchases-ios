@@ -894,6 +894,60 @@ extension OfferingsManagerTests {
     }
 }
 
+extension OfferingsManagerTests {
+
+    func testLinearityOfferingsErrorNotificationContainsDiagnostics() {
+        let notification = expectation(
+            forNotification: OfferingsErrorNotification,
+            object: nil
+        ) { notification in
+            let userInfo = notification.userInfo
+            expect(userInfo?["context"] as? String) == "offerings"
+            expect(userInfo?["error.title"] as? String) == "Products empty"
+            expect(userInfo?["nsError.domain"] as? String) == "primary"
+            expect(userInfo?["nsError.code"] as? Int) == 7
+            expect(userInfo?["nsError.domain.underlying"] as? String) == "underlying"
+            expect(userInfo?["nsError.code.underlying"] as? Int) == 8
+            return true
+        }
+
+        sendError(
+            NSError(domain: "primary", code: 7),
+            underlyingError: NSError(domain: "underlying", code: 8),
+            title: "Products empty",
+            userInfo: ["context": "offerings"]
+        )
+
+        wait(for: [notification], timeout: 1)
+    }
+
+    func testLinearityOfferingsErrorNotificationSuppressesStoreProblems() {
+        let storeProblem = NSError(
+            domain: "StoreKit",
+            code: ErrorCode.storeProblemError.rawValue
+        )
+        let otherError = NSError(domain: "Other", code: 1)
+
+        expect(shouldSuppressErrorNotification(error: storeProblem, underlyingError: nil)) == true
+        expect(shouldSuppressErrorNotification(error: otherError, underlyingError: storeProblem)) == true
+        expect(shouldSuppressErrorNotification(error: storeProblem, underlyingError: otherError)) == false
+    }
+
+    func testLinearityOfferingsResponseDiagnostics() throws {
+        let response = userInfo(for: MockData.anyBackendOfferingsContents.response)
+        let offerings = try XCTUnwrap(response["response.offerings"] as? [[String: AnyHashable]])
+        let offering = try XCTUnwrap(offerings.onlyElement)
+        let packages = try XCTUnwrap(offering["packages"] as? [[String: AnyHashable]])
+
+        expect(response["response.currentOfferingId"] as? String) == "base"
+        expect(offering["identifier"] as? String) == "base"
+        expect(offering["description"] as? String) == "This is the base offering"
+        expect(packages.onlyElement?["identifier"] as? String) == "$rc_monthly"
+        expect(packages.onlyElement?["platformProductIdentifier"] as? String) == "monthly_freetrial"
+    }
+
+}
+
 private extension OfferingsManagerTests {
 
     enum MockData {
