@@ -126,7 +126,9 @@ public class PaywallViewController: UIViewController {
     private var purchaseHandler: PurchaseHandler {
         return configuration.purchaseHandler
     }
-
+    
+    public private(set) var hasMadeAPurchase = false
+    
     /// Initialize a `PaywallViewController` with an optional `Offering`.
     /// - Parameter offering: The `Offering` containing the desired paywall to display.
     /// `Offerings.current` will be used by default.
@@ -134,11 +136,12 @@ public class PaywallViewController: UIViewController {
     /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall
-    @objc
     public convenience init(
         offering: Offering? = nil,
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -146,6 +149,27 @@ public class PaywallViewController: UIViewController {
             fonts: DefaultPaywallFontProvider(),
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
+            dismissRequestedHandler: dismissRequestedHandler
+        )
+    }
+    
+    public convenience init(
+        placementIdentifier: String,
+        displayCloseButton: Bool = false,
+        shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
+        dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
+    ) {
+        self.init(
+            content: .placementIdentifier(placementIdentifier),
+            fonts: DefaultPaywallFontProvider(),
+            displayCloseButton: displayCloseButton,
+            shouldBlockTouchEvents: shouldBlockTouchEvents,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -155,11 +179,11 @@ public class PaywallViewController: UIViewController {
     /// `Offerings.current` will be used by default.
     /// - Parameter fonts: A ``PaywallFontProvider``.
     /// - Parameter displayCloseButton: Set this to `true` to automatically include a close button.
+    /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC.
     /// - Parameter performPurchase: Closure to perform a purchase action. Only used when `Purchases`
     /// has been configured with `.with(purchasesAreCompletedBy: .myApp)`.
     /// - Parameter performRestore: Closure to perform a restore action. Only used when `Purchases`
     /// has been configured with `.with(purchasesAreCompletedBy: .myApp)`.
-    /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC.
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall.
     public convenience init(
@@ -189,12 +213,13 @@ public class PaywallViewController: UIViewController {
     /// - Parameter shouldBlockTouchEvents: Whether to interecept all touch events propagated through this VC
     /// - Parameter dismissRequestedHandler: If this is not set, the paywall will close itself automatically
     /// after a successful purchase. Otherwise use this handler to handle dismissals of the paywall
-    @available(*, deprecated, message: "use init with Offering instead")
     public convenience init(
         offeringIdentifier: String,
         fonts: PaywallFontProvider = DefaultPaywallFontProvider(),
         displayCloseButton: Bool = false,
         shouldBlockTouchEvents: Bool = false,
+        performPurchase: PerformPurchase? = nil,
+        performRestore: PerformRestore? = nil,
         dismissRequestedHandler: ((_ controller: PaywallViewController) -> Void)? = nil
     ) {
         self.init(
@@ -202,8 +227,8 @@ public class PaywallViewController: UIViewController {
             fonts: fonts,
             displayCloseButton: displayCloseButton,
             shouldBlockTouchEvents: shouldBlockTouchEvents,
-            performPurchase: nil,
-            performRestore: nil,
+            performPurchase: performPurchase,
+            performRestore: performRestore,
             dismissRequestedHandler: dismissRequestedHandler
         )
     }
@@ -299,11 +324,16 @@ public class PaywallViewController: UIViewController {
         }
         self.presentationController?.delegate = self
     }
+    
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        delegate?.paywallViewControllerDidAppear?(self)
+    }
 
     public override func viewDidDisappear(_ animated: Bool) {
         if self.isBeingDismissed && !self.isDismissingForExitOffer {
             self.delegate?.paywallViewControllerWasDismissed?(self)
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
         }
         super.viewDidDisappear(animated)
     }
@@ -387,7 +417,7 @@ public class PaywallViewController: UIViewController {
     private func handleDismissalRequest() {
         // If purchased, dismiss immediately without showing exit offer
         guard !self.purchaseHandler.hasPurchasedInSession else {
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
             self.dismissPaywall()
             return
         }
@@ -396,7 +426,7 @@ public class PaywallViewController: UIViewController {
         if let exitOffering = self.exitOfferOffering, !self.isShowingExitOffer {
             self.presentExitOffer(for: exitOffering)
         } else {
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
             self.dismissPaywall()
         }
     }
@@ -419,7 +449,7 @@ public class PaywallViewController: UIViewController {
         // Capture the presenting view controller and other needed state before dismissing
         guard let presenter = self.presentingViewController else {
             // No presenter, just dismiss normally
-            self.purchaseHandler.resetForNewSession()
+            self.resetPurchaseHandler()
             self.dismissPaywall()
             return
         }
@@ -499,6 +529,11 @@ public class PaywallViewController: UIViewController {
             ])
         }
     }
+    
+    private func resetPurchaseHandler() {
+        hasMadeAPurchase = purchaseHandler.hasPurchasedInSession
+        purchaseHandler.resetForNewSession()
+    }
 
 }
 
@@ -550,7 +585,7 @@ extension PaywallViewController: UIAdaptivePresentationControllerDelegate {
     // swiftlint:disable:next missing_docs
     public func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
         // Dismissal is happening (we allowed it) - clean up
-        self.purchaseHandler.resetForNewSession()
+        self.resetPurchaseHandler()
 
         // Forward to original delegate (with safety check to prevent recursion)
         if let originalDelegate = self.originalPresentationControllerDelegate, originalDelegate !== self {
@@ -631,6 +666,19 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     optional func paywallViewController(_ controller: PaywallViewController,
                                         didChangeSizeTo size: CGSize)
 
+    /// Notifies ``PaywallViewController`` did appear.
+    @objc(paywallViewControllerDidAppear:)
+    optional func paywallViewControllerDidAppear(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did load paywall.
+    @objc(paywallViewControllerDidLoadPaywall:)
+    optional func paywallViewControllerDidLoadPaywall(_ controller: PaywallViewController)
+    
+    /// Notifies ``PaywallViewController`` did fail to load paywall.
+    @objc(paywallViewController:didFailLoadPaywallWithError:)
+    optional func paywallViewController(_ controller: PaywallViewController,
+                                        didFailLoadPaywallWith error: NSError)
+
     /// Notifies that an exit offer paywall is about to be presented.
     /// - Parameters:
     ///   - controller: The original ``PaywallViewController`` that was dismissed.
@@ -640,7 +688,6 @@ public protocol PaywallViewControllerDelegate: AnyObject {
     @objc(paywallViewController:willPresentExitOfferController:)
     optional func paywallViewController(_ controller: PaywallViewController,
                                         willPresentExitOfferController exitOfferController: PaywallViewController)
-
 }
 
 // MARK: - Private
@@ -690,11 +737,19 @@ private extension PaywallViewController {
                 guard let self else { return }
                 self.delegate?.paywallViewController?(self, didFailRestoringWith: error)
             },
-            requestedDismissal: onRequestedDismissal,
             onSizeChange: { [weak self] in
                 guard let self else { return }
                 self.delegate?.paywallViewController?(self, didChangeSizeTo: $0)
-            }
+            },
+            onPaywallDidLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewControllerDidLoadPaywall?(self)
+            },
+            onPaywallDidFailLoad: { [weak self] in
+                guard let self else { return }
+                self.delegate?.paywallViewController?(self, didFailLoadPaywallWith: $0)
+            },
+            requestedDismissal: onRequestedDismissal
         )
 
         let controller = UIHostingController(rootView: container)
@@ -722,9 +777,10 @@ private struct PaywallContainerView: View {
     let purchaseFailure: PurchaseFailureHandler
     let restoreStarted: RestoreStartedHandler
     let restoreFailure: PurchaseFailureHandler
-    let requestedDismissal: () -> Void
-
     let onSizeChange: (CGSize) -> Void
+    let onPaywallDidLoad: () -> Void
+    let onPaywallDidFailLoad: (NSError) -> Void
+    let requestedDismissal: () -> Void
 
     var body: some View {
         PaywallView(configuration: self.configuration)
@@ -737,6 +793,8 @@ private struct PaywallContainerView: View {
             .onRestoreCompleted(self.restoreCompleted)
             .onRestoreFailure(self.restoreFailure)
             .onSizeChange(self.onSizeChange)
+            .onPaywallDidLoad(self.onPaywallDidLoad)
+            .onPaywallDidFailLoad(self.onPaywallDidFailLoad)
             .onRequestedDismissal(self.requestedDismissal)
     }
 

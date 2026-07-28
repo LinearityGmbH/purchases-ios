@@ -47,6 +47,9 @@ struct AsyncButton<Label>: View where Label: View {
             self.label
         }
         .displayError(self.$error)
+#if targetEnvironment(macCatalyst)
+        .buttonStyle(.plain)
+#endif
     }
 
 }

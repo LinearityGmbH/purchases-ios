@@ -257,13 +257,13 @@ struct Template7View: TemplateViewType {
         ConsistentTierContentView(
             tiers: self.tiers,
             selected: self.selectedTier
-        ) { tier, packages in
+        ) { _, packages in
             VStack {
                 self.features(package: self.selectedPackage)
                     // Only bottom padding if the tier selector is being hidden
                     .padding(self.showTierSelector ? .vertical : .bottom, self.defaultVerticalPaddingLength)
 
-                self.packages(for: tier, packages: packages.all)
+                self.packages(packages: packages.all)
 
                 // Needed if there are tiers that have
                 // different number of packages than other tiers
@@ -313,13 +313,12 @@ struct Template7View: TemplateViewType {
             tiers: self.tiers,
             selected: self.selectedTier
         ) { tier, packages in
-            self.packages(for: tier, packages: packages.all)
+            self.packages(packages: packages.all)
         }
         .defaultHorizontalPadding()
     }
 
     private func packages(
-        for tier: PaywallData.Tier,
         packages: [TemplateViewConfiguration.Package]
     ) -> some View {
         VStack(spacing: Constants.defaultPackageVerticalSpacing) {
