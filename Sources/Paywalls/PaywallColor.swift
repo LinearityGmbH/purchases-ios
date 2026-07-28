@@ -182,7 +182,7 @@ public extension Color {
 
 #if canImport(UIKit)
 
-    private extension Color {
+    public extension Color {
 
         init(light: UIColor, dark: UIColor) {
             self.init(UIColor(light: light, dark: dark))

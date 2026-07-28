@@ -361,6 +361,7 @@ private struct PresentingPaywallFooterModifier: ViewModifier {
 
     let restoreStarted: RestoreStartedHandler?
     let restoreCompleted: PurchaseOrRestoreCompletedHandler?
+
     let restoreFailure: PurchaseFailureHandler?
 
     func body(content: Content) -> some View {
