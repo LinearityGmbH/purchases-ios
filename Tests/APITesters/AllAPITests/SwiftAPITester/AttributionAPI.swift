@@ -15,6 +15,8 @@ func checkAttributionAPI() {
 
     attribution.setEmail("")
     attribution.setEmail(nil)
+    let _: String? = attribution.getEmail()
+    let _: Bool = attribution.isThereUnsyncedAttributes
 
     attribution.setPhoneNumber("")
     attribution.setPhoneNumber(nil)
