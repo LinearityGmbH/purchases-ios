@@ -42,3 +42,20 @@ class LocalizedAlertErrorCodeTests: TestCase {
     }
 
 }
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+class LocalizedAlertCustomErrorTests: TestCase {
+
+    func testCustomLocalizedError() {
+        let error = LocalizedAlertError(
+            errorDescription: "Couldn’t load paywall",
+            failureReason: "The offering is unavailable.",
+            recoverySuggestion: "Try again later."
+        )
+
+        expect(error.errorDescription) == "Couldn’t load paywall"
+        expect(error.failureReason) == "The offering is unavailable."
+        expect(error.recoverySuggestion) == "Try again later."
+    }
+
+}

@@ -139,7 +139,11 @@ extension PaywallData {
         case .template4:
             Template4View(configuration)
         case .template5:
+            #if canImport(UIKit) && !os(tvOS) && !os(watchOS)
             LinTemplateView(configuration)
+            #else
+            Template5View(configuration)
+            #endif
         case .template7:
             Template7View(configuration)
         }
