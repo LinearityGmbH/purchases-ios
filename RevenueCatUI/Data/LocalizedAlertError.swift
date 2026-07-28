@@ -26,12 +26,12 @@ public struct LocalizedAlertError: LocalizedError {
     }
 
     public init(error: NSError) {
-        errorDescription = "\(error.domain) \(error.code)"
-        failureReason = switch error {
-        case is ErrorCode:
-            "Error \(error.code): \(error.description)"
-        default:
-            error.localizedDescription
+        if let errorCode = error as? ErrorCode {
+            errorDescription = "Error"
+            failureReason = "Error \(error.code): \(errorCode.description)"
+        } else {
+            errorDescription = "\(error.domain) \(error.code)"
+            failureReason = error.localizedDescription
         }
         recoverySuggestion = error.localizedRecoverySuggestion
     }
