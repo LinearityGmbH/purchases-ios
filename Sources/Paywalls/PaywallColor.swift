@@ -45,6 +45,11 @@ public struct PaywallColor {
     // Only available from iOS 13
     fileprivate var _underlyingColor: (any Sendable)?
 
+    /// "Designated" initializer
+    private init(stringRepresentation: String, underlyingColor: (any Sendable)?) {
+        self.stringRepresentation = stringRepresentation
+        self._underlyingColor = underlyingColor
+    }
 }
 
 // MARK: - Public constructors
@@ -120,12 +125,6 @@ private extension PaywallColor {
 
     #endif
 
-    /// "Designated" initializer
-    private init(stringRepresentation: String, underlyingColor: (any Sendable)?) {
-        self.stringRepresentation = stringRepresentation
-        self._underlyingColor = underlyingColor
-    }
-
 }
 
 // MARK: - Errors
@@ -182,7 +181,7 @@ public extension Color {
 
 #if canImport(UIKit)
 
-    private extension Color {
+    public extension Color {
 
         init(light: UIColor, dark: UIColor) {
             self.init(UIColor(light: light, dark: dark))

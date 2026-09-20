@@ -12,6 +12,7 @@
 //  Created by Nacho Soto on 7/21/23.
 
 import Foundation
+import RevenueCat
 
 /// Error produced when displaying paywalls.
 enum PaywallError: Error {
@@ -23,7 +24,7 @@ enum PaywallError: Error {
     case noCurrentOffering
 
     /// The selected offering was not found.
-    case offeringNotFound(identifier: String)
+    case offeringNotFound(identifier: String, offerings: Offerings)
 
     /// The PaywallView must be initialized with ``performPurchase`` and ``performRestore``
     /// when ``purchasesAreCompletedBy`` is ``.myApp``
@@ -50,9 +51,8 @@ extension PaywallError: CustomNSError, CustomStringConvertible {
 
         case .noCurrentOffering:
             return "The RevenueCat dashboard does not have a current offering configured."
-
-        case let .offeringNotFound(identifier):
-            return "The RevenueCat dashboard does not have an offering with identifier '\(identifier)'."
+        case let .offeringNotFound(identifier, offerings):
+            return "The RevenueCat dashboard does not have an offering with identifier '\(identifier)' in the \(offerings.description)."
         case .performPurchaseAndRestoreHandlersNotDefined:
             return "PaywallView has not been correctly initialized. purchasesAreCompletedBy is set to .myApp, and so " +
             "the PaywallView must be initialized with a PerformPurchase and PerformRestore handler."

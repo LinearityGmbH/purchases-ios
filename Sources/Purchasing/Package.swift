@@ -100,6 +100,23 @@ import Foundation
     @objc public let packageType: PackageType
     /// The underlying ``storeProduct``
     @objc public let storeProduct: StoreProduct
+    
+    public var introductoryOfferDaysDuration: Int? {
+        guard let subscriptionPeriod = storeProduct.introductoryDiscount?.subscriptionPeriod else {
+            return nil
+        }
+        switch subscriptionPeriod.unit {
+        case .day:
+            return subscriptionPeriod.value
+        case .week:
+            return subscriptionPeriod.value * 7
+        case .month:
+            // Best effort, not really supported
+            return subscriptionPeriod.value * 30
+        case .year:
+            return subscriptionPeriod.value * 365
+        }
+    }
 
     ////  The information about the ``Offering`` containing this Package
     @objc public let presentedOfferingContext: PresentedOfferingContext
